@@ -352,7 +352,7 @@ function nodeText(record) {
 .inbound-list-shell {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 13px;
 }
 
 .inbound-toolbar {
@@ -439,7 +439,7 @@ function nodeText(record) {
 .inbound-cards {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 9px;
 }
 
 .inbound-card {
@@ -481,22 +481,21 @@ function nodeText(record) {
 .card-main {
   min-width: 0;
   flex: 1;
-  padding: 17px 18px 16px;
+  padding: 13px 14px 12px;
 }
 
 .card-header {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
+  gap: 9px;
 }
 
 .expand-button {
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   display: grid;
   place-items: center;
-  flex: 0 0 30px;
-  margin-top: 1px;
+  flex: 0 0 28px;
   border: 1px solid rgba(255, 255, 255, 0.065);
   border-radius: 8px;
   color: #64748b;
@@ -533,7 +532,7 @@ function nodeText(record) {
 }
 
 .title-line {
-  gap: 7px;
+  gap: 6px;
 }
 
 .title-line h2 {
@@ -543,7 +542,7 @@ function nodeText(record) {
   overflow: hidden;
   color: #f1f5f9;
   font-size: 15px;
-  line-height: 28px;
+  line-height: 24px;
   font-weight: 700;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -553,8 +552,8 @@ function nodeText(record) {
 .special-tag {
   display: inline-flex;
   align-items: center;
-  min-height: 23px;
-  padding: 2px 8px;
+  min-height: 21px;
+  padding: 1px 7px;
   border: 1px solid rgba(255, 255, 255, 0.065);
   border-radius: 6px;
   color: #94a3b8;
@@ -571,8 +570,8 @@ function nodeText(record) {
 .badge.port { color: #cbd5e1; font-variant-numeric: tabular-nums; }
 
 .meta-line {
-  gap: 7px 16px;
-  margin-top: 9px;
+  gap: 5px 14px;
+  margin-top: 5px;
   color: #64748b;
   font-size: 12px;
 }
@@ -598,12 +597,12 @@ function nodeText(record) {
 .primary-actions {
   justify-content: flex-end;
   flex: 0 0 auto;
-  gap: 6px;
+  gap: 5px;
 }
 
 .primary-actions :deep(.icon-action) {
-  width: 34px;
-  height: 34px;
+  width: 30px;
+  height: 30px;
   padding: 0;
   color: #64748b;
   border-color: rgba(255, 255, 255, 0.065);
@@ -620,13 +619,13 @@ function nodeText(record) {
 .primary-actions :deep(.delete:hover) { color: #f87171; border-color: rgba(239, 68, 68, 0.28); background: rgba(239, 68, 68, 0.1); }
 
 .traffic-section {
-  width: min(580px, 100%);
-  margin: 15px 0 0 42px;
+  width: min(540px, 100%);
+  margin: 9px 0 0 37px;
 }
 
 .traffic-labels {
-  gap: 10px;
-  margin-bottom: 4px;
+  gap: 8px;
+  margin-bottom: 2px;
   color: #64748b;
   font-size: 11px;
 }
@@ -645,8 +644,8 @@ function nodeText(record) {
 }
 
 .client-panel {
-  margin: 17px -18px -16px -21px;
-  padding: 15px 18px 16px 21px;
+  margin: 12px -14px -12px -17px;
+  padding: 13px 14px 14px 17px;
   border-top: 1px solid rgba(255, 255, 255, 0.055);
   background: rgba(0, 0, 0, 0.18);
 }
@@ -682,7 +681,7 @@ function nodeText(record) {
   }
 
   .card-main {
-    padding: 14px 12px;
+    padding: 12px 11px;
   }
 
   .title-line h2 {
@@ -695,8 +694,8 @@ function nodeText(record) {
   }
 
   .primary-actions :deep(.icon-action) {
-    width: 32px;
-    height: 32px;
+    width: 30px;
+    height: 30px;
   }
 
   .traffic-section,
@@ -705,10 +704,11 @@ function nodeText(record) {
   }
 
   .client-panel {
-    margin-right: -12px;
-    margin-left: -15px;
-    padding-right: 12px;
-    padding-left: 15px;
+    margin-right: -11px;
+    margin-bottom: -12px;
+    margin-left: -14px;
+    padding-right: 11px;
+    padding-left: 14px;
   }
 }
 </style>

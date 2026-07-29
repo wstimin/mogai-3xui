@@ -10,7 +10,6 @@ import {
   ExclamationCircleOutlined,
   HistoryOutlined,
   LinkOutlined,
-  PlusOutlined,
   ReloadOutlined,
   SearchOutlined,
   ThunderboltOutlined,
@@ -24,7 +23,7 @@ const props = defineProps({
   togglingIds: { type: Set, default: () => new Set() },
 });
 
-const emit = defineEmits(['add', 'refresh', 'edit', 'delete', 'probe', 'toggle-enable']);
+const emit = defineEmits(['refresh', 'edit', 'delete', 'probe', 'toggle-enable']);
 const { t } = useI18n();
 const expandedIds = ref(new Set());
 const searchKey = ref('');
@@ -149,7 +148,7 @@ function statusLabel(node) {
     <a-spin :spinning="loading">
       <div class="node-grid">
         <a-empty
-          v-if="visibleNodes.length === 0 && dataSource.length > 0"
+          v-if="visibleNodes.length === 0"
           class="empty-filter"
           :description="t('noData')"
         />
@@ -280,12 +279,6 @@ function statusLabel(node) {
             <NodeHistoryPanel :node="node" />
           </div>
         </article>
-
-        <button type="button" class="node-card add-card" @click="emit('add')">
-          <span class="add-icon"><PlusOutlined /></span>
-          <strong>{{ t('pages.nodes.addNode') }}</strong>
-          <span>{{ t('pages.nodes.addCardHint') }}</span>
-        </button>
       </div>
     </a-spin>
   </section>
@@ -741,61 +734,6 @@ function statusLabel(node) {
   padding: 15px 19px 19px;
   border-top: 1px solid rgba(255, 255, 255, 0.055);
   background: rgba(0, 0, 0, 0.18);
-}
-
-.add-card {
-  min-height: 312px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  border-style: dashed;
-  border-color: rgba(255, 255, 255, 0.09);
-  color: #64748b;
-  background: rgba(15, 17, 23, 0.25);
-  cursor: pointer;
-  font-family: inherit;
-}
-
-.add-card::before {
-  display: none;
-}
-
-.add-card:hover {
-  color: #a5b4fc;
-  border-color: rgba(99, 102, 241, 0.34);
-  background: rgba(99, 102, 241, 0.08);
-}
-
-.add-icon {
-  width: 48px;
-  height: 48px;
-  display: grid;
-  place-items: center;
-  margin-bottom: 4px;
-  border: 1px dashed rgba(255, 255, 255, 0.17);
-  border-radius: 14px;
-  font-size: 20px;
-}
-
-.add-card:hover .add-icon {
-  border-color: rgba(99, 102, 241, 0.42);
-}
-
-.add-card strong {
-  color: #94a3b8;
-  font-size: 13.5px;
-}
-
-.add-card:hover strong {
-  color: #c4b5fd;
-}
-
-.add-card > span:last-child {
-  max-width: 230px;
-  font-size: 11px;
-  line-height: 1.5;
 }
 
 @media (max-width: 768px) {

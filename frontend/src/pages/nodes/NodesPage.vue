@@ -191,7 +191,6 @@ async function onToggleEnable(node, next) {
                   :loading="loading"
                   :probing-ids="probingIds"
                   :toggling-ids="togglingIds"
-                  @add="onAdd"
                   @refresh="refresh"
                   @edit="onEdit"
                   @delete="onDelete"
