@@ -62,17 +62,15 @@ func serveDistPage(c *gin.Context, name string) {
 		basePath = "/"
 	}
 
-	// Rewrite asset URLs only when basePath isn't the root — for the
-	// default `/` install, Vite's `/assets/...` already resolves
-	// correctly and we save the byte churn.
-	if basePath != "/" {
-		// Vite emits these three attribute shapes for every entry's
-		// JS / CSS / modulepreload reference. Anchoring the search to
-		// the leading attribute name avoids matching unrelated /assets
-		// substrings inside any inlined script.
-		body = bytes.ReplaceAll(body, []byte(`src="/assets/`), []byte(`src="`+basePath+`assets/`))
-		body = bytes.ReplaceAll(body, []byte(`href="/assets/`), []byte(`href="`+basePath+`assets/`))
-	}
+	// `base: './'` makes Vite emit `./assets/...` for entry references and
+	// makes lazy chunks resolve relative to their entry JS file. Entry HTML
+	// is served from routes such as `/panel/inbounds/`, so its relative URLs
+	// must be anchored back to the panel's static asset route here. Keep the
+	// absolute replacements for compatibility with older embedded builds.
+	body = bytes.ReplaceAll(body, []byte(`src="./assets/`), []byte(`src="`+basePath+`assets/`))
+	body = bytes.ReplaceAll(body, []byte(`href="./assets/`), []byte(`href="`+basePath+`assets/`))
+	body = bytes.ReplaceAll(body, []byte(`src="/assets/`), []byte(`src="`+basePath+`assets/`))
+	body = bytes.ReplaceAll(body, []byte(`href="/assets/`), []byte(`href="`+basePath+`assets/`))
 
 	// Escape just enough that a hostile basePath setting can't break
 	// out of the JS string literal. The setting is admin-controlled

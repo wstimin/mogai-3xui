@@ -263,6 +263,9 @@ export function useInbounds() {
       await fetchOnlineUsers();
       setInbounds(Array.isArray(msg.obj) ? msg.obj : []);
     } finally {
+      // The initial loading mask must never remain over the page when the
+      // request fails; it intercepts every toolbar and row action click.
+      fetched.value = true;
       // Match legacy: keep the spinning-icon state visible briefly so
       // a fast network doesn't make the button feel like it didn't fire.
       setTimeout(() => { refreshing.value = false; }, 500);

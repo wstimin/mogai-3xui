@@ -130,6 +130,10 @@ function makeBackendProxy(target) {
 }
 
 export default defineConfig({
+  // Keep lazy-loaded chunks relative to their entry bundle. The panel can
+  // be mounted under any webBasePath, so root-relative `/assets/...` URLs
+  // break modal components such as Add/Edit inbound on custom paths.
+  base: './',
   plugins: [vue(), injectBasePathPlugin()],
   resolve: {
     alias: {
