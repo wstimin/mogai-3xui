@@ -19,6 +19,7 @@ import {
 const ThemeSwitchLogin = defineAsyncComponent(() => import('@/components/ThemeSwitchLogin.vue'));
 
 const { t } = useI18n();
+const panelVersion = (typeof window !== 'undefined' && window.__X_UI_CUR_VER__) || '2.9.5';
 
 const headlineWords = computed(() => [t('pages.login.hello'), t('pages.login.title')]);
 const HEADLINE_INTERVAL_MS = 2000;
@@ -85,7 +86,7 @@ function onLangChange(next) {
           <div class="brand-copy">
             <SafetyCertificateOutlined />
             <h1>Secure access to your network control center.</h1>
-            <p>3X-UI v2.9.4</p>
+            <p>3X-UI v{{ panelVersion }}</p>
           </div>
           <div class="brand-grid" />
         </div>
@@ -99,7 +100,7 @@ function onLangChange(next) {
             <div v-else>
               <div class="mobile-brand">
                 <div class="brand-mark">X</div>
-                <div><strong>3X-UI</strong><span>v2.9.4</span></div>
+                <div><strong>3X-UI</strong><span>v{{ panelVersion }}</span></div>
               </div>
               <div class="login-settings">
                 <a-popover :overlay-class-name="currentTheme" :title="t('menu.settings')" placement="bottomRight"

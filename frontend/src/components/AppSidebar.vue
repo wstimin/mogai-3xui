@@ -19,7 +19,7 @@ import { currentTheme } from '@/composables/useTheme.js';
 import ThemeSwitch from '@/components/ThemeSwitch.vue';
 
 const { t } = useI18n();
-const panelVersion = (typeof window !== 'undefined' && window.__X_UI_CUR_VER__) || '2.9.4';
+const panelVersion = (typeof window !== 'undefined' && window.__X_UI_CUR_VER__) || '2.9.5';
 
 const props = defineProps({
   basePath: { type: String, default: '' },
