@@ -20,20 +20,20 @@
 }
 
 body.dark {
-  --xui-bg: #0c1118;
-  --xui-sidebar: #182334;
-  --xui-surface: #182334;
-  --xui-surface-2: #131c29;
-  --xui-surface-3: #202d40;
-  --xui-border: #2a3a51;
-  --xui-border-strong: #36506f;
-  --xui-text-strong: #f1f5fb;
-  --xui-text: #c2cee0;
-  --xui-text-muted: #8fa4c2;
-  --xui-text-faint: #657a98;
+  --xui-bg: #0f1419;
+  --xui-sidebar: #111923;
+  --xui-surface: #1a2332;
+  --xui-surface-2: #141d29;
+  --xui-surface-3: #202b3d;
+  --xui-border: #2a3749;
+  --xui-border-strong: #3b506d;
+  --xui-text-strong: #f4f7fb;
+  --xui-text: #c8d3e1;
+  --xui-text-muted: #91a4bd;
+  --xui-text-faint: #657991;
   --xui-primary: #3b82f6;
   --xui-primary-soft: rgba(59, 130, 246, 0.14);
-  --xui-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+  --xui-shadow: 0 12px 28px rgba(0, 0, 0, 0.22);
 }
 
 body.dark[data-theme='ultra-dark'],
@@ -86,7 +86,7 @@ body {
   width: 100%;
   max-width: 1760px;
   margin: 0 auto;
-  padding: 32px !important;
+  padding: 28px 30px 36px !important;
 }
 
 .page-heading {
@@ -138,12 +138,43 @@ body {
   background: var(--xui-surface) !important;
   border: 1px solid var(--xui-border) !important;
   border-radius: 8px !important;
-  box-shadow: none !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08) !important;
 }
 
 .ant-card-hoverable:hover {
   border-color: var(--xui-border-strong) !important;
   box-shadow: var(--xui-shadow) !important;
+}
+
+.ant-collapse,
+.ant-collapse-item,
+.ant-list,
+.ant-list-item {
+  color: var(--xui-text) !important;
+  background: var(--xui-surface) !important;
+  border-color: var(--xui-border) !important;
+}
+
+.ant-collapse {
+  border-radius: 8px !important;
+  overflow: hidden;
+}
+
+.ant-collapse-header,
+.ant-collapse-header-text,
+.ant-list-item-meta-title,
+.ant-list-item-meta-title > a {
+  color: var(--xui-text-strong) !important;
+}
+
+.ant-collapse-content {
+  color: var(--xui-text) !important;
+  background: var(--xui-surface-2) !important;
+  border-top-color: var(--xui-border) !important;
+}
+
+.ant-list-item {
+  border-block-end-color: var(--xui-border) !important;
 }
 
 .ant-card-head {
@@ -218,6 +249,19 @@ body {
   border-color: var(--xui-border) !important;
 }
 
+.ant-dropdown-menu-item,
+.ant-select-item,
+.ant-popover-title,
+.ant-modal-close,
+.ant-drawer-close {
+  color: var(--xui-text) !important;
+}
+
+.ant-dropdown-menu-item:hover,
+.ant-select-item-option-active:not(.ant-select-item-option-disabled) {
+  background: var(--xui-surface-3) !important;
+}
+
 .ant-modal-content,
 .ant-popover-inner,
 .ant-dropdown-menu {
@@ -264,6 +308,74 @@ body {
   color: var(--xui-primary) !important;
 }
 
+.ant-tabs-content-holder {
+  color: var(--xui-text);
+}
+
+.ant-radio-button-wrapper {
+  color: var(--xui-text-muted) !important;
+  background: var(--xui-surface-2) !important;
+  border-color: var(--xui-border) !important;
+}
+
+.ant-radio-button-wrapper-checked:not(.ant-radio-button-wrapper-disabled) {
+  color: #fff !important;
+  background: var(--xui-primary) !important;
+  border-color: var(--xui-primary) !important;
+}
+
+.ant-empty-description,
+.ant-breadcrumb,
+.ant-breadcrumb a {
+  color: var(--xui-text-muted) !important;
+}
+
+.panel-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+  background: var(--xui-surface);
+  border: 1px solid var(--xui-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+
+.panel-toolbar__group {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.metric-grid .ant-col {
+  min-width: 0;
+}
+
+.metric-card {
+  height: 100%;
+}
+
+.metric-card .ant-card-body {
+  min-height: 108px;
+  display: flex;
+  align-items: center;
+}
+
+.settings-page .ant-tabs-nav,
+.xray-page .ant-tabs-nav {
+  padding: 0 14px;
+  background: var(--xui-surface);
+  border: 1px solid var(--xui-border);
+  border-radius: 8px;
+}
+
+.settings-page .ant-tabs-content-holder,
+.xray-page .ant-tabs-content-holder {
+  margin-top: 14px;
+}
+
 .ant-tag {
   border-radius: 5px;
 }
@@ -301,5 +413,20 @@ body {
   .mobile-nav-drawer .ant-menu {
     margin-top: 16px;
     background: var(--xui-sidebar) !important;
+  }
+
+  .panel-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .panel-toolbar__group {
+    width: 100%;
+  }
+
+  .panel-toolbar__group .ant-input-affix-wrapper,
+  .panel-toolbar__group .ant-input {
+    flex: 1;
+    min-width: 150px;
   }
 }

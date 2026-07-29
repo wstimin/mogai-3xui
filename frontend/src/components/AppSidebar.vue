@@ -7,6 +7,9 @@ import {
   SettingOutlined,
   ToolOutlined,
   ClusterOutlined,
+  TeamOutlined,
+  LineChartOutlined,
+  CloudSyncOutlined,
   LogoutOutlined,
   CloseOutlined,
   MenuOutlined,
@@ -29,6 +32,9 @@ const iconByName = {
   setting: SettingOutlined,
   tool: ToolOutlined,
   cluster: ClusterOutlined,
+  clients: TeamOutlined,
+  traffic: LineChartOutlined,
+  subscription: CloudSyncOutlined,
   logout: LogoutOutlined,
 };
 
@@ -37,13 +43,17 @@ const prefix = props.basePath?.startsWith('/') ? props.basePath : `/${props.base
 const tabs = computed(() => [
   { key: `${prefix}panel/`, icon: 'dashboard', title: t('menu.dashboard') },
   { key: `${prefix}panel/inbounds`, icon: 'user', title: t('menu.inbounds') },
+  { key: `${prefix}panel/inbounds#clients`, icon: 'clients', title: t('clients') },
+  { key: `${prefix}panel/inbounds#traffic`, icon: 'traffic', title: t('pages.inbounds.traffic') },
   { key: `${prefix}panel/nodes`, icon: 'cluster', title: t('menu.nodes') },
+  { key: `${prefix}panel/settings#subscription`, icon: 'subscription', title: t('pages.settings.subSettings') },
   { key: `${prefix}panel/settings`, icon: 'setting', title: t('menu.settings') },
   { key: `${prefix}panel/xray`, icon: 'tool', title: t('menu.xray') },
 ]);
 
 const activeTab = computed(() => {
-  const exact = tabs.value.find((tab) => tab.key === props.requestUri);
+  const current = `${props.requestUri}${window.location.hash || ''}`;
+  const exact = tabs.value.find((tab) => tab.key === current);
   if (exact) return [exact.key];
   const nested = [...tabs.value]
     .sort((a, b) => b.key.length - a.key.length)
@@ -55,6 +65,12 @@ const drawerOpen = ref(false);
 
 function openLink(key) {
   drawerOpen.value = false;
+  const target = new URL(key, window.location.origin);
+  if (target.pathname === window.location.pathname && target.hash) {
+    window.location.hash = target.hash;
+    window.setTimeout(() => document.querySelector(target.hash)?.scrollIntoView({ behavior: 'smooth' }), 0);
+    return;
+  }
   window.location.href = key;
 }
 </script>
@@ -70,7 +86,7 @@ function openLink(key) {
         </div>
       </div>
 
-      <div class="nav-label">CONTROL PANEL</div>
+      <div class="nav-label">3X-UI CONTROL</div>
       <a-menu :theme="currentTheme" mode="inline" :selected-keys="activeTab" @click="({ key }) => openLink(key)">
         <a-menu-item v-for="tab in tabs" :key="tab.key">
           <component :is="iconByName[tab.icon]" />
@@ -157,8 +173,8 @@ function openLink(key) {
   color: #fff;
   font-size: 18px;
   font-weight: 800;
-  background: linear-gradient(135deg, #3b82f6, #6366f1);
-  box-shadow: 0 10px 24px rgba(59, 130, 246, 0.24);
+  background: #2f73f6;
+  box-shadow: 0 8px 20px rgba(47, 115, 246, 0.22);
 }
 
 .brand-copy {
@@ -196,6 +212,10 @@ function openLink(key) {
   line-height: 44px;
   margin: 3px 0;
   border-radius: 6px;
+}
+
+.desktop-sider :deep(.ant-menu-item-selected) {
+  border: 1px solid rgba(59, 130, 246, 0.26);
 }
 
 .sidebar-bottom {

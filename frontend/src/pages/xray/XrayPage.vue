@@ -240,7 +240,7 @@ function confirmRestart() {
               <a-row :gutter="[isMobile ? 8 : 16, isMobile ? 0 : 12]">
                 <!-- Save / Restart bar -->
                 <a-col :span="24">
-                  <a-card hoverable>
+                  <div class="panel-toolbar xray-toolbar">
                     <a-row class="header-row">
                       <a-col :xs="24" :sm="14" class="header-actions">
                         <a-space direction="horizontal">
@@ -268,7 +268,7 @@ function confirmRestart() {
                         />
                       </a-col>
                     </a-row>
-                  </a-card>
+                  </div>
                 </a-col>
 
                 <!-- Tabs -->
@@ -418,10 +418,12 @@ function confirmRestart() {
 .loading-spacer { min-height: calc(100vh - 120px); }
 
 .header-row {
+  width: 100%;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
 }
+.xray-toolbar { display: block; }
 .header-actions { padding: 4px; }
 .header-info {
   display: flex;

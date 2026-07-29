@@ -1,13 +1,12 @@
 <script setup>
-import { computed, defineAsyncComponent, onMounted, ref } from 'vue';
+import { computed, defineAsyncComponent, nextTick, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Modal, message } from 'ant-design-vue';
 import {
-  SwapOutlined,
-  PieChartOutlined,
-  HistoryOutlined,
   BarsOutlined,
-  TeamOutlined,
+  CheckCircleOutlined,
+  CloudUploadOutlined,
+  CloudDownloadOutlined,
 } from '@ant-design/icons-vue';
 
 import { HttpUtil, SizeFormatter, RandomUtil } from '@/utils';
@@ -69,9 +68,24 @@ const { byId: nodesById } = useNodeList();
 const basePath = window.__X_UI_BASE_PATH__ || '';
 const requestUri = window.location.pathname;
 
+const runningInboundCount = computed(() => {
+  const now = Date.now();
+  return dbInbounds.value.filter((record) => (
+    record.enable && !(record.expiryTime > 0 && record.expiryTime <= now)
+  )).length;
+});
+
+async function scrollToCurrentHash() {
+  await nextTick();
+  if (window.location.hash) {
+    document.querySelector(window.location.hash)?.scrollIntoView({ behavior: 'smooth' });
+  }
+}
+
 onMounted(async () => {
   await fetchDefaultSettings();
   await refresh();
+  await scrollToCurrentHash();
 });
 
 // === Add/Edit modal ===================================================
@@ -559,56 +573,37 @@ function onRowAction({ key, dbInbound }) {
                   </div>
                 </div>
               </a-col>
-              <!-- Summary statistics card -->
-              <a-col :span="24">
-                <a-card size="small" hoverable class="summary-card">
-                  <a-row :gutter="[16, 12]">
-                    <a-col :xs="12" :sm="12" :md="5">
-                      <CustomStatistic :title="t('pages.inbounds.totalDownUp')"
-                        :value="`${SizeFormatter.sizeFormat(totals.up)} / ${SizeFormatter.sizeFormat(totals.down)}`">
-                        <template #prefix>
-                          <SwapOutlined />
-                        </template>
-                      </CustomStatistic>
-                    </a-col>
-                    <a-col :xs="12" :sm="12" :md="5">
-                      <CustomStatistic :title="t('pages.inbounds.totalUsage')"
-                        :value="SizeFormatter.sizeFormat(totals.up + totals.down)">
-                        <template #prefix>
-                          <PieChartOutlined />
-                        </template>
-                      </CustomStatistic>
-                    </a-col>
-                    <a-col :xs="12" :sm="12" :md="5">
-                      <CustomStatistic :title="t('pages.inbounds.allTimeTrafficUsage')"
-                        :value="SizeFormatter.sizeFormat(totals.allTime)">
-                        <template #prefix>
-                          <HistoryOutlined />
-                        </template>
-                      </CustomStatistic>
-                    </a-col>
-                    <a-col :xs="12" :sm="12" :md="5">
+              <a-col id="traffic" :span="24">
+                <a-row class="metric-grid" :gutter="[12, 12]">
+                  <a-col :xs="12" :lg="6">
+                    <a-card class="metric-card" hoverable>
                       <CustomStatistic :title="t('pages.inbounds.inboundCount')" :value="String(dbInbounds.length)">
-                        <template #prefix>
-                          <BarsOutlined />
-                        </template>
+                        <template #prefix><BarsOutlined style="color: #3b82f6" /></template>
                       </CustomStatistic>
-                    </a-col>
-                    <a-col :xs="24" :sm="24" :md="4">
-                      <CustomStatistic :title="t('clients')" value=" ">
-                        <template #prefix>
-                          <a-space direction="horizontal">
-                            <TeamOutlined />
-                            <a-tag color="green">{{ totals.clients }}</a-tag>
-                            <a-tag v-if="totals.deactive.length">{{ totals.deactive.length }}</a-tag>
-                            <a-tag v-if="totals.depleted.length" color="red">{{ totals.depleted.length }}</a-tag>
-                            <a-tag v-if="totals.expiring.length" color="orange">{{ totals.expiring.length }}</a-tag>
-                          </a-space>
-                        </template>
+                    </a-card>
+                  </a-col>
+                  <a-col :xs="12" :lg="6">
+                    <a-card class="metric-card" hoverable>
+                      <CustomStatistic :title="t('pages.index.xrayStatusRunning')" :value="String(runningInboundCount)">
+                        <template #prefix><CheckCircleOutlined style="color: #10b981" /></template>
                       </CustomStatistic>
-                    </a-col>
-                  </a-row>
-                </a-card>
+                    </a-card>
+                  </a-col>
+                  <a-col :xs="12" :lg="6">
+                    <a-card class="metric-card" hoverable>
+                      <CustomStatistic :title="t('pages.index.upload')" :value="SizeFormatter.sizeFormat(totals.up)">
+                        <template #prefix><CloudUploadOutlined style="color: #06b6d4" /></template>
+                      </CustomStatistic>
+                    </a-card>
+                  </a-col>
+                  <a-col :xs="12" :lg="6">
+                    <a-card class="metric-card" hoverable>
+                      <CustomStatistic :title="t('pages.index.download')" :value="SizeFormatter.sizeFormat(totals.down)">
+                        <template #prefix><CloudDownloadOutlined style="color: #f59e0b" /></template>
+                      </CustomStatistic>
+                    </a-card>
+                  </a-col>
+                </a-row>
               </a-col>
 
               <!-- Inbound list — toolbar, search/filter, columns, row actions -->

@@ -123,7 +123,7 @@ async function openConfig() {
           <a-spin :spinning="loading || !fetched" :delay="200" :tip="loading ? loadingTip : t('loading')" size="large">
             <div v-if="!fetched" class="loading-spacer" />
 
-            <a-row v-else :gutter="[isMobile ? 8 : 16, 12]">
+            <a-row v-else class="dashboard-grid" :gutter="[isMobile ? 8 : 16, 12]">
               <a-col :span="24">
                 <div class="page-heading">
                   <div>
@@ -385,6 +385,19 @@ async function openConfig() {
 
 .link-tags :deep(.ant-tag) {
   margin-inline-end: 0;
+}
+
+.dashboard-grid :deep(.ant-card) {
+  height: 100%;
+}
+
+.dashboard-grid :deep(.ant-card-head-title) {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.dashboard-grid :deep(.ant-card-actions > li) {
+  margin: 10px 0;
 }
 
 .ip-toggle-icon {

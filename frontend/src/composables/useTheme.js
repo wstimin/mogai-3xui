@@ -33,14 +33,14 @@ export const currentTheme = computed(() => (theme.isDark ? 'dark' : 'light'));
 // neutral black on top of darkAlgorithm.
 const DARK_TOKENS = {
   colorPrimary: '#3b82f6',
-  colorBgBase: '#0c1118',
-  colorBgLayout: '#0c1118',
-  colorBgContainer: '#182334',
-  colorBgElevated: '#182334',
-  colorBorder: '#2a3a51',
-  colorBorderSecondary: '#25354a',
-  colorText: '#c2cee0',
-  colorTextHeading: '#f1f5fb',
+  colorBgBase: '#0f1419',
+  colorBgLayout: '#0f1419',
+  colorBgContainer: '#1a2332',
+  colorBgElevated: '#1a2332',
+  colorBorder: '#2a3749',
+  colorBorderSecondary: '#243143',
+  colorText: '#c8d3e1',
+  colorTextHeading: '#f4f7fb',
   borderRadius: 6,
 };
 const ULTRA_DARK_TOKENS = {
@@ -64,9 +64,9 @@ const ULTRA_DARK_TOKENS = {
 // Dark theme uses a refined navy for the sidebar — distinct from the
 // neutral ultra-dark and warmer than AD-Vue's stock #001529.
 const DARK_LAYOUT_TOKENS = {
-  colorBgHeader: '#182334',
-  colorBgTrigger: '#202d40',
-  colorBgBody: '#0c1118',
+  colorBgHeader: '#111923',
+  colorBgTrigger: '#1a2332',
+  colorBgBody: '#0f1419',
 };
 const ULTRA_DARK_LAYOUT_TOKENS = {
   colorBgHeader: '#0a0a0a',
@@ -74,9 +74,9 @@ const ULTRA_DARK_LAYOUT_TOKENS = {
   colorBgBody: '#000',
 };
 const DARK_MENU_TOKENS = {
-  colorItemBg: '#182334',
-  colorSubItemBg: '#131c29',
-  menuSubMenuBg: '#182334',
+  colorItemBg: '#111923',
+  colorSubItemBg: '#141d29',
+  menuSubMenuBg: '#111923',
   itemSelectedBg: 'rgba(59, 130, 246, 0.14)',
   itemSelectedColor: '#69a2ff',
 };

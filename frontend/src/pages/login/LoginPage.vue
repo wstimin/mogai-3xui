@@ -1,7 +1,13 @@
 <script setup>
 import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { UserOutlined, LockOutlined, KeyOutlined, SettingOutlined } from '@ant-design/icons-vue';
+import {
+  UserOutlined,
+  LockOutlined,
+  KeyOutlined,
+  SettingOutlined,
+  SafetyCertificateOutlined,
+} from '@ant-design/icons-vue';
 
 import { HttpUtil, LanguageManager } from '@/utils';
 import {
@@ -71,20 +77,17 @@ function onLangChange(next) {
   <a-config-provider :theme="antdThemeConfig">
     <a-layout class="login-app" :class="{ 'is-dark': themeState.isDark, 'is-ultra': themeState.isUltra }">
       <a-layout-content class="login-content">
-        <div class="waves-header">
-          <div class="waves-inner-header"></div>
-          <svg class="waves" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
-            viewBox="0 24 150 28" preserveAspectRatio="none" shape-rendering="auto">
-            <defs>
-              <path id="gentle-wave" d="M-160 44c30 0 58-18 88-18s 58 18 88 18 58-18 88-18 58 18 88 18 v44h-352z" />
-            </defs>
-            <g class="parallax">
-              <use xlink:href="#gentle-wave" x="48" y="0" />
-              <use xlink:href="#gentle-wave" x="48" y="3" />
-              <use xlink:href="#gentle-wave" x="48" y="5" />
-              <use xlink:href="#gentle-wave" x="48" y="7" />
-            </g>
-          </svg>
+        <div class="login-brand-panel" aria-hidden="true">
+          <div class="brand-lockup">
+            <div class="brand-mark">X</div>
+            <div><strong>3X-UI</strong><span>CONTROL PANEL</span></div>
+          </div>
+          <div class="brand-copy">
+            <SafetyCertificateOutlined />
+            <h1>Secure access to your network control center.</h1>
+            <p>3X-UI v2.9.4</p>
+          </div>
+          <div class="brand-grid" />
         </div>
 
         <a-row type="flex" justify="center" align="middle" class="login-row">
@@ -94,6 +97,10 @@ function onLangChange(next) {
             </div>
 
             <div v-else>
+              <div class="mobile-brand">
+                <div class="brand-mark">X</div>
+                <div><strong>3X-UI</strong><span>v2.9.4</span></div>
+              </div>
               <div class="login-settings">
                 <a-popover :overlay-class-name="currentTheme" :title="t('menu.settings')" placement="bottomRight"
                   trigger="click">
@@ -125,6 +132,7 @@ function onLangChange(next) {
                       <b :key="headlineIndex">{{ headlineWords[headlineIndex] }}</b>
                     </Transition>
                   </h2>
+                  <p class="login-subtitle">Sign in to continue to the control panel</p>
                 </a-col>
               </a-row>
 
@@ -362,8 +370,118 @@ function onLangChange(next) {
   min-height: 44px;
 }
 
+.login-brand-panel {
+  position: fixed;
+  inset: 0 52% 0 0;
+  overflow: hidden;
+  padding: 42px 48px;
+  color: var(--xui-text-strong);
+  background: #111923;
+  border-right: 1px solid var(--xui-border);
+}
+
+.brand-lockup,
+.mobile-brand {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-mark {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  color: #fff;
+  background: #2f73f6;
+  font-size: 19px;
+  font-weight: 800;
+  box-shadow: 0 10px 24px rgba(47, 115, 246, 0.24);
+}
+
+.brand-lockup div:last-child,
+.mobile-brand div:last-child {
+  display: flex;
+  flex-direction: column;
+}
+
+.brand-lockup strong,
+.mobile-brand strong {
+  color: var(--xui-text-strong);
+  font-size: 18px;
+}
+
+.brand-lockup span,
+.mobile-brand span {
+  margin-top: 2px;
+  color: var(--xui-text-muted);
+  font-size: 10px;
+}
+
+.brand-copy {
+  position: relative;
+  z-index: 2;
+  max-width: 520px;
+  margin-top: 28vh;
+}
+
+.brand-copy > span {
+  color: #54d6c2;
+  font-size: 30px;
+}
+
+.brand-copy h1 {
+  margin: 20px 0 14px;
+  color: var(--xui-text-strong);
+  font-size: clamp(32px, 4vw, 54px);
+  line-height: 1.08;
+  font-weight: 750;
+}
+
+.brand-copy p {
+  color: var(--xui-text-muted);
+  font-size: 14px;
+}
+
+.brand-grid {
+  position: absolute;
+  inset: 0;
+  opacity: 0.22;
+  background-image:
+    linear-gradient(rgba(87, 113, 145, 0.18) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(87, 113, 145, 0.18) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: linear-gradient(to bottom right, transparent 10%, #000 78%);
+}
+
+.login-row {
+  padding: 24px 7% 24px 55%;
+}
+
+.login-title {
+  margin: 18px 0 6px;
+}
+
+.login-subtitle {
+  margin: 0 0 26px;
+  color: var(--xui-text-muted);
+  text-align: center;
+  font-size: 13px;
+}
+
+.mobile-brand {
+  display: none;
+}
+
 @media (max-width: 768px) {
   .login-content::before {
+    display: none;
+  }
+
+  .login-brand-panel {
     display: none;
   }
 
@@ -372,7 +490,13 @@ function onLangChange(next) {
   }
 
   .login-card {
+    width: min(100%, 390px);
     padding: 32px 24px 24px;
+  }
+
+  .mobile-brand {
+    display: flex;
+    margin-bottom: 14px;
   }
 }
 </style>

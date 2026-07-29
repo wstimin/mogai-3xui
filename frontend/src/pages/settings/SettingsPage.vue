@@ -154,6 +154,7 @@ const confAlerts = computed(() => {
 });
 
 const alertVisible = ref(true);
+const initialTab = window.location.hash === '#subscription' ? '4' : '1';
 </script>
 
 <template>
@@ -187,7 +188,7 @@ const alertVisible = ref(true);
 
               <a-row :gutter="[isMobile ? 8 : 16, isMobile ? 0 : 12]">
                 <a-col :span="24">
-                  <a-card hoverable>
+                  <div class="panel-toolbar settings-toolbar">
                     <a-row class="header-row">
                       <a-col :xs="24" :sm="10" class="header-actions">
                         <a-space direction="horizontal">
@@ -204,11 +205,11 @@ const alertVisible = ref(true);
                         <a-alert type="warning" show-icon :message="t('pages.settings.infoDesc')" />
                       </a-col>
                     </a-row>
-                  </a-card>
+                  </div>
                 </a-col>
 
                 <a-col :span="24">
-                  <a-tabs default-active-key="1">
+                  <a-tabs :default-active-key="initialTab">
                     <a-tab-pane key="1" class="tab-pane">
                       <template #tab>
                         <SettingOutlined />
@@ -230,7 +231,7 @@ const alertVisible = ref(true);
                       </template>
                       <TelegramTab :all-setting="allSetting" />
                     </a-tab-pane>
-                    <a-tab-pane key="4" class="tab-pane">
+                    <a-tab-pane id="subscription" key="4" class="tab-pane">
                       <template #tab>
                         <CloudServerOutlined />
                         <span>{{ t('pages.settings.subSettings') }}</span>
@@ -292,9 +293,14 @@ const alertVisible = ref(true);
 }
 
 .header-row {
+  width: 100%;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+}
+
+.settings-toolbar {
+  display: block;
 }
 
 .header-actions {

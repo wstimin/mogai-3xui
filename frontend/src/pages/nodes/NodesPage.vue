@@ -120,11 +120,10 @@ async function onToggleEnable(node, next) {
                   </div>
                 </div>
               </a-col>
-              <!-- Summary statistics card -->
               <a-col :span="24">
-                <a-card size="small" hoverable class="summary-card">
-                  <a-row :gutter="[16, 12]">
-                    <a-col :sm="12" :md="6">
+                <a-row class="metric-grid" :gutter="[12, 12]">
+                    <a-col :xs="12" :lg="6">
+                      <a-card class="metric-card" hoverable>
                       <CustomStatistic
                         :title="t('pages.nodes.totalNodes')"
                         :value="String(totals.total)"
@@ -133,8 +132,10 @@ async function onToggleEnable(node, next) {
                           <CloudServerOutlined />
                         </template>
                       </CustomStatistic>
+                      </a-card>
                     </a-col>
-                    <a-col :sm="12" :md="6">
+                    <a-col :xs="12" :lg="6">
+                      <a-card class="metric-card" hoverable>
                       <CustomStatistic
                         :title="t('pages.nodes.onlineNodes')"
                         :value="String(totals.online)"
@@ -143,8 +144,10 @@ async function onToggleEnable(node, next) {
                           <CheckCircleOutlined style="color: #52c41a" />
                         </template>
                       </CustomStatistic>
+                      </a-card>
                     </a-col>
-                    <a-col :sm="12" :md="6">
+                    <a-col :xs="12" :lg="6">
+                      <a-card class="metric-card" hoverable>
                       <CustomStatistic
                         :title="t('pages.nodes.offlineNodes')"
                         :value="String(totals.offline)"
@@ -153,8 +156,10 @@ async function onToggleEnable(node, next) {
                           <CloseCircleOutlined style="color: #ff4d4f" />
                         </template>
                       </CustomStatistic>
+                      </a-card>
                     </a-col>
-                    <a-col :sm="12" :md="6">
+                    <a-col :xs="12" :lg="6">
+                      <a-card class="metric-card" hoverable>
                       <CustomStatistic
                         :title="t('pages.nodes.avgLatency')"
                         :value="totals.avgLatency > 0 ? `${totals.avgLatency} ms` : '-'"
@@ -163,9 +168,9 @@ async function onToggleEnable(node, next) {
                           <ThunderboltOutlined />
                         </template>
                       </CustomStatistic>
+                      </a-card>
                     </a-col>
-                  </a-row>
-                </a-card>
+                </a-row>
               </a-col>
 
               <!-- Node table -->
@@ -229,13 +234,4 @@ async function onToggleEnable(node, next) {
   min-height: calc(100vh - 120px);
 }
 
-.summary-card {
-  padding: 16px;
-}
-
-@media (max-width: 768px) {
-  .summary-card {
-    padding: 8px;
-  }
-}
 </style>

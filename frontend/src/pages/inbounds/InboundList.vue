@@ -3,16 +3,11 @@ import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
   PlusOutlined,
-  MenuOutlined,
   SearchOutlined,
-  FilterOutlined,
   MoreOutlined,
   EditOutlined,
   QrcodeOutlined,
-  UserAddOutlined,
-  UsergroupAddOutlined,
   CopyOutlined,
-  FileDoneOutlined,
   ExportOutlined,
   ImportOutlined,
   ReloadOutlined,
@@ -21,17 +16,19 @@ import {
   BlockOutlined,
   DeleteOutlined,
   InfoCircleOutlined,
+  UserAddOutlined,
+  UsergroupAddOutlined,
+  FileDoneOutlined,
   RightOutlined,
+  PoweroffOutlined,
+  LinkOutlined,
 } from '@ant-design/icons-vue';
 
-import { HttpUtil, ObjectUtil, SizeFormatter, IntlUtil, ColorUtils } from '@/utils';
+import { HttpUtil, ObjectUtil, SizeFormatter, IntlUtil } from '@/utils';
 import { DBInbound } from '@/models/dbinbound.js';
 import { Inbound } from '@/models/inbound.js';
 import InfinityIcon from '@/components/InfinityIcon.vue';
 import ClientRowTable from './ClientRowTable.vue';
-import { useDatepicker } from '@/composables/useDatepicker.js';
-
-const { datepicker } = useDatepicker();
 
 const { t } = useI18n();
 
@@ -46,8 +43,6 @@ const props = defineProps({
   isMobile: { type: Boolean, default: false },
   isDarkTheme: { type: Boolean, default: false },
   subEnable: { type: Boolean, default: false },
-  // Map node id -> node row, supplied by the parent page so each
-  // inbound row can render its node name without an extra fetch.
   nodesById: { type: Map, default: () => new Map() },
 });
 
@@ -56,7 +51,6 @@ const emit = defineEmits([
   'add-inbound',
   'general-action',
   'row-action',
-  // Per-client events surfaced from the expand-row table.
   'edit-client',
   'qrcode-client',
   'info-client',
@@ -65,22 +59,28 @@ const emit = defineEmits([
   'toggle-enable-client',
 ]);
 
-// ============ Toolbar / search & filter =============================
-const enableFilter = ref(false);
 const searchKey = ref('');
-const filterBy = ref('');
+const statusFilter = ref('all');
+const expandedIds = ref(new Set());
 
-// Toggle the filter mode — flip cleans the other input.
-function onToggleFilter() {
-  if (enableFilter.value) searchKey.value = '';
-  else filterBy.value = '';
+function statusOf(record) {
+  const now = Date.now();
+  if (record.expiryTime > 0 && record.expiryTime <= now) return 'expired';
+  if (!record.enable) return 'disabled';
+  if (record.expiryTime > now && props.expireDiff > 0 && record.expiryTime - now <= props.expireDiff) {
+    return 'expiring';
+  }
+  return 'running';
 }
 
-// ============ Search / filter projection =============================
-// Mirrors the legacy logic: when searching, keep inbounds that match
-// anywhere (deep search); when filtering, keep inbounds that have at
-// least one client in the requested bucket and reduce their settings
-// to that bucket.
+function statusLabel(record) {
+  const status = statusOf(record);
+  if (status === 'expired') return t('depleted');
+  if (status === 'disabled') return t('disabled');
+  if (status === 'expiring') return t('depletingSoon');
+  return t('pages.index.xrayStatusRunning');
+}
+
 function projectInbound(dbInbound, predicate) {
   const next = new DBInbound(dbInbound);
   let settings;
@@ -90,778 +90,546 @@ function projectInbound(dbInbound, predicate) {
     settings = {};
   }
   if (!Array.isArray(settings.clients)) return next;
-  const filtered = settings.clients.filter(predicate);
-  next.settings = Inbound.Settings.fromJson(dbInbound.protocol, { clients: filtered });
+  next.settings = Inbound.Settings.fromJson(dbInbound.protocol, {
+    clients: settings.clients.filter(predicate),
+  });
   next.invalidateCache();
   return next;
 }
 
 const visibleInbounds = computed(() => {
-  if (enableFilter.value) {
-    if (ObjectUtil.isEmpty(filterBy.value)) return [...props.dbInbounds];
-    const out = [];
-    for (const dbInbound of props.dbInbounds) {
-      const c = props.clientCount[dbInbound.id];
-      if (!c || !c[filterBy.value] || c[filterBy.value].length === 0) continue;
-      const list = c[filterBy.value];
-      out.push(projectInbound(dbInbound, (client) => list.includes(client.email)));
-    }
-    return out;
+  let rows = props.dbInbounds.filter((record) => (
+    statusFilter.value === 'all' || statusOf(record) === statusFilter.value
+  ));
+  if (!ObjectUtil.isEmpty(searchKey.value)) {
+    rows = rows
+      .filter((record) => ObjectUtil.deepSearch(record, searchKey.value))
+      .map((record) => projectInbound(
+        record,
+        (client) => ObjectUtil.deepSearch(client, searchKey.value),
+      ));
   }
-  if (ObjectUtil.isEmpty(searchKey.value)) return [...props.dbInbounds];
-  const out = [];
-  for (const dbInbound of props.dbInbounds) {
-    if (!ObjectUtil.deepSearch(dbInbound, searchKey.value)) continue;
-    out.push(projectInbound(dbInbound, (client) => ObjectUtil.deepSearch(client, searchKey.value)));
-  }
-  return out;
+  return rows;
 });
 
-// ============ Columns =================================================
-// `key`-driven so we can render via the body-cell slot below. AD-Vue 4's
-// `responsive` array still works on column defs. Computed so column
-// labels react to live locale switches.
-const desktopColumns = computed(() => {
-  const cols = [
-    { title: 'ID', dataIndex: 'id', key: 'id', align: 'right', width: 30, responsive: ['xs'] },
-    { title: t('pages.inbounds.operate'), key: 'action', align: 'center', width: 30 },
-    { title: t('pages.inbounds.enable'), key: 'enable', align: 'center', width: 35 },
-    { title: t('pages.inbounds.remark'), dataIndex: 'remark', key: 'remark', align: 'center', width: 60 },
-  ];
-  if (props.nodesById.size > 0) {
-    cols.push({ title: t('pages.inbounds.node'), key: 'node', align: 'center', width: 60 });
-  }
-  cols.push(
-    { title: t('pages.inbounds.port'), dataIndex: 'port', key: 'port', align: 'center', width: 40 },
-    { title: t('pages.inbounds.protocol'), key: 'protocol', align: 'left', width: 130 },
-    { title: t('clients'), key: 'clients', align: 'left', width: 50 },
-    { title: t('pages.inbounds.traffic'), key: 'traffic', align: 'center', width: 90 },
-    { title: t('pages.inbounds.allTimeTraffic'), key: 'allTimeInbound', align: 'center', width: 95 },
-    { title: t('pages.inbounds.expireDate'), key: 'expiryTime', align: 'center', width: 40 },
-  );
-  return cols;
-});
-const columns = computed(() => desktopColumns.value);
+const filterItems = computed(() => [
+  { key: 'all', label: t('pages.client.selectAll') },
+  { key: 'running', label: t('pages.index.xrayStatusRunning') },
+  { key: 'disabled', label: t('disabled') },
+  { key: 'expiring', label: t('depletingSoon') },
+  { key: 'expired', label: t('depleted') },
+]);
 
-// Mobile expansion state — replaces a-table's expandable() since the
-// mobile branch renders a hand-rolled card list rather than a table.
-const expandedIds = ref(new Set());
 function toggleExpanded(id) {
   const next = new Set(expandedIds.value);
   if (next.has(id)) next.delete(id);
   else next.add(id);
   expandedIds.value = next;
 }
+
 function isExpanded(id) {
   return expandedIds.value.has(id);
 }
 
-// ============ Pagination ============================================
-function paginationFor(rows) {
-  const size = props.pageSize > 0 ? props.pageSize : rows.length || 1;
-  return {
-    pageSize: size,
-    showSizeChanger: false,
-    hideOnSinglePage: true,
-  };
-}
-
-// ============ Per-row enable switch =================================
-async function onSwitchEnable(dbInbound, next) {
-  const previous = dbInbound.enable;
-  dbInbound.enable = next; // optimistic
+async function onSwitchEnable(record, next) {
+  const previous = record.enable;
+  record.enable = next;
   try {
     const formData = new FormData();
     formData.append('enable', String(next));
-    const msg = await HttpUtil.post(`/panel/api/inbounds/setEnable/${dbInbound.id}`, formData);
-    if (!msg?.success) dbInbound.enable = previous;
+    const msg = await HttpUtil.post(`/panel/api/inbounds/setEnable/${record.id}`, formData);
+    if (!msg?.success) record.enable = previous;
   } catch (_e) {
-    dbInbound.enable = previous;
+    record.enable = previous;
   }
 }
 
-// ============ Helpers shared with the templates =====================
-// Whether to show the "Switch xray" / qrcode menu entry — same predicate
-// as legacy: SS single-user inbounds and WireGuard inbounds expose
-// inbound-wide QR codes.
-function showQrCodeMenu(dbInbound) {
-  if (dbInbound.isWireguard) return true;
-  if (dbInbound.isSS) {
-    try {
-      return !dbInbound.toInbound().isSSMultiUser;
-    } catch (_e) {
-      return false;
-    }
+function safeInbound(record) {
+  try {
+    return record.toInbound();
+  } catch (_e) {
+    return null;
   }
-  return false;
 }
 
-function trafficPercent(dbInbound) {
-  if (!dbInbound.total || dbInbound.total <= 0) return 0;
-  return Math.min(100, Math.round(((dbInbound.up + dbInbound.down) / dbInbound.total) * 100));
+function transportLabel(record) {
+  const inbound = safeInbound(record);
+  if (!inbound?.stream) return '-';
+  const parts = [String(inbound.stream.network || 'tcp').toUpperCase()];
+  if (inbound.stream.isReality) parts.push('Reality');
+  else if (inbound.stream.isTls) parts.push('TLS');
+  return parts.join(' + ');
+}
+
+function specialTags(record) {
+  const inbound = safeInbound(record);
+  const tags = [];
+  if (inbound?.stream?.network === 'ws') tags.push('CDN');
+  if (inbound?.stream?.isReality) tags.push('Reality');
+  if ((inbound?.clients || []).some((client) => !!client.flow)) tags.push('Flow');
+  return tags;
+}
+
+function showQrCodeMenu(record) {
+  if (record.isWireguard) return true;
+  if (!record.isSS) return false;
+  const inbound = safeInbound(record);
+  return !!inbound && !inbound.isSSMultiUser;
+}
+
+function onQrAction(record) {
+  if (showQrCodeMenu(record)) {
+    emit('row-action', { key: 'qrcode', dbInbound: record });
+  } else if (record.isMultiUser()) {
+    toggleExpanded(record.id);
+  } else {
+    emit('row-action', { key: 'showInfo', dbInbound: record });
+  }
+}
+
+function trafficPercent(record) {
+  if (!record.total || record.total <= 0) return 0;
+  return Math.min(100, Math.round(((record.up + record.down) / record.total) * 100));
+}
+
+function trafficColor(record) {
+  const percent = trafficPercent(record);
+  if (percent >= 90) return '#ef4444';
+  if (percent >= 70) return '#f59e0b';
+  return '#3b82f6';
+}
+
+function expiryText(record) {
+  return record.expiryTime > 0 ? IntlUtil.formatRelativeTime(record.expiryTime) : t('unlimited');
+}
+
+function clientTotal(record) {
+  return props.clientCount[record.id]?.clients || 0;
+}
+
+function nodeText(record) {
+  if (record.nodeId == null) return t('pages.inbounds.localPanel');
+  return props.nodesById.get(record.nodeId)?.name || `#${record.nodeId}`;
 }
 </script>
 
 <template>
-  <a-card hoverable>
-    <template #title>
-      <a-space direction="horizontal">
-        <a-button type="primary" @click="emit('add-inbound')">
-          <template #icon>
-            <PlusOutlined />
-          </template>
-          <template v-if="!isMobile">{{ t('pages.inbounds.addInbound') }}</template>
-        </a-button>
+  <section id="clients" class="inbound-list-shell">
+    <div class="panel-toolbar inbound-toolbar">
+      <div class="panel-toolbar__group search-group">
+        <a-input v-model:value="searchKey" :placeholder="t('search')" allow-clear>
+          <template #prefix><SearchOutlined /></template>
+        </a-input>
+        <a-tooltip title="Refresh">
+          <a-button aria-label="Refresh" @click="emit('refresh')">
+            <template #icon><ReloadOutlined /></template>
+          </a-button>
+        </a-tooltip>
+      </div>
+      <div class="panel-toolbar__group">
         <a-dropdown :trigger="['click']">
-          <a-button type="primary">
-            <template #icon>
-              <MenuOutlined />
-            </template>
-            <template v-if="!isMobile">{{ t('pages.inbounds.generalActions') }}</template>
+          <a-button>
+            <template #icon><MoreOutlined /></template>
+            {{ t('pages.inbounds.generalActions') }}
           </a-button>
           <template #overlay>
-            <a-menu @click="(a) => emit('general-action', a.key)">
-              <a-menu-item key="import">
-                <ImportOutlined /> {{ t('pages.inbounds.importInbound') }}
-              </a-menu-item>
-              <a-menu-item key="export">
-                <ExportOutlined /> {{ t('pages.inbounds.export') }}
-              </a-menu-item>
-              <a-menu-item v-if="subEnable" key="subs">
-                <ExportOutlined /> {{ t('pages.inbounds.export') }} — {{ t('pages.settings.subSettings') }}
-              </a-menu-item>
-              <a-menu-item key="resetInbounds">
-                <ReloadOutlined /> {{ t('pages.inbounds.resetAllTraffic') }}
-              </a-menu-item>
-              <a-menu-item key="resetClients">
-                <FileDoneOutlined /> {{ t('pages.inbounds.resetAllClientTraffics') }}
-              </a-menu-item>
-              <a-menu-item key="delDepletedClients" class="danger-item">
-                <RestOutlined /> {{ t('pages.inbounds.delDepletedClients') }}
-              </a-menu-item>
+            <a-menu @click="({ key }) => emit('general-action', key)">
+              <a-menu-item key="import"><ImportOutlined /> {{ t('pages.inbounds.importInbound') }}</a-menu-item>
+              <a-menu-item key="export"><ExportOutlined /> {{ t('pages.inbounds.export') }}</a-menu-item>
+              <a-menu-item v-if="subEnable" key="subs"><LinkOutlined /> {{ t('pages.settings.subSettings') }}</a-menu-item>
+              <a-menu-divider />
+              <a-menu-item key="resetInbounds"><ReloadOutlined /> {{ t('pages.inbounds.resetAllTraffic') }}</a-menu-item>
+              <a-menu-item key="resetClients"><FileDoneOutlined /> {{ t('pages.inbounds.resetAllClientTraffics') }}</a-menu-item>
+              <a-menu-item key="delDepletedClients" class="danger-item"><RestOutlined /> {{ t('pages.inbounds.delDepletedClients') }}</a-menu-item>
             </a-menu>
           </template>
         </a-dropdown>
-      </a-space>
-    </template>
-
-    <a-space direction="vertical" :style="{ width: '100%' }">
-      <!-- Search / filter toolbar -->
-      <div :class="isMobile ? 'filter-bar mobile' : 'filter-bar'">
-        <a-switch v-model:checked="enableFilter" @change="onToggleFilter">
-          <template #checkedChildren>
-            <SearchOutlined />
-          </template>
-          <template #unCheckedChildren>
-            <FilterOutlined />
-          </template>
-        </a-switch>
-        <a-input v-if="!enableFilter" v-model:value="searchKey" :placeholder="t('search')" autofocus
-          :size="isMobile ? 'small' : 'middle'" :style="{ maxWidth: '300px' }" />
-        <a-radio-group v-if="enableFilter" v-model:value="filterBy" button-style="solid"
-          :size="isMobile ? 'small' : 'middle'">
-          <a-radio-button value="">{{ t('none') }}</a-radio-button>
-          <a-radio-button value="active">{{ t('subscription.active') }}</a-radio-button>
-          <a-radio-button value="deactive">{{ t('disabled') }}</a-radio-button>
-          <a-radio-button value="depleted">{{ t('depleted') }}</a-radio-button>
-          <a-radio-button value="expiring">{{ t('depletingSoon') }}</a-radio-button>
-          <a-radio-button value="online">{{ t('online') }}</a-radio-button>
-        </a-radio-group>
+        <a-button type="primary" @click="emit('add-inbound')">
+          <template #icon><PlusOutlined /></template>
+          {{ t('pages.inbounds.addInbound') }}
+        </a-button>
       </div>
+    </div>
 
-      <!-- ====================== Mobile: card list ======================= -->
-      <div class="inbound-cards">
-        <div v-if="visibleInbounds.length === 0" class="card-empty">—</div>
+    <div class="filter-tabs" role="tablist" aria-label="Inbound status filter">
+      <button v-for="item in filterItems" :key="item.key" type="button"
+        :class="{ active: statusFilter === item.key }" @click="statusFilter = item.key">
+        {{ item.label }}
+      </button>
+    </div>
 
-        <div v-for="record in visibleInbounds" :key="record.id" class="inbound-card">
-          <!-- Header: chevron (multi-user only) + remark + enable + actions -->
-          <div class="card-head" @click="record.isMultiUser() && toggleExpanded(record.id)">
-            <RightOutlined v-if="record.isMultiUser()" class="card-expand"
-              :class="{ 'is-expanded': isExpanded(record.id) }" />
-            <span class="card-id">#{{ record.id }}</span>
-            <span class="tag-name">{{ record.remark }}</span>
-            <div class="card-actions" @click.stop>
-              <a-switch :checked="record.enable" size="small"
-                @change="(next) => onSwitchEnable(record, next)" />
+    <div class="inbound-cards">
+      <a-empty v-if="visibleInbounds.length === 0" :description="t('noData')" />
+
+      <article v-for="record in visibleInbounds" :key="record.id" class="inbound-card"
+        :class="`status-${statusOf(record)}`">
+        <div class="status-rail" />
+        <div class="card-main">
+          <header class="card-header">
+            <button v-if="record.isMultiUser()" type="button" class="expand-button"
+              :aria-expanded="isExpanded(record.id)" @click="toggleExpanded(record.id)">
+              <RightOutlined :class="{ expanded: isExpanded(record.id) }" />
+            </button>
+            <div class="identity">
+              <div class="title-line">
+                <h2>{{ record.remark || `Inbound #${record.id}` }}</h2>
+                <span class="badge protocol">{{ String(record.protocol).toUpperCase() }}</span>
+                <span class="badge" :class="`status-${statusOf(record)}`">{{ statusLabel(record) }}</span>
+                <span class="badge port">:{{ record.port }}</span>
+              </div>
+              <div class="meta-line">
+                <span>{{ transportLabel(record) }}</span>
+                <span>{{ clientTotal(record) }} {{ t('clients') }}</span>
+                <span>{{ expiryText(record) }}</span>
+                <span v-if="nodesById.size">{{ nodeText(record) }}</span>
+                <span v-for="tag in specialTags(record)" :key="tag" class="special-tag">{{ tag }}</span>
+              </div>
+            </div>
+
+            <div class="primary-actions">
+              <a-tooltip :title="t('qrCode')">
+                <a-button class="icon-action qr" @click="onQrAction(record)"><template #icon><QrcodeOutlined /></template></a-button>
+              </a-tooltip>
+              <a-tooltip :title="t('pages.inbounds.export')">
+                <a-button class="icon-action copy" @click="emit('row-action', { key: 'export', dbInbound: record })"><template #icon><CopyOutlined /></template></a-button>
+              </a-tooltip>
               <a-tooltip :title="t('edit')">
-                <a-button type="text" size="small" @click="emit('row-action', { key: 'edit', dbInbound: record })">
-                  <template #icon><EditOutlined /></template>
-                </a-button>
+                <a-button class="icon-action edit" @click="emit('row-action', { key: 'edit', dbInbound: record })"><template #icon><EditOutlined /></template></a-button>
+              </a-tooltip>
+              <a-tooltip :title="record.enable ? t('pages.index.stopXray') : t('pages.index.xrayStatusRunning')">
+                <a-button class="icon-action power" :class="{ enabled: record.enable }"
+                  @click="onSwitchEnable(record, !record.enable)"><template #icon><PoweroffOutlined /></template></a-button>
+              </a-tooltip>
+              <a-tooltip :title="t('delete')">
+                <a-button danger class="icon-action delete" @click="emit('row-action', { key: 'delete', dbInbound: record })"><template #icon><DeleteOutlined /></template></a-button>
               </a-tooltip>
               <a-dropdown :trigger="['click']" placement="bottomRight">
-                <MoreOutlined class="row-action-trigger" @click.prevent />
+                <a-button class="icon-action"><template #icon><MoreOutlined /></template></a-button>
                 <template #overlay>
-                  <a-menu @click="(a) => emit('row-action', { key: a.key, dbInbound: record })">
-                    <a-menu-item key="edit">
-                      <EditOutlined /> {{ t('edit') }}
-                    </a-menu-item>
-                    <a-menu-item v-if="showQrCodeMenu(record)" key="qrcode">
-                      <QrcodeOutlined /> {{ t('qrCode') }}
-                    </a-menu-item>
-                    <template v-if="record.isMultiUser()">
-                      <a-menu-item key="addClient">
-                        <UserAddOutlined /> {{ t('pages.client.add') }}
-                      </a-menu-item>
-                      <a-menu-item key="addBulkClient">
-                        <UsergroupAddOutlined /> {{ t('pages.client.bulk') }}
-                      </a-menu-item>
-                      <a-menu-item key="copyClients">
-                        <CopyOutlined /> {{ t('pages.client.copyFromInbound') }}
-                      </a-menu-item>
-                      <a-menu-item key="resetClients">
-                        <FileDoneOutlined /> {{ t('pages.inbounds.resetInboundClientTraffics') }}
-                      </a-menu-item>
-                      <a-menu-item key="export">
-                        <ExportOutlined /> {{ t('pages.inbounds.export') }}
-                      </a-menu-item>
-                      <a-menu-item v-if="subEnable" key="subs">
-                        <ExportOutlined /> {{ t('pages.inbounds.export') }} — {{ t('pages.settings.subSettings') }}
-                      </a-menu-item>
-                      <a-menu-item key="delDepletedClients" class="danger-item">
-                        <RestOutlined /> {{ t('pages.inbounds.delDepletedClients') }}
-                      </a-menu-item>
-                    </template>
-                    <template v-else>
-                      <a-menu-item key="showInfo">
-                        <InfoCircleOutlined /> {{ t('info') }}
-                      </a-menu-item>
-                    </template>
-                    <a-menu-item key="clipboard">
-                      <CopyOutlined /> {{ t('pages.inbounds.exportInbound') }}
-                    </a-menu-item>
-                    <a-menu-item key="resetTraffic">
-                      <RetweetOutlined /> {{ t('pages.inbounds.resetTraffic') }}
-                    </a-menu-item>
-                    <a-menu-item key="clone">
-                      <BlockOutlined /> {{ t('pages.inbounds.clone') }}
-                    </a-menu-item>
-                    <a-menu-item key="delete" class="danger-item">
-                      <DeleteOutlined /> {{ t('delete') }}
-                    </a-menu-item>
+                  <a-menu @click="({ key }) => emit('row-action', { key, dbInbound: record })">
+                    <a-menu-item v-if="record.isMultiUser()" key="addClient"><UserAddOutlined /> {{ t('pages.client.add') }}</a-menu-item>
+                    <a-menu-item v-if="record.isMultiUser()" key="addBulkClient"><UsergroupAddOutlined /> {{ t('pages.client.bulk') }}</a-menu-item>
+                    <a-menu-item v-if="!record.isMultiUser()" key="showInfo"><InfoCircleOutlined /> {{ t('info') }}</a-menu-item>
+                    <a-menu-item key="clipboard"><CopyOutlined /> {{ t('pages.inbounds.exportInbound') }}</a-menu-item>
+                    <a-menu-item v-if="subEnable && record.isMultiUser()" key="subs"><LinkOutlined /> {{ t('pages.settings.subSettings') }}</a-menu-item>
+                    <a-menu-divider />
+                    <a-menu-item key="resetTraffic"><RetweetOutlined /> {{ t('pages.inbounds.resetTraffic') }}</a-menu-item>
+                    <a-menu-item v-if="record.isMultiUser()" key="resetClients"><FileDoneOutlined /> {{ t('pages.inbounds.resetInboundClientTraffics') }}</a-menu-item>
+                    <a-menu-item key="clone"><BlockOutlined /> {{ t('pages.inbounds.clone') }}</a-menu-item>
+                    <a-menu-item v-if="record.isMultiUser()" key="delDepletedClients" class="danger-item"><RestOutlined /> {{ t('pages.inbounds.delDepletedClients') }}</a-menu-item>
                   </a-menu>
                 </template>
               </a-dropdown>
             </div>
-          </div>
+          </header>
 
-          <div v-if="record.total > 0" class="traffic-progress">
-            <div class="traffic-progress-label">
-              <span>{{ t('pages.inbounds.traffic') }} {{ SizeFormatter.sizeFormat(record.up + record.down) }} / {{ SizeFormatter.sizeFormat(record.total) }}</span>
-              <span>{{ trafficPercent(record) }}%</span>
-            </div>
-            <a-progress :percent="trafficPercent(record)" :show-info="false" size="small"
-              :stroke-color="trafficPercent(record) > 85 ? '#ef4444' : (trafficPercent(record) > 65 ? '#f59e0b' : '#22c7d9')" />
-          </div>
-
-          <!-- 2-column labelled stat grid: protocol/port/node + traffic/clients/expiry -->
-          <div class="card-stats">
-            <div class="stat-row">
-              <span class="stat-label">{{ t('pages.inbounds.protocol') }}</span>
-              <a-tag color="purple">{{ record.protocol }}</a-tag>
-              <template v-if="record.isVMess || record.isVLess || record.isTrojan || record.isSS">
-                <a-tag color="green">{{ record.toInbound().stream.network }}</a-tag>
-                <a-tag v-if="record.toInbound().stream.isTls" color="blue">TLS</a-tag>
-                <a-tag v-if="record.toInbound().stream.isReality" color="blue">Reality</a-tag>
-              </template>
-            </div>
-            <div class="stat-row">
-              <span class="stat-label">{{ t('pages.inbounds.port') }}</span>
-              <a-tag>{{ record.port }}</a-tag>
-            </div>
-            <div v-if="nodesById.size > 0" class="stat-row">
-              <span class="stat-label">{{ t('pages.inbounds.node') }}</span>
-              <a-tag v-if="record.nodeId == null" color="default">
-                {{ t('pages.inbounds.localPanel') }}
-              </a-tag>
-              <a-tag v-else-if="nodesById.get(record.nodeId)"
-                :color="nodesById.get(record.nodeId).status === 'online' ? 'blue' : 'red'">
-                {{ nodesById.get(record.nodeId).name }}
-              </a-tag>
-              <a-tag v-else color="orange">#{{ record.nodeId }}</a-tag>
-            </div>
-            <div class="stat-row">
-              <span class="stat-label">{{ t('pages.inbounds.traffic') }}</span>
-              <a-tag :color="ColorUtils.usageColor(record.up + record.down, trafficDiff, record.total)">
+          <div class="traffic-section">
+            <div class="traffic-labels">
+              <span>{{ t('pages.inbounds.traffic') }}</span>
+              <strong>
                 {{ SizeFormatter.sizeFormat(record.up + record.down) }} /
                 <template v-if="record.total > 0">{{ SizeFormatter.sizeFormat(record.total) }}</template>
                 <InfinityIcon v-else />
-              </a-tag>
+              </strong>
+              <span v-if="record.total > 0">{{ trafficPercent(record) }}%</span>
             </div>
-            <div class="stat-row">
-              <span class="stat-label">{{ t('pages.inbounds.allTimeTraffic') }}</span>
-              <a-tag>{{ SizeFormatter.sizeFormat(record.allTime || 0) }}</a-tag>
-            </div>
-            <div v-if="clientCount[record.id]" class="stat-row">
-              <span class="stat-label">{{ t('clients') }}</span>
-              <a-tag color="green">{{ clientCount[record.id].clients }}</a-tag>
-              <a-tag v-if="clientCount[record.id].online.length" color="blue">
-                {{ clientCount[record.id].online.length }} {{ t('online') }}
-              </a-tag>
-              <a-tag v-if="clientCount[record.id].depleted.length" color="red">
-                {{ clientCount[record.id].depleted.length }} {{ t('depleted') }}
-              </a-tag>
-              <a-tag v-if="clientCount[record.id].expiring.length" color="orange">
-                {{ clientCount[record.id].expiring.length }} {{ t('depletingSoon') }}
-              </a-tag>
-            </div>
-            <div class="stat-row">
-              <span class="stat-label">{{ t('pages.inbounds.expireDate') }}</span>
-              <a-tag v-if="record.expiryTime > 0"
-                :color="ColorUtils.usageColor(Date.now(), expireDiff, record._expiryTime)">
-                {{ IntlUtil.formatRelativeTime(record.expiryTime) }}
-              </a-tag>
-              <a-tag v-else color="purple"><InfinityIcon /></a-tag>
-            </div>
+            <a-progress :percent="trafficPercent(record)" :show-info="false" size="small"
+              :stroke-color="trafficColor(record)" />
           </div>
 
-          <!-- Expanded client list (multi-user only) -->
-          <div v-if="record.isMultiUser() && isExpanded(record.id)" class="card-clients">
-            <ClientRowTable :db-inbound="record" :is-mobile="true"
-              :traffic-diff="trafficDiff" :expire-diff="expireDiff" :online-clients="onlineClients"
-              :last-online-map="lastOnlineMap" :is-dark-theme="isDarkTheme"
-              @edit-client="(p) => emit('edit-client', p)"
-              @qrcode-client="(p) => emit('qrcode-client', p)"
-              @info-client="(p) => emit('info-client', p)"
+          <div v-if="record.isMultiUser() && isExpanded(record.id)" class="client-panel">
+            <ClientRowTable :db-inbound="record" :is-mobile="isMobile" :traffic-diff="trafficDiff"
+              :expire-diff="expireDiff" :online-clients="onlineClients" :last-online-map="lastOnlineMap"
+              :is-dark-theme="isDarkTheme" @edit-client="(p) => emit('edit-client', p)"
+              @qrcode-client="(p) => emit('qrcode-client', p)" @info-client="(p) => emit('info-client', p)"
               @reset-traffic-client="(p) => emit('reset-traffic-client', p)"
               @delete-client="(p) => emit('delete-client', p)"
               @toggle-enable-client="(p) => emit('toggle-enable-client', p)" />
           </div>
         </div>
-      </div>
-
-      <!-- ====================== Desktop: a-table ======================== -->
-      <a-table v-if="false" :columns="columns" :data-source="visibleInbounds" :row-key="(r) => r.id"
-        :pagination="paginationFor(visibleInbounds)" :scroll="{ x: 1000 }"
-        :style="{ marginTop: '10px' }" size="small"
-        :row-class-name="(r) => (r.isMultiUser() ? '' : 'hide-expand-icon')">
-        <!-- Per-inbound client list, expanded by clicking the row's
-             default expand chevron. Hidden via row-class-name for
-             non-multi-user inbounds (matches legacy behavior). -->
-        <template #expandedRowRender="{ record }">
-          <ClientRowTable v-if="record.isMultiUser()" :db-inbound="record" :is-mobile="isMobile"
-            :traffic-diff="trafficDiff" :expire-diff="expireDiff" :online-clients="onlineClients"
-            :last-online-map="lastOnlineMap" :is-dark-theme="isDarkTheme" @edit-client="(p) => emit('edit-client', p)"
-            @qrcode-client="(p) => emit('qrcode-client', p)" @info-client="(p) => emit('info-client', p)"
-            @reset-traffic-client="(p) => emit('reset-traffic-client', p)"
-            @delete-client="(p) => emit('delete-client', p)"
-            @toggle-enable-client="(p) => emit('toggle-enable-client', p)" />
-        </template>
-
-        <template #bodyCell="{ column, record }">
-          <!-- ============== Action dropdown ============== -->
-          <template v-if="column.key === 'action'">
-            <a-dropdown :trigger="['click']">
-              <MoreOutlined class="row-action-trigger" @click.prevent />
-              <template #overlay>
-                <a-menu @click="(a) => emit('row-action', { key: a.key, dbInbound: record })">
-                  <a-menu-item key="edit">
-                    <EditOutlined /> {{ t('edit') }}
-                  </a-menu-item>
-                  <a-menu-item v-if="showQrCodeMenu(record)" key="qrcode">
-                    <QrcodeOutlined /> {{ t('qrCode') }}
-                  </a-menu-item>
-                  <template v-if="record.isMultiUser()">
-                    <a-menu-item key="addClient">
-                      <UserAddOutlined /> {{ t('pages.client.add') }}
-                    </a-menu-item>
-                    <a-menu-item key="addBulkClient">
-                      <UsergroupAddOutlined /> {{ t('pages.client.bulk') }}
-                    </a-menu-item>
-                    <a-menu-item key="copyClients">
-                      <CopyOutlined /> {{ t('pages.client.copyFromInbound') }}
-                    </a-menu-item>
-                    <a-menu-item key="resetClients">
-                      <FileDoneOutlined /> {{ t('pages.inbounds.resetInboundClientTraffics') }}
-                    </a-menu-item>
-                    <a-menu-item key="export">
-                      <ExportOutlined /> {{ t('pages.inbounds.export') }}
-                    </a-menu-item>
-                    <a-menu-item v-if="subEnable" key="subs">
-                      <ExportOutlined /> {{ t('pages.inbounds.export') }} — {{ t('pages.settings.subSettings') }}
-                    </a-menu-item>
-                    <a-menu-item key="delDepletedClients" class="danger-item">
-                      <RestOutlined /> {{ t('pages.inbounds.delDepletedClients') }}
-                    </a-menu-item>
-                  </template>
-                  <template v-else>
-                    <a-menu-item key="showInfo">
-                      <InfoCircleOutlined /> {{ t('info') }}
-                    </a-menu-item>
-                  </template>
-                  <a-menu-item key="clipboard">
-                    <CopyOutlined /> {{ t('pages.inbounds.exportInbound') }}
-                  </a-menu-item>
-                  <a-menu-item key="resetTraffic">
-                    <RetweetOutlined /> {{ t('pages.inbounds.resetTraffic') }}
-                  </a-menu-item>
-                  <a-menu-item key="clone">
-                    <BlockOutlined /> {{ t('pages.inbounds.clone') }}
-                  </a-menu-item>
-                  <a-menu-item key="delete" class="danger-item">
-                    <DeleteOutlined /> {{ t('delete') }}
-                  </a-menu-item>
-                </a-menu>
-              </template>
-            </a-dropdown>
-          </template>
-
-          <!-- ============== Enable switch (desktop) ============== -->
-          <template v-else-if="column.key === 'enable'">
-            <a-switch :checked="record.enable" @change="(next) => onSwitchEnable(record, next)" />
-          </template>
-
-          <!-- ============== Node deployment tag ============== -->
-          <template v-else-if="column.key === 'node'">
-            <template v-if="record.nodeId == null">
-              <a-tag color="default">{{ t('pages.inbounds.localPanel') }}</a-tag>
-            </template>
-            <template v-else-if="nodesById.get(record.nodeId)">
-              <a-tag :color="nodesById.get(record.nodeId).status === 'online' ? 'blue' : 'red'">
-                {{ nodesById.get(record.nodeId).name }}
-              </a-tag>
-            </template>
-            <template v-else>
-              <!-- Node row was deleted but inbound still references it. -->
-              <a-tag color="orange">node #{{ record.nodeId }}</a-tag>
-            </template>
-          </template>
-
-          <!-- ============== Protocol tags ============== -->
-          <template v-else-if="column.key === 'protocol'">
-            <div class="protocol-tags">
-              <a-tag color="purple">{{ record.protocol }}</a-tag>
-              <template v-if="record.isVMess || record.isVLess || record.isTrojan || record.isSS">
-                <a-tag color="green">{{ record.toInbound().stream.network }}</a-tag>
-                <a-tag v-if="record.toInbound().stream.isTls" color="blue">TLS</a-tag>
-                <a-tag v-if="record.toInbound().stream.isReality" color="blue">Reality</a-tag>
-              </template>
-            </div>
-          </template>
-
-          <!-- ============== Clients tag + popovers ============== -->
-          <template v-else-if="column.key === 'clients'">
-            <template v-if="clientCount[record.id]">
-              <a-tag color="green" style="margin: 0">{{ clientCount[record.id].clients }}</a-tag>
-              <a-popover v-if="clientCount[record.id].deactive.length" :title="t('disabled')">
-                <template #content>
-                  <div v-for="email in clientCount[record.id].deactive" :key="email">{{ email }}</div>
-                </template>
-                <a-tag style="margin: 0; padding: 0 2px">{{ clientCount[record.id].deactive.length }}</a-tag>
-              </a-popover>
-              <a-popover v-if="clientCount[record.id].depleted.length" :title="t('depleted')">
-                <template #content>
-                  <div v-for="email in clientCount[record.id].depleted" :key="email">{{ email }}</div>
-                </template>
-                <a-tag color="red" style="margin: 0; padding: 0 2px">{{ clientCount[record.id].depleted.length
-                }}</a-tag>
-              </a-popover>
-              <a-popover v-if="clientCount[record.id].expiring.length" :title="t('depletingSoon')">
-                <template #content>
-                  <div v-for="email in clientCount[record.id].expiring" :key="email">{{ email }}</div>
-                </template>
-                <a-tag color="orange" style="margin: 0; padding: 0 2px">{{ clientCount[record.id].expiring.length
-                }}</a-tag>
-              </a-popover>
-              <a-popover v-if="clientCount[record.id].online.length" :title="t('online')">
-                <template #content>
-                  <div v-for="email in clientCount[record.id].online" :key="email">{{ email }}</div>
-                </template>
-                <a-tag color="blue" style="margin: 0; padding: 0 2px">{{ clientCount[record.id].online.length }}</a-tag>
-              </a-popover>
-            </template>
-          </template>
-
-          <!-- ============== Traffic ============== -->
-          <template v-else-if="column.key === 'traffic'">
-            <a-popover>
-              <template #content>
-                <table cellpadding="2">
-                  <tbody>
-                    <tr>
-                      <td>↑ {{ SizeFormatter.sizeFormat(record.up) }}</td>
-                      <td>↓ {{ SizeFormatter.sizeFormat(record.down) }}</td>
-                    </tr>
-                    <tr v-if="record.total > 0 && record.up + record.down < record.total">
-                      <td>{{ t('remained') }}</td>
-                      <td>{{ SizeFormatter.sizeFormat(record.total - record.up - record.down) }}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </template>
-              <a-tag :color="ColorUtils.usageColor(record.up + record.down, trafficDiff, record.total)">
-                {{ SizeFormatter.sizeFormat(record.up + record.down) }} /
-                <template v-if="record.total > 0">{{ SizeFormatter.sizeFormat(record.total) }}</template>
-                <InfinityIcon v-else />
-              </a-tag>
-            </a-popover>
-          </template>
-
-          <!-- ============== All-time inbound traffic ============== -->
-          <template v-else-if="column.key === 'allTimeInbound'">
-            <a-tag>{{ SizeFormatter.sizeFormat(record.allTime || 0) }}</a-tag>
-          </template>
-
-          <!-- ============== Expiry ============== -->
-          <template v-else-if="column.key === 'expiryTime'">
-            <a-popover v-if="record.expiryTime > 0">
-              <template #content>{{ IntlUtil.formatDate(record.expiryTime, datepicker) }}</template>
-              <a-tag :color="ColorUtils.usageColor(Date.now(), expireDiff, record._expiryTime)" style="min-width: 50px">
-                {{ IntlUtil.formatRelativeTime(record.expiryTime) }}
-              </a-tag>
-            </a-popover>
-            <a-tag v-else color="purple">
-              <InfinityIcon />
-            </a-tag>
-          </template>
-
-        </template>
-      </a-table>
-    </a-space>
-  </a-card>
+      </article>
+    </div>
+  </section>
 </template>
 
 <style scoped>
-.filter-bar {
+.inbound-list-shell {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  justify-content: flex-end;
-  margin-bottom: 4px;
+  flex-direction: column;
+  gap: 14px;
 }
 
-.filter-bar.mobile {
-  display: block;
+.search-group :deep(.ant-input-affix-wrapper) {
+  width: min(360px, 44vw);
 }
 
-.filter-bar.mobile>* {
-  margin-bottom: 4px;
-}
-
-.protocol-tags {
-  display: inline-flex;
-  flex-wrap: wrap;
+.filter-tabs {
+  display: flex;
   gap: 4px;
+  overflow-x: auto;
+  padding: 4px;
+  border: 1px solid var(--xui-border);
+  border-radius: 8px;
+  background: var(--xui-surface-2);
 }
 
-.row-action-trigger {
-  font-size: 20px;
+.filter-tabs button {
+  min-height: 34px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 6px;
+  color: var(--xui-text-muted);
+  background: transparent;
   cursor: pointer;
+  white-space: nowrap;
 }
 
-.danger-item {
-  color: #ff4d4f;
+.filter-tabs button:hover,
+.filter-tabs button.active {
+  color: #fff;
+  background: var(--xui-primary);
 }
 
-/* Hide the expand chevron on rows whose inbound has no client list
- * (HTTP/Mixed/Tunnel/WireGuard single-config). */
-:deep(.hide-expand-icon .ant-table-row-expand-icon) {
-  visibility: hidden;
-}
-
-/* Push the expand chevron away from the table's left edge so it has
- * a little breathing room instead of being flush against the corner. */
-:deep(.ant-table-tbody .ant-table-cell-with-append) {
-  padding-left: 12px;
-}
-
-:deep(.ant-table-row-expand-icon) {
-  margin-inline-end: 10px;
-  margin-inline-start: 4px;
-}
-
-/* Round the table's outer corners — AD-Vue gives .ant-table the radius
- * token, but the inner header strip and footer touch the edges, so clip
- * them here. */
-:deep(.ant-table) {
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-:deep(.ant-table-container) {
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-:deep(.ant-table-thead > tr:first-child > *:first-child) {
-  border-start-start-radius: 8px;
-}
-
-:deep(.ant-table-thead > tr:first-child > *:last-child) {
-  border-start-end-radius: 8px;
-}
-
-:deep(.ant-table-tbody > tr:last-child > *:first-child) {
-  border-end-start-radius: 8px;
-}
-
-:deep(.ant-table-tbody > tr:last-child > *:last-child) {
-  border-end-end-radius: 8px;
-}
-
-/* ===== Mobile card list ===========================================
- * <768px renders inbounds as a vertical stack of cards via the
- * v-if="isMobile" branch above; the desktop <a-table> isn't mounted
- * so the legacy table-cell tightening rules went away. */
 .inbound-cards {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  margin-top: 10px;
 }
 
 .inbound-card {
   position: relative;
-  border: 1px solid var(--xui-border);
-  border-left: 4px solid #22c55e;
-  border-radius: 8px;
-  padding: 18px 20px;
-  background: var(--xui-surface);
+  overflow: hidden;
   display: flex;
-  flex-direction: column;
-  gap: 12px;
-  transition: border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+  min-width: 0;
+  border: 1px solid var(--xui-border);
+  border-radius: 8px;
+  background: var(--xui-surface);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.09);
+  transition: border-color 160ms ease, box-shadow 160ms ease;
 }
 
 .inbound-card:hover {
   border-color: var(--xui-border-strong);
-  border-left-color: #22c55e;
   box-shadow: var(--xui-shadow);
 }
 
-.card-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  user-select: none;
-}
-.card-id {
-  font-size: 11px;
-  color: var(--xui-text-faint);
-}
-.tag-name {
-  color: var(--xui-text-strong);
-  font-size: 16px;
-  font-weight: 700;
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.card-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
+.status-rail {
+  width: 4px;
+  flex: 0 0 4px;
+  background: var(--xui-success);
 }
 
-.card-actions :deep(.ant-btn) {
-  width: 34px;
-  height: 34px;
-  color: var(--xui-text-muted);
+.inbound-card.status-disabled .status-rail { background: #738196; }
+.inbound-card.status-expiring .status-rail { background: var(--xui-warning); }
+.inbound-card.status-expired .status-rail { background: var(--xui-danger); }
+
+.card-main {
+  min-width: 0;
+  flex: 1;
+  padding: 18px 20px;
+}
+
+.card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.expand-button {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 28px;
+  margin-top: 1px;
   border: 1px solid var(--xui-border);
   border-radius: 6px;
+  color: var(--xui-text-muted);
+  background: var(--xui-surface-2);
+  cursor: pointer;
 }
-.card-expand {
-  font-size: 12px;
-  opacity: 0.6;
+
+.expand-button span {
   transition: transform 150ms ease;
-  flex-shrink: 0;
 }
-.card-expand.is-expanded {
+
+.expand-button span.expanded {
   transform: rotate(90deg);
 }
 
-.card-stats {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(150px, max-content));
-  gap: 8px 22px;
+.identity {
+  min-width: 0;
+  flex: 1;
 }
-.stat-row {
+
+.title-line,
+.meta-line,
+.primary-actions,
+.traffic-labels {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
+}
+
+.title-line {
+  gap: 7px;
+}
+
+.title-line h2 {
+  min-width: 0;
+  max-width: 420px;
+  margin: 0 4px 0 0;
+  overflow: hidden;
+  color: var(--xui-text-strong);
+  font-size: 16px;
+  line-height: 28px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.badge,
+.special-tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 23px;
+  padding: 2px 8px;
+  border: 1px solid var(--xui-border);
+  border-radius: 5px;
+  color: var(--xui-text-muted);
+  background: var(--xui-surface-2);
+  font-size: 11px;
+}
+
+.badge.protocol { color: #8ec5ff; border-color: rgba(59, 130, 246, 0.38); background: rgba(59, 130, 246, 0.12); }
+.badge.status-running { color: #63e6be; border-color: rgba(16, 185, 129, 0.34); background: rgba(16, 185, 129, 0.1); }
+.badge.status-disabled { color: #b3bfce; }
+.badge.status-expiring { color: #ffd166; border-color: rgba(245, 158, 11, 0.36); background: rgba(245, 158, 11, 0.1); }
+.badge.status-expired { color: #ff8a8a; border-color: rgba(239, 68, 68, 0.36); background: rgba(239, 68, 68, 0.1); }
+.badge.port { color: #b7c7dc; }
+
+.meta-line {
+  gap: 7px 16px;
+  margin-top: 9px;
+  color: var(--xui-text-muted);
+  font-size: 12px;
+}
+
+.meta-line > span:not(.special-tag)::before {
+  content: '';
+  width: 4px;
+  height: 4px;
+  display: inline-block;
+  margin: 0 7px 2px 0;
+  border-radius: 50%;
+  background: var(--xui-text-faint);
+}
+
+.special-tag {
+  min-height: 20px;
+  padding: 1px 6px;
+  color: #67e8f9;
+  border-color: rgba(6, 182, 212, 0.34);
+  background: rgba(6, 182, 212, 0.08);
+}
+
+.primary-actions {
+  justify-content: flex-end;
+  flex: 0 0 auto;
   gap: 6px;
 }
-.stat-label {
+
+.primary-actions :deep(.icon-action) {
+  width: 34px;
+  height: 34px;
+  padding: 0;
   color: var(--xui-text-muted);
-  font-size: 11px;
-  min-width: auto;
-  flex-shrink: 0;
-}
-.card-stats :deep(.ant-tag) {
-  margin: 0;
+  border-color: var(--xui-border);
+  background: var(--xui-surface-2);
 }
 
-.card-clients {
-  margin-top: 4px;
-  padding-top: 8px;
-  border-top: 1px solid rgba(128, 128, 128, 0.15);
+.primary-actions :deep(.icon-action:hover) { color: #fff; border-color: var(--xui-primary); background: var(--xui-primary); }
+.primary-actions :deep(.power.enabled:hover) { border-color: var(--xui-warning); background: var(--xui-warning); }
+.primary-actions :deep(.delete:hover) { border-color: var(--xui-danger); background: var(--xui-danger); }
+
+.traffic-section {
+  width: min(580px, 100%);
+  margin: 16px 0 0 40px;
 }
 
-.traffic-progress {
-  width: min(360px, 100%);
-}
-
-.traffic-progress-label {
-  margin-bottom: 2px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+.traffic-labels {
+  gap: 10px;
+  margin-bottom: 4px;
   color: var(--xui-text-muted);
   font-size: 11px;
 }
 
-.traffic-progress :deep(.ant-progress-inner) {
+.traffic-labels strong {
+  color: var(--xui-text);
+  font-weight: 600;
+}
+
+.traffic-labels span:last-child {
+  margin-left: auto;
+}
+
+.traffic-section :deep(.ant-progress-inner) {
   background: var(--xui-surface-3);
 }
 
-.card-empty {
-  text-align: center;
-  opacity: 0.4;
-  padding: 20px 0;
+.client-panel {
+  margin: 16px 0 0 40px;
+  padding-top: 16px;
+  border-top: 1px solid var(--xui-border);
+}
+
+.danger-item {
+  color: var(--xui-danger) !important;
+}
+
+@media (max-width: 980px) {
+  .card-header {
+    flex-wrap: wrap;
+  }
+
+  .primary-actions {
+    width: 100%;
+    padding-left: 40px;
+    justify-content: flex-start;
+  }
 }
 
 @media (max-width: 768px) {
-  :deep(.ant-card-head) {
-    padding: 0 12px;
-    min-height: 44px;
-  }
-  :deep(.ant-card-head-title),
-  :deep(.ant-card-extra) {
-    padding: 8px 0;
-  }
-  :deep(.ant-card-body) {
-    padding: 8px;
+  .search-group,
+  .search-group :deep(.ant-input-affix-wrapper) {
+    width: 100%;
   }
 
-  .filter-bar.mobile {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-  .filter-bar.mobile > * {
-    margin-bottom: 0;
+  .panel-toolbar__group:last-child :deep(.ant-btn) {
+    flex: 1;
   }
 
-  .row-action-trigger {
-    font-size: 22px;
-    padding: 4px;
-  }
-
-  .inbound-card {
+  .card-main {
     padding: 14px 12px;
   }
 
-  .card-stats {
-    grid-template-columns: 1fr;
-    gap: 7px;
+  .title-line h2 {
+    width: 100%;
+    max-width: calc(100vw - 112px);
   }
 
-  .card-actions :deep(.ant-btn) {
-    width: 30px;
-    height: 30px;
+  .primary-actions {
+    padding-left: 0;
+  }
+
+  .primary-actions :deep(.icon-action) {
+    width: 32px;
+    height: 32px;
+  }
+
+  .traffic-section,
+  .client-panel {
+    margin-left: 0;
   }
 }
 </style>

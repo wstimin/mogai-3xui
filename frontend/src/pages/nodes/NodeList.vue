@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
   EditOutlined,
@@ -7,6 +7,10 @@ import {
   PlusOutlined,
   ThunderboltOutlined,
   ExclamationCircleOutlined,
+  RightOutlined,
+  LinkOutlined,
+  ClockCircleOutlined,
+  DashboardOutlined,
 } from '@ant-design/icons-vue';
 import NodeHistoryPanel from './NodeHistoryPanel.vue';
 
@@ -16,36 +20,26 @@ const props = defineProps({
   isMobile: { type: Boolean, default: false },
 });
 
-const emit = defineEmits([
-  'add',
-  'edit',
-  'delete',
-  'probe',
-  'toggle-enable',
-]);
-
+const emit = defineEmits(['add', 'edit', 'delete', 'probe', 'toggle-enable']);
 const { t } = useI18n();
+const expandedIds = ref(new Set());
 
-// Render the address column as a clickable URL so admins can jump to
-// the remote panel directly from the list.
-const dataSource = computed(() =>
-  props.nodes.map((n) => ({
-    ...n,
-    url: `${n.scheme}://${n.address}:${n.port}${n.basePath || '/'}`,
-    key: n.id,
-  })),
-);
+const dataSource = computed(() => props.nodes.map((node) => ({
+  ...node,
+  url: `${node.scheme}://${node.address}:${node.port}${node.basePath || '/'}`,
+})));
 
-function statusColor(status) {
-  switch (status) {
-    case 'online': return 'green';
-    case 'offline': return 'red';
-    default: return 'default';
-  }
+function toggleExpanded(id) {
+  const next = new Set(expandedIds.value);
+  if (next.has(id)) next.delete(id);
+  else next.add(id);
+  expandedIds.value = next;
 }
 
-// Relative-time formatter — keeps the column compact and avoids
-// pulling dayjs just for this single use.
+function isExpanded(id) {
+  return expandedIds.value.has(id);
+}
+
 function relativeTime(unixSeconds) {
   if (!unixSeconds) return t('pages.nodes.never');
   const diffSec = Math.max(0, Math.floor(Date.now() / 1000 - unixSeconds));
@@ -62,146 +56,274 @@ function formatUptime(secs) {
   const hours = Math.floor((secs % 86400) / 3600);
   if (days > 0) return `${days}d ${hours}h`;
   const mins = Math.floor((secs % 3600) / 60);
-  if (hours > 0) return `${hours}h ${mins}m`;
-  return `${mins}m`;
+  return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
 }
 
-function formatPct(p) {
-  if (typeof p !== 'number' || isNaN(p)) return '-';
-  return `${p.toFixed(1)}%`;
+function formatPct(value) {
+  return typeof value === 'number' && !Number.isNaN(value) ? `${value.toFixed(1)}%` : '-';
 }
 </script>
 
 <template>
-  <a-card size="small" hoverable>
-    <div class="toolbar">
+  <section class="node-list-shell">
+    <div class="panel-toolbar">
+      <div>
+        <strong class="toolbar-title">{{ t('menu.nodes') }}</strong>
+        <span class="toolbar-subtitle">{{ dataSource.length }} {{ t('pages.nodes.totalNodes') }}</span>
+      </div>
       <a-button type="primary" @click="emit('add')">
         <template #icon><PlusOutlined /></template>
         {{ t('pages.nodes.addNode') }}
       </a-button>
     </div>
 
-    <a-table
-      :data-source="dataSource"
-      :pagination="false"
-      :loading="loading"
-      :scroll="{ x: 'max-content' }"
-      size="middle"
-      row-key="id"
-    >
-      <template #expandedRowRender="{ record }">
-        <NodeHistoryPanel :node="record" />
-      </template>
-      <a-table-column :title="t('pages.nodes.name')" data-index="name" :ellipsis="true">
-        <template #default="{ record }">
-          <div class="name-cell">
-            <span class="name">{{ record.name }}</span>
-            <span v-if="record.remark" class="remark">{{ record.remark }}</span>
+    <a-spin :spinning="loading">
+      <div class="node-grid">
+        <a-empty v-if="dataSource.length === 0" :description="t('noData')" />
+        <article v-for="node in dataSource" :key="node.id" class="node-card"
+          :class="`status-${node.status || 'unknown'}`">
+          <div class="status-rail" />
+          <div class="node-card-content">
+            <header>
+              <button type="button" class="expand-button" :aria-expanded="isExpanded(node.id)"
+                @click="toggleExpanded(node.id)">
+                <RightOutlined :class="{ expanded: isExpanded(node.id) }" />
+              </button>
+              <div class="node-identity">
+                <div class="node-title">
+                  <h2>{{ node.name }}</h2>
+                  <span class="status-badge" :class="`status-${node.status || 'unknown'}`">
+                    {{ t(`pages.nodes.statusValues.${node.status || 'unknown'}`) }}
+                  </span>
+                  <a-tooltip v-if="node.lastError" :title="node.lastError">
+                    <ExclamationCircleOutlined class="warning-icon" />
+                  </a-tooltip>
+                </div>
+                <a :href="node.url" target="_blank" rel="noopener noreferrer" class="node-url">
+                  <LinkOutlined /> {{ node.url }}
+                </a>
+                <p v-if="node.remark">{{ node.remark }}</p>
+              </div>
+              <div class="node-actions">
+                <a-tooltip :title="t('pages.nodes.probe')">
+                  <a-button @click="emit('probe', node)"><template #icon><ThunderboltOutlined /></template></a-button>
+                </a-tooltip>
+                <a-tooltip :title="t('edit')">
+                  <a-button @click="emit('edit', node)"><template #icon><EditOutlined /></template></a-button>
+                </a-tooltip>
+                <a-switch :checked="node.enable" size="small" @change="(value) => emit('toggle-enable', node, value)" />
+                <a-tooltip :title="t('delete')">
+                  <a-button danger @click="emit('delete', node)"><template #icon><DeleteOutlined /></template></a-button>
+                </a-tooltip>
+              </div>
+            </header>
+
+            <div class="node-metrics">
+              <div><DashboardOutlined /><span>CPU</span><strong>{{ formatPct(node.cpuPct) }}</strong></div>
+              <div><DashboardOutlined /><span>{{ t('pages.nodes.mem') }}</span><strong>{{ formatPct(node.memPct) }}</strong></div>
+              <div><ThunderboltOutlined /><span>{{ t('pages.nodes.latency') }}</span><strong>{{ node.latencyMs > 0 ? `${node.latencyMs} ms` : '-' }}</strong></div>
+              <div><ClockCircleOutlined /><span>{{ t('pages.nodes.uptime') }}</span><strong>{{ formatUptime(node.uptimeSecs) }}</strong></div>
+              <div><ClockCircleOutlined /><span>{{ t('pages.nodes.lastHeartbeat') }}</span><strong>{{ relativeTime(node.lastHeartbeat) }}</strong></div>
+              <div><span>Xray</span><strong>{{ node.xrayVersion || '-' }}</strong></div>
+            </div>
+
+            <div v-if="isExpanded(node.id)" class="history-panel">
+              <NodeHistoryPanel :node="node" />
+            </div>
           </div>
-        </template>
-      </a-table-column>
-
-      <a-table-column :title="t('pages.nodes.address')" data-index="url" :ellipsis="true">
-        <template #default="{ record }">
-          <a :href="record.url" target="_blank" rel="noopener noreferrer">{{ record.url }}</a>
-        </template>
-      </a-table-column>
-
-      <a-table-column :title="t('pages.nodes.status')" data-index="status" align="center">
-        <template #default="{ record }">
-          <a-space :size="4">
-            <a-badge :status="statusColor(record.status) === 'green' ? 'success' : (statusColor(record.status) === 'red' ? 'error' : 'default')" />
-            <span>{{ t(`pages.nodes.statusValues.${record.status || 'unknown'}`) }}</span>
-            <a-tooltip v-if="record.lastError" :title="record.lastError">
-              <ExclamationCircleOutlined style="color: #faad14" />
-            </a-tooltip>
-          </a-space>
-        </template>
-      </a-table-column>
-
-      <a-table-column :title="t('pages.nodes.cpu')" data-index="cpuPct" align="center" :width="90">
-        <template #default="{ record }">{{ formatPct(record.cpuPct) }}</template>
-      </a-table-column>
-
-      <a-table-column :title="t('pages.nodes.mem')" data-index="memPct" align="center" :width="90">
-        <template #default="{ record }">{{ formatPct(record.memPct) }}</template>
-      </a-table-column>
-
-      <a-table-column :title="t('pages.nodes.xrayVersion')" data-index="xrayVersion" align="center">
-        <template #default="{ record }">
-          {{ record.xrayVersion || '-' }}
-        </template>
-      </a-table-column>
-
-      <a-table-column :title="t('pages.nodes.uptime')" data-index="uptimeSecs" align="center">
-        <template #default="{ record }">{{ formatUptime(record.uptimeSecs) }}</template>
-      </a-table-column>
-
-      <a-table-column :title="t('pages.nodes.latency')" data-index="latencyMs" align="center" :width="100">
-        <template #default="{ record }">
-          <span v-if="record.latencyMs > 0">{{ record.latencyMs }} ms</span>
-          <span v-else>-</span>
-        </template>
-      </a-table-column>
-
-      <a-table-column :title="t('pages.nodes.lastHeartbeat')" data-index="lastHeartbeat" align="center" :width="120">
-        <template #default="{ record }">{{ relativeTime(record.lastHeartbeat) }}</template>
-      </a-table-column>
-
-      <a-table-column :title="t('pages.nodes.enable')" data-index="enable" align="center" :width="80">
-        <template #default="{ record }">
-          <a-switch
-            :checked="record.enable"
-            size="small"
-            @change="(v) => emit('toggle-enable', record, v)"
-          />
-        </template>
-      </a-table-column>
-
-      <a-table-column :title="t('pages.nodes.actions')" align="center" :width="160" fixed="right">
-        <template #default="{ record }">
-          <a-space>
-            <a-tooltip :title="t('pages.nodes.probe')">
-              <a-button type="text" size="small" @click="emit('probe', record)">
-                <template #icon><ThunderboltOutlined /></template>
-              </a-button>
-            </a-tooltip>
-            <a-tooltip :title="t('edit')">
-              <a-button type="text" size="small" @click="emit('edit', record)">
-                <template #icon><EditOutlined /></template>
-              </a-button>
-            </a-tooltip>
-            <a-tooltip :title="t('delete')">
-              <a-button type="text" size="small" danger @click="emit('delete', record)">
-                <template #icon><DeleteOutlined /></template>
-              </a-button>
-            </a-tooltip>
-          </a-space>
-        </template>
-      </a-table-column>
-    </a-table>
-  </a-card>
+        </article>
+      </div>
+    </a-spin>
+  </section>
 </template>
 
 <style scoped>
-.toolbar {
-  margin-bottom: 16px;
+.node-list-shell,
+.node-grid {
   display: flex;
-  justify-content: flex-end;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.toolbar-title,
+.toolbar-subtitle {
+  display: block;
+}
+
+.toolbar-title {
+  color: var(--xui-text-strong);
+  font-size: 14px;
+}
+
+.toolbar-subtitle {
+  margin-top: 2px;
+  color: var(--xui-text-muted);
+  font-size: 11px;
+}
+
+.node-card {
+  overflow: hidden;
+  display: flex;
+  border: 1px solid var(--xui-border);
+  border-radius: 8px;
+  background: var(--xui-surface);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.09);
+}
+
+.status-rail {
+  width: 4px;
+  flex: 0 0 4px;
+  background: #738196;
+}
+
+.node-card.status-online .status-rail { background: var(--xui-success); }
+.node-card.status-offline .status-rail { background: var(--xui-danger); }
+
+.node-card-content {
+  min-width: 0;
+  flex: 1;
+  padding: 18px 20px;
+}
+
+.node-card header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.expand-button {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 28px;
+  border: 1px solid var(--xui-border);
+  border-radius: 6px;
+  color: var(--xui-text-muted);
+  background: var(--xui-surface-2);
+  cursor: pointer;
+}
+
+.expand-button span { transition: transform 150ms ease; }
+.expand-button span.expanded { transform: rotate(90deg); }
+
+.node-identity {
+  min-width: 0;
+  flex: 1;
+}
+
+.node-title,
+.node-actions,
+.node-url {
+  display: flex;
   align-items: center;
 }
 
-.name-cell {
-  display: flex;
-  flex-direction: column;
+.node-title {
+  flex-wrap: wrap;
+  gap: 7px;
 }
 
-.name {
-  font-weight: 500;
+.node-title h2 {
+  margin: 0;
+  color: var(--xui-text-strong);
+  font-size: 16px;
 }
 
-.remark {
+.status-badge {
+  padding: 2px 8px;
+  border: 1px solid var(--xui-border);
+  border-radius: 5px;
+  color: var(--xui-text-muted);
+  background: var(--xui-surface-2);
+  font-size: 11px;
+}
+
+.status-badge.status-online { color: #63e6be; border-color: rgba(16, 185, 129, 0.34); background: rgba(16, 185, 129, 0.1); }
+.status-badge.status-offline { color: #ff8a8a; border-color: rgba(239, 68, 68, 0.34); background: rgba(239, 68, 68, 0.1); }
+.warning-icon { color: var(--xui-warning); }
+
+.node-url {
+  max-width: 100%;
+  gap: 6px;
+  margin-top: 8px;
+  overflow: hidden;
+  color: #78b5ff;
   font-size: 12px;
-  opacity: 0.65;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.node-identity p {
+  margin: 7px 0 0;
+  color: var(--xui-text-muted);
+  font-size: 12px;
+}
+
+.node-actions {
+  flex: 0 0 auto;
+  gap: 6px;
+}
+
+.node-actions :deep(.ant-btn) {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  color: var(--xui-text-muted);
+  border-color: var(--xui-border);
+  background: var(--xui-surface-2);
+}
+
+.node-actions :deep(.ant-btn:hover) { color: #fff; background: var(--xui-primary); }
+.node-actions :deep(.ant-btn-dangerous:hover) { background: var(--xui-danger); }
+
+.node-metrics {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(100px, 1fr));
+  gap: 8px;
+  margin: 16px 0 0 40px;
+}
+
+.node-metrics > div {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 6px;
+  padding: 10px;
+  border: 1px solid var(--xui-border);
+  border-radius: 6px;
+  background: var(--xui-surface-2);
+}
+
+.node-metrics span {
+  overflow: hidden;
+  color: var(--xui-text-muted);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.node-metrics strong {
+  grid-column: 1 / -1;
+  color: var(--xui-text-strong);
+  font-size: 13px;
+}
+
+.history-panel {
+  margin: 16px 0 0 40px;
+  padding-top: 16px;
+  border-top: 1px solid var(--xui-border);
+}
+
+@media (max-width: 1100px) {
+  .node-metrics { grid-template-columns: repeat(3, minmax(100px, 1fr)); }
+}
+
+@media (max-width: 768px) {
+  .node-card-content { padding: 14px 12px; }
+  .node-card header { flex-wrap: wrap; }
+  .node-actions { width: 100%; padding-left: 40px; }
+  .node-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-left: 0; }
+  .history-panel { margin-left: 0; }
 }
 </style>
