@@ -1,0 +1,305 @@
+:root {
+  --xui-bg: #f4f7fb;
+  --xui-sidebar: #ffffff;
+  --xui-surface: #ffffff;
+  --xui-surface-2: #f8fafc;
+  --xui-surface-3: #eef3f9;
+  --xui-border: #dfe7f1;
+  --xui-border-strong: #cbd7e6;
+  --xui-text-strong: #14213d;
+  --xui-text: #42526b;
+  --xui-text-muted: #718096;
+  --xui-text-faint: #9aa8ba;
+  --xui-primary: #2f73f6;
+  --xui-primary-soft: #e8f0ff;
+  --xui-success: #10b981;
+  --xui-warning: #f59e0b;
+  --xui-danger: #ef4444;
+  --xui-cyan: #06b6d4;
+  --xui-shadow: 0 8px 24px rgba(31, 48, 76, 0.08);
+}
+
+body.dark {
+  --xui-bg: #0c1118;
+  --xui-sidebar: #182334;
+  --xui-surface: #182334;
+  --xui-surface-2: #131c29;
+  --xui-surface-3: #202d40;
+  --xui-border: #2a3a51;
+  --xui-border-strong: #36506f;
+  --xui-text-strong: #f1f5fb;
+  --xui-text: #c2cee0;
+  --xui-text-muted: #8fa4c2;
+  --xui-text-faint: #657a98;
+  --xui-primary: #3b82f6;
+  --xui-primary-soft: rgba(59, 130, 246, 0.14);
+  --xui-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+}
+
+body.dark[data-theme='ultra-dark'],
+html[data-theme='ultra-dark'] body {
+  --xui-bg: #080b10;
+  --xui-sidebar: #10161f;
+  --xui-surface: #121923;
+  --xui-surface-2: #0d131b;
+  --xui-surface-3: #1a2432;
+  --xui-border: #252f3d;
+  --xui-border-strong: #344156;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  min-height: 100%;
+  margin: 0;
+  background: var(--xui-bg) !important;
+}
+
+body {
+  color: var(--xui-text);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+}
+
+.ant-layout,
+.ant-layout-content {
+  background: transparent !important;
+}
+
+.index-page,
+.inbounds-page,
+.nodes-page,
+.settings-page,
+.xray-page {
+  min-height: 100vh;
+  background: var(--xui-bg) !important;
+}
+
+.content-shell {
+  min-width: 0;
+}
+
+.content-area {
+  width: 100%;
+  max-width: 1760px;
+  margin: 0 auto;
+  padding: 32px !important;
+}
+
+.page-heading {
+  margin-bottom: 24px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.page-heading h1 {
+  margin: 0;
+  color: var(--xui-text-strong);
+  font-size: 25px;
+  line-height: 1.25;
+  font-weight: 750;
+}
+
+.page-heading p {
+  margin: 7px 0 0;
+  color: var(--xui-text-muted);
+  font-size: 13px;
+}
+
+.ant-layout-sider,
+.ant-layout-sider-children,
+.ant-menu-dark,
+.ant-menu-dark > .ant-menu {
+  background: var(--xui-sidebar) !important;
+}
+
+.ant-menu-dark .ant-menu-item,
+.ant-menu-dark .ant-menu-submenu-title,
+.ant-menu-dark .ant-menu-item a {
+  color: var(--xui-text-muted) !important;
+}
+
+.ant-menu-dark .ant-menu-item-selected {
+  color: #69a2ff !important;
+  background: var(--xui-primary-soft) !important;
+}
+
+.ant-menu-dark .ant-menu-item-selected::after {
+  border-inline-end: 3px solid var(--xui-primary) !important;
+}
+
+.ant-card {
+  color: var(--xui-text);
+  background: var(--xui-surface) !important;
+  border: 1px solid var(--xui-border) !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+}
+
+.ant-card-hoverable:hover {
+  border-color: var(--xui-border-strong) !important;
+  box-shadow: var(--xui-shadow) !important;
+}
+
+.ant-card-head {
+  min-height: 54px;
+  color: var(--xui-text-strong) !important;
+  background: transparent !important;
+  border-bottom: 1px solid var(--xui-border) !important;
+}
+
+.ant-card-head-title,
+.ant-modal-title,
+.ant-drawer-title,
+.ant-typography,
+.ant-form-item-label > label,
+.ant-statistic-content {
+  color: var(--xui-text-strong) !important;
+}
+
+.ant-statistic-title,
+.ant-list-item-meta-description,
+.ant-form-item-extra {
+  color: var(--xui-text-muted) !important;
+}
+
+.ant-card-actions {
+  background: transparent !important;
+  border-top-color: var(--xui-border) !important;
+}
+
+.ant-card-actions > li:not(:last-child) {
+  border-inline-end-color: var(--xui-border) !important;
+}
+
+.ant-btn {
+  border-radius: 6px;
+  box-shadow: none;
+  font-weight: 550;
+}
+
+.ant-btn-primary:not(.ant-btn-dangerous) {
+  background: var(--xui-primary);
+  border-color: var(--xui-primary);
+}
+
+.ant-input,
+.ant-input-affix-wrapper,
+.ant-input-number,
+.ant-picker,
+.ant-select-selector,
+.ant-segmented {
+  color: var(--xui-text) !important;
+  background: var(--xui-surface-2) !important;
+  border-color: var(--xui-border) !important;
+  border-radius: 6px !important;
+}
+
+.ant-input::placeholder,
+.ant-input-affix-wrapper input::placeholder,
+.ant-select-selection-placeholder {
+  color: var(--xui-text-faint) !important;
+}
+
+.ant-modal-content,
+.ant-modal-header,
+.ant-drawer-content,
+.ant-drawer-header,
+.ant-popover-inner,
+.ant-dropdown-menu,
+.ant-select-dropdown {
+  color: var(--xui-text);
+  background: var(--xui-surface) !important;
+  border-color: var(--xui-border) !important;
+}
+
+.ant-modal-content,
+.ant-popover-inner,
+.ant-dropdown-menu {
+  border: 1px solid var(--xui-border);
+  border-radius: 8px !important;
+  box-shadow: var(--xui-shadow) !important;
+}
+
+.ant-table,
+.ant-table-container,
+.ant-table-content,
+.ant-table-header {
+  color: var(--xui-text);
+  background: transparent !important;
+}
+
+.ant-table-thead > tr > th {
+  color: var(--xui-text-muted) !important;
+  background: var(--xui-surface-2) !important;
+  border-bottom-color: var(--xui-border) !important;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.ant-table-tbody > tr > td {
+  color: var(--xui-text) !important;
+  background: var(--xui-surface) !important;
+  border-bottom-color: var(--xui-border) !important;
+}
+
+.ant-table-tbody > tr:hover > td {
+  background: var(--xui-surface-2) !important;
+}
+
+.ant-tabs-nav::before {
+  border-bottom-color: var(--xui-border) !important;
+}
+
+.ant-tabs-tab {
+  color: var(--xui-text-muted) !important;
+}
+
+.ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: var(--xui-primary) !important;
+}
+
+.ant-tag {
+  border-radius: 5px;
+}
+
+.ant-alert {
+  border-radius: 6px;
+}
+
+.ant-switch {
+  min-width: 34px;
+}
+
+@media (max-width: 768px) {
+  .content-area {
+    padding: 72px 14px 20px !important;
+  }
+
+  .page-heading {
+    margin-bottom: 18px;
+  }
+
+  .page-heading h1 {
+    font-size: 22px;
+  }
+
+  .page-heading p {
+    font-size: 12px;
+  }
+
+  .mobile-nav-drawer .ant-drawer-body {
+    padding: 16px 14px;
+    background: var(--xui-sidebar);
+  }
+
+  .mobile-nav-drawer .ant-menu {
+    margin-top: 16px;
+    background: var(--xui-sidebar) !important;
+  }
+}
