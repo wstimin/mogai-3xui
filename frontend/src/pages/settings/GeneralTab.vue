@@ -19,7 +19,7 @@ const props = defineProps({
 const remarkModels = computed(() => ({
   i: t('pages.settings.remarkParts.inbound'),
   e: t('pages.settings.remarkParts.email'),
-  o: t('pages.settings.remarkParts.other'),
+  o: t('pages.settings.remarkParts.misc'),
 }));
 const remarkSeparators = [' ', '-', '_', '@', ':', '~', '|', ',', '.', '/'];
 

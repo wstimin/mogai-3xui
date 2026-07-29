@@ -495,7 +495,7 @@
       "remarkParts": {
         "inbound": "入站",
         "email": "邮箱",
-        "other": "其他"
+        "misc": "其他"
       },
       "datepicker": "日期选择器",
       "datepickerPlaceholder": "选择日期",
@@ -618,7 +618,7 @@
       },
       "securityWarnings": {
         "title": "安全警告",
-        "description": "以下配置可能增加面板暴露风险：",
+        "intro": "以下配置可能增加面板暴露风险：",
         "http": "当前面板通过 HTTP 提供服务，生产环境建议配置 TLS。",
         "port": "默认端口 2053 较容易被识别，建议更换为随机端口。",
         "basePath": "默认面板路径 '/' 较容易被识别，建议更换为随机路径。",

@@ -495,7 +495,7 @@
       "remarkParts": {
         "inbound": "Inbound",
         "email": "Email",
-        "other": "Other"
+        "misc": "Other"
       },
       "datepicker": "Calendar Type",
       "datepickerPlaceholder": "Select date",
@@ -618,7 +618,7 @@
       },
       "securityWarnings": {
         "title": "Security Warnings",
-        "description": "The following settings may expose your panel:",
+        "intro": "The following settings may expose your panel:",
         "http": "The panel is served over HTTP. Configure TLS for production use.",
         "port": "The default port 2053 is easy to identify. Use a random port.",
         "basePath": "The default panel path '/' is easy to identify. Use a random path.",

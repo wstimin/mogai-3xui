@@ -183,7 +183,7 @@ const initialTab = window.location.hash === '#subscription' ? '4' : '1';
               >
                 <template #message>{{ t('pages.settings.securityWarnings.title') }}</template>
                 <template #description>
-                  <b>{{ t('pages.settings.securityWarnings.description') }}</b>
+                  <b>{{ t('pages.settings.securityWarnings.intro') }}</b>
                   <ul>
                     <li v-for="(msg, index) in confAlerts" :key="index">{{ msg }}</li>
                   </ul>
