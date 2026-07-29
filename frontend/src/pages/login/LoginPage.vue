@@ -1,5 +1,5 @@
 <script setup>
-import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
+import { computed, defineAsyncComponent, onMounted, reactive, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
   UserOutlined,
@@ -23,30 +23,23 @@ const panelVersion = (typeof window !== 'undefined' && window.__X_UI_CUR_VER__) 
 const isChinese = computed(() => locale.value === 'zh-CN');
 const loginCopy = computed(() => (isChinese.value
   ? {
-    controlPanel: '控制面板',
-    securityTitle: '安全访问您的网络控制中心',
-    subtitle: '登录后继续使用控制面板',
+    productLine: 'Xray 多协议管理面板',
+    securityTitle: '安全、清晰地管理您的网络服务',
+    securityDescription: '统一管理入站、订阅、流量和 Xray 配置，所有操作均通过现有面板服务完成。',
+    subtitle: '登录后继续使用 X Panel',
+    secureConnection: '安全连接',
+    systemOnline: '服务正常',
+    disclaimer: '仅供个人学习与研究使用，请勿用于非法用途',
   }
   : {
-    controlPanel: 'CONTROL PANEL',
-    securityTitle: 'Secure access to your network control center.',
-    subtitle: 'Sign in to continue to the control panel',
+    productLine: 'Xray multi-protocol management panel',
+    securityTitle: 'Manage your network services securely and clearly',
+    securityDescription: 'Manage inbounds, subscriptions, traffic, and Xray settings through the existing panel service.',
+    subtitle: 'Sign in to continue to X Panel',
+    secureConnection: 'Secure connection',
+    systemOnline: 'Service online',
+    disclaimer: 'For personal learning and research only. Do not use for illegal purposes.',
   }));
-
-const headlineWords = computed(() => [t('pages.login.hello'), t('pages.login.title')]);
-const HEADLINE_INTERVAL_MS = 2000;
-const headlineIndex = ref(0);
-let headlineTimer = null;
-
-onMounted(() => {
-  headlineTimer = window.setInterval(() => {
-    headlineIndex.value = (headlineIndex.value + 1) % headlineWords.value.length;
-  }, HEADLINE_INTERVAL_MS);
-});
-
-onBeforeUnmount(() => {
-  if (headlineTimer != null) window.clearInterval(headlineTimer);
-});
 
 const fetched = ref(false);
 const submitting = ref(false);
@@ -90,67 +83,76 @@ function onLangChange(next) {
   <a-config-provider :theme="antdThemeConfig">
     <a-layout class="login-app" :class="{ 'is-dark': themeState.isDark, 'is-ultra': themeState.isUltra }">
       <a-layout-content class="login-content">
-        <div class="login-brand-panel" aria-hidden="true">
-          <div class="brand-lockup">
-            <div class="brand-mark">X</div>
-            <div><strong>X Panel</strong><span>{{ loginCopy.controlPanel }}</span></div>
-          </div>
-          <div class="brand-copy">
-            <SafetyCertificateOutlined />
-            <h1>{{ loginCopy.securityTitle }}</h1>
-            <p>X Panel v{{ panelVersion }}</p>
-          </div>
-          <div class="brand-grid" />
-        </div>
+        <div class="page-grid" aria-hidden="true" />
 
-        <a-row type="flex" justify="center" align="middle" class="login-row">
-          <a-col class="login-card">
+        <section class="login-brand-panel" aria-hidden="true">
+          <div class="brand-lockup">
+            <div class="brand-mark"><span>X</span></div>
+            <div>
+              <strong>X Panel</strong>
+              <span>{{ loginCopy.productLine }}</span>
+            </div>
+          </div>
+
+          <div class="brand-copy">
+            <div class="security-icon"><SafetyCertificateOutlined /></div>
+            <h1>{{ loginCopy.securityTitle }}</h1>
+            <p>{{ loginCopy.securityDescription }}</p>
+          </div>
+
+          <div class="brand-status">
+            <span class="status-dot" />
+            <span>{{ loginCopy.systemOnline }}</span>
+            <b>v{{ panelVersion }}</b>
+          </div>
+        </section>
+
+        <section class="login-panel">
+          <div class="login-toolbar">
+            <a-popover :overlay-class-name="currentTheme" :title="t('menu.settings')" placement="bottomRight"
+              trigger="click">
+              <template #content>
+                <a-space direction="vertical" :size="10" class="settings-popover">
+                  <ThemeSwitchLogin />
+                  <span>{{ t('pages.settings.language') }}</span>
+                  <a-select v-model:value="lang" class="lang-select" @change="onLangChange">
+                    <a-select-option v-for="l in LanguageManager.supportedLanguages" :key="l.value"
+                      :value="l.value">
+                      <span :aria-label="l.name">{{ l.icon }}</span>
+                      &nbsp;&nbsp;<span>{{ l.name }}</span>
+                    </a-select-option>
+                  </a-select>
+                </a-space>
+              </template>
+              <a-button class="settings-button" shape="circle" :aria-label="t('menu.settings')">
+                <template #icon>
+                  <SettingOutlined />
+                </template>
+              </a-button>
+            </a-popover>
+          </div>
+
+          <div class="login-card">
             <div v-if="!fetched" class="login-loading">
               <a-spin size="large" />
             </div>
 
-            <div v-else>
-              <div class="mobile-brand">
-                <div class="brand-mark">X</div>
-                <div><strong>X Panel</strong><span>v{{ panelVersion }}</span></div>
-              </div>
-              <div class="login-settings">
-                <a-popover :overlay-class-name="currentTheme" :title="t('menu.settings')" placement="bottomRight"
-                  trigger="click">
-                  <template #content>
-                    <a-space direction="vertical" :size="10" class="settings-popover">
-                      <ThemeSwitchLogin />
-                      <span>{{ t('pages.settings.language') }}</span>
-                      <a-select v-model:value="lang" class="lang-select" @change="onLangChange">
-                        <a-select-option v-for="l in LanguageManager.supportedLanguages" :key="l.value"
-                          :value="l.value">
-                          <span :aria-label="l.name">{{ l.icon }}</span>
-                          &nbsp;&nbsp;<span>{{ l.name }}</span>
-                        </a-select-option>
-                      </a-select>
-                    </a-space>
-                  </template>
-                  <a-button shape="circle">
-                    <template #icon>
-                      <SettingOutlined />
-                    </template>
-                  </a-button>
-                </a-popover>
+            <div v-else class="login-card-content">
+              <div class="card-brand">
+                <div class="brand-mark card-brand-mark"><span>X</span></div>
+                <div>
+                  <strong>X Panel</strong>
+                  <span>{{ loginCopy.productLine }}</span>
+                </div>
               </div>
 
-              <a-row justify="center">
-                <a-col :span="24">
-                  <h2 class="login-title">
-                    <Transition name="headline" mode="out-in">
-                      <b :key="headlineIndex">{{ headlineWords[headlineIndex] }}</b>
-                    </Transition>
-                  </h2>
-                  <p class="login-subtitle">{{ loginCopy.subtitle }}</p>
-                </a-col>
-              </a-row>
+              <header class="login-heading">
+                <h2>{{ t('pages.login.title') }}</h2>
+                <p>{{ loginCopy.subtitle }}</p>
+              </header>
 
-              <a-form layout="vertical" @submit.prevent="login">
-                <a-form-item>
+              <a-form class="login-form" layout="vertical" @submit.prevent="login">
+                <a-form-item :label="t('username')">
                   <a-input v-model:value="user.username" autocomplete="username" name="username"
                     :placeholder="t('username')" autofocus required>
                     <template #prefix>
@@ -159,7 +161,7 @@ function onLangChange(next) {
                   </a-input>
                 </a-form-item>
 
-                <a-form-item>
+                <a-form-item :label="t('password')">
                   <a-input-password v-model:value="user.password" autocomplete="current-password" name="password"
                     :placeholder="t('password')" required>
                     <template #prefix>
@@ -168,7 +170,7 @@ function onLangChange(next) {
                   </a-input-password>
                 </a-form-item>
 
-                <a-form-item v-if="twoFactorEnable">
+                <a-form-item v-if="twoFactorEnable" :label="t('twoFactorCode')">
                   <a-input v-model:value="user.twoFactorCode" autocomplete="one-time-code" name="twoFactorCode"
                     :placeholder="t('twoFactorCode')" required>
                     <template #prefix>
@@ -177,17 +179,25 @@ function onLangChange(next) {
                   </a-input>
                 </a-form-item>
 
-                <a-form-item>
-                  <a-row justify="center">
-                    <a-button type="primary" html-type="submit" :loading="submitting" block>
-                      {{ submitting ? '' : t('login') }}
-                    </a-button>
-                  </a-row>
+                <a-form-item class="submit-item">
+                  <a-button class="login-submit" type="primary" html-type="submit" :loading="submitting" block>
+                    {{ submitting ? '' : t('login') }}
+                  </a-button>
                 </a-form-item>
               </a-form>
+
+              <div class="secure-divider"><span>{{ loginCopy.secureConnection }}</span></div>
+
+              <footer class="login-footer">
+                <div class="version-badge">
+                  <span class="status-dot" />
+                  X Panel v{{ panelVersion }}
+                </div>
+                <p>{{ loginCopy.disclaimer }}</p>
+              </footer>
             </div>
-          </a-col>
-        </a-row>
+          </div>
+        </section>
       </a-layout-content>
     </a-layout>
   </a-config-provider>
@@ -195,52 +205,196 @@ function onLangChange(next) {
 
 <style scoped>
 .login-app {
-  --bg-page: #c7ebe2;
-  --bg-wave-header: #dbf5ed;
-  --bg-card: #ffffff;
-  --color-title: #008771;
-  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.09);
-  --wave-fill: rgba(0, 135, 113, 0.12);
-  --wave-fill-bottom: #c7ebe2;
+  --login-bg: #08090c;
+  --login-card: rgba(16, 18, 24, 0.82);
+  --login-border: rgba(255, 255, 255, 0.08);
+  --login-border-hover: rgba(255, 255, 255, 0.14);
+  --login-primary: #6366f1;
+  --login-primary-bright: #818cf8;
+  --login-secondary: #a78bfa;
+  --login-text: #f1f5f9;
+  --login-muted: #7c899c;
+  --login-dim: #4b5568;
 
   min-height: 100vh;
+  color: var(--login-text);
+  background: var(--login-bg) !important;
 }
 
-.login-app,
-.login-app :deep(.ant-layout-content) {
-  background-color: transparent !important;
+.login-content {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(300px, 1fr) minmax(560px, 2fr);
+  min-height: 100vh;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 62% 54% at 18% 28%, rgba(99, 102, 241, 0.2), transparent 58%),
+    radial-gradient(ellipse 52% 46% at 82% 72%, rgba(139, 92, 246, 0.13), transparent 56%),
+    radial-gradient(ellipse 34% 28% at 52% 100%, rgba(16, 185, 129, 0.05), transparent 64%),
+    var(--login-bg) !important;
 }
 
-/* 隐藏原本的波浪背景，防止遮挡壁纸 */
-.waves-header {
-  display: none;
+.page-grid {
   position: fixed;
-  inset: 0 0 auto 0;
-  width: 100%;
   z-index: 0;
+  inset: 0;
   pointer-events: none;
-  background: var(--bg-wave-header);
+  opacity: 0.72;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.82), rgba(0, 0, 0, 0.3));
 }
 
-.login-card {
-  width: clamp(280px, 90vw, 300px);
-  border-radius: 2rem;
-  padding: clamp(2rem, 5vw, 4rem) 1.5rem;
-  transition: background 0.3s, box-shadow 0.3s;
+.login-brand-panel,
+.login-panel {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
 }
 
-.login-title {
-  text-align: center;
-  margin-bottom: 32px;
-  font-size: 2rem;
-  font-weight: 500;
-  min-height: 2.5rem;
-}
-
-.login-settings {
+.login-brand-panel {
   display: flex;
-  justify-content: flex-end;
-  margin-bottom: 8px;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: clamp(34px, 4vw, 58px);
+}
+
+.brand-lockup,
+.card-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.brand-mark {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  flex: 0 0 auto;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 15px;
+  color: #fff;
+  background: linear-gradient(135deg, var(--login-primary), var(--login-secondary));
+  box-shadow:
+    0 10px 28px rgba(99, 102, 241, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
+}
+
+.brand-mark::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: -5px;
+  border-radius: 19px;
+  background: rgba(99, 102, 241, 0.28);
+  filter: blur(14px);
+}
+
+.brand-mark span {
+  font-size: 23px;
+  font-weight: 800;
+}
+
+.brand-lockup > div:last-child,
+.card-brand > div:last-child {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.brand-lockup strong,
+.card-brand strong {
+  color: var(--login-text);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.brand-lockup span,
+.card-brand span {
+  margin-top: 3px;
+  overflow: hidden;
+  color: var(--login-muted);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.brand-copy {
+  max-width: 460px;
+  margin: auto 0;
+  padding: 70px 0;
+}
+
+.security-icon {
+  display: grid;
+  place-items: center;
+  width: 50px;
+  height: 50px;
+  border: 1px solid rgba(129, 140, 248, 0.2);
+  border-radius: 14px;
+  color: #a5b4fc;
+  background: rgba(99, 102, 241, 0.09);
+  font-size: 24px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.22);
+}
+
+.brand-copy h1 {
+  max-width: 440px;
+  margin: 24px 0 16px;
+  color: var(--login-text);
+  font-size: clamp(34px, 3.8vw, 54px);
+  font-weight: 720;
+  line-height: 1.12;
+}
+
+.brand-copy p {
+  max-width: 420px;
+  margin: 0;
+  color: var(--login-muted);
+  font-size: 14px;
+  line-height: 1.75;
+}
+
+.brand-status,
+.version-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  color: var(--login-muted);
+  font-size: 12px;
+}
+
+.brand-status b {
+  margin-left: 4px;
+  color: #a5b4fc;
+  font-weight: 600;
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.16), 0 0 14px rgba(16, 185, 129, 0.45);
+}
+
+.login-panel {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: 76px clamp(28px, 7vw, 110px) 54px;
+}
+
+.login-toolbar {
+  position: absolute;
+  top: 28px;
+  right: 34px;
 }
 
 .settings-popover {
@@ -251,265 +405,280 @@ function onLangChange(next) {
   width: 100%;
 }
 
-.login-content {
-  position: relative;
+.settings-button {
+  color: #a5b4fc;
+  border-color: var(--login-border);
+  background: rgba(16, 18, 24, 0.74);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.2);
 }
 
-.login-row {
-  position: relative;
-  z-index: 1;
-  min-height: 100vh;
-  padding: 24px 0;
-}
-
-.login-loading {
-  text-align: center;
-  padding: 40px 0;
-}
-
-.login-title b {
-  display: inline-block;
-}
-
-.headline-enter-active,
-.headline-leave-active {
-  transition: opacity 0.4s ease, transform 0.4s ease;
-}
-
-.headline-enter-from {
-  opacity: 0;
-  transform: translateY(-12px);
-}
-
-.headline-leave-to {
-  opacity: 0;
-  transform: translateY(12px);
-}
-
-/* 下面保留原有的波浪动画CSS以防后续你需要恢复，但上面已通过 display: none 隐藏 */
-.waves-inner-header {
-  height: 50vh;
-  width: 100%;
-}
-
-.waves {
-  position: relative;
-  display: block;
-  width: 100%;
-  height: 15vh;
-  min-height: 100px;
-  max-height: 150px;
-  margin-bottom: -8px;
-}
-
-.parallax>use {
-  fill: var(--wave-fill);
-  animation: move-forever 25s cubic-bezier(0.55, 0.5, 0.45, 0.5) infinite;
-}
-
-.parallax>use:nth-child(1) {
-  animation-delay: -2s;
-  animation-duration: 4s;
-  opacity: 0.2;
-}
-
-.parallax>use:nth-child(2) {
-  animation-delay: -3s;
-  animation-duration: 7s;
-  opacity: 0.4;
-}
-
-.parallax>use:nth-child(3) {
-  animation-delay: -4s;
-  animation-duration: 10s;
-  opacity: 0.6;
-}
-
-.parallax>use:nth-child(4) {
-  animation-delay: -5s;
-  animation-duration: 13s;
-  fill: var(--wave-fill-bottom);
-  opacity: 1;
-}
-
-@keyframes move-forever {
-  0% {
-    transform: translate3d(-90px, 0, 0);
-  }
-
-  100% {
-    transform: translate3d(85px, 0, 0);
-  }
-}
-</style>
-
-<style scoped>
-.login-app,
-.login-app.is-dark,
-.login-app.is-dark.is-ultra {
-  min-height: 100vh;
-  background: var(--xui-bg) !important;
-  background-image: none !important;
-}
-
-.login-content::before {
-  content: '';
-  position: fixed;
-  inset: 0 58% 0 0;
-  background: var(--xui-sidebar);
-  border-right: 1px solid var(--xui-border);
+.settings-button:hover,
+.settings-button:focus {
+  color: #c4b5fd !important;
+  border-color: rgba(129, 140, 248, 0.48) !important;
+  background: rgba(99, 102, 241, 0.14) !important;
 }
 
 .login-card {
-  width: clamp(320px, 90vw, 390px);
-  padding: 38px 34px 30px;
-  border: 1px solid var(--xui-border);
-  border-radius: 8px;
-  background: var(--xui-surface) !important;
-  backdrop-filter: none;
-  box-shadow: var(--xui-shadow) !important;
+  width: min(100%, 510px);
+  min-height: 610px;
+  padding: 46px 48px 38px;
+  border: 1px solid var(--login-border);
+  border-radius: 22px;
+  background: var(--login-card);
+  backdrop-filter: blur(24px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 28px 60px -20px rgba(0, 0, 0, 0.7),
+    0 0 80px -34px rgba(99, 102, 241, 0.42);
+  animation: login-enter 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-.login-title {
-  margin-bottom: 28px;
-  color: var(--xui-text-strong) !important;
-  text-shadow: none;
-  font-size: 25px;
-  font-weight: 750;
+@keyframes login-enter {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.login-card :deep(.ant-input-affix-wrapper),
-.login-card :deep(.ant-btn-primary) {
-  min-height: 44px;
-}
-
-.login-brand-panel {
-  position: fixed;
-  inset: 0 52% 0 0;
-  overflow: hidden;
-  padding: 42px 48px;
-  color: var(--xui-text-strong);
-  background: #111923;
-  border-right: 1px solid var(--xui-border);
-}
-
-.brand-lockup,
-.mobile-brand {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.brand-mark {
-  width: 42px;
-  height: 42px;
+.login-loading {
   display: grid;
+  min-height: 520px;
   place-items: center;
-  border-radius: 8px;
-  color: #fff;
-  background: #2f73f6;
-  font-size: 19px;
-  font-weight: 800;
-  box-shadow: 0 10px 24px rgba(47, 115, 246, 0.24);
 }
 
-.brand-lockup div:last-child,
-.mobile-brand div:last-child {
-  display: flex;
-  flex-direction: column;
-}
-
-.brand-lockup strong,
-.mobile-brand strong {
-  color: var(--xui-text-strong);
-  font-size: 18px;
-}
-
-.brand-lockup span,
-.mobile-brand span {
-  margin-top: 2px;
-  color: var(--xui-text-muted);
-  font-size: 10px;
-}
-
-.brand-copy {
-  position: relative;
-  z-index: 2;
-  max-width: 520px;
-  margin-top: 28vh;
-}
-
-.brand-copy > span {
-  color: #54d6c2;
-  font-size: 30px;
-}
-
-.brand-copy h1 {
-  margin: 20px 0 14px;
-  color: var(--xui-text-strong);
-  font-size: clamp(32px, 4vw, 54px);
-  line-height: 1.08;
-  font-weight: 750;
-}
-
-.brand-copy p {
-  color: var(--xui-text-muted);
-  font-size: 14px;
-}
-
-.brand-grid {
-  position: absolute;
-  inset: 0;
-  opacity: 0.22;
-  background-image:
-    linear-gradient(rgba(87, 113, 145, 0.18) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(87, 113, 145, 0.18) 1px, transparent 1px);
-  background-size: 44px 44px;
-  mask-image: linear-gradient(to bottom right, transparent 10%, #000 78%);
-}
-
-.login-row {
-  padding: 24px 7% 24px 55%;
-}
-
-.login-title {
-  margin: 18px 0 6px;
-}
-
-.login-subtitle {
-  margin: 0 0 26px;
-  color: var(--xui-text-muted);
-  text-align: center;
-  font-size: 13px;
-}
-
-.mobile-brand {
+.card-brand {
   display: none;
 }
 
+.card-brand-mark {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+}
+
+.login-heading {
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.login-heading h2 {
+  margin: 0 0 9px;
+  color: var(--login-text);
+  font-size: 29px;
+  font-weight: 700;
+}
+
+.login-heading p {
+  margin: 0;
+  color: var(--login-muted);
+  font-size: 13px;
+}
+
+.login-form :deep(.ant-form-item) {
+  margin-bottom: 20px;
+}
+
+.login-form :deep(.ant-form-item-label) {
+  padding-bottom: 7px;
+}
+
+.login-form :deep(.ant-form-item-label > label) {
+  height: auto;
+  color: var(--login-muted);
+  font-size: 12px;
+  font-weight: 550;
+}
+
+.login-form :deep(.ant-input-affix-wrapper) {
+  min-height: 52px;
+  padding: 0 16px;
+  color: var(--login-text);
+  border-color: var(--login-border);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.035);
+  box-shadow: none;
+  transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+}
+
+.login-form :deep(.ant-input-affix-wrapper:hover) {
+  border-color: var(--login-border-hover);
+  background: rgba(255, 255, 255, 0.048);
+}
+
+.login-form :deep(.ant-input-affix-wrapper-focused) {
+  border-color: var(--login-primary);
+  background: rgba(99, 102, 241, 0.07);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.17);
+}
+
+.login-form :deep(.ant-input-prefix) {
+  margin-right: 12px;
+  color: #536078;
+  font-size: 16px;
+  transition: color 0.18s ease;
+}
+
+.login-form :deep(.ant-input-affix-wrapper-focused .ant-input-prefix) {
+  color: var(--login-primary-bright);
+}
+
+.login-form :deep(.ant-input),
+.login-form :deep(.ant-input-password-icon) {
+  color: var(--login-text);
+  background: transparent;
+}
+
+.login-form :deep(.ant-input::placeholder) {
+  color: #49556a;
+}
+
+.login-form :deep(.ant-input-password-icon:hover) {
+  color: var(--login-primary-bright);
+}
+
+.submit-item {
+  margin-top: 28px;
+  margin-bottom: 0 !important;
+}
+
+.login-submit {
+  min-height: 52px;
+  border: 0;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 650;
+  background: linear-gradient(135deg, var(--login-primary), #7c3aed);
+  box-shadow: 0 7px 24px rgba(99, 102, 241, 0.35);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.login-submit:hover,
+.login-submit:focus {
+  transform: translateY(-2px);
+  filter: brightness(1.08);
+  background: linear-gradient(135deg, var(--login-primary), #7c3aed) !important;
+  box-shadow: 0 11px 30px rgba(99, 102, 241, 0.45);
+}
+
+.login-submit:active {
+  transform: translateY(0);
+}
+
+.secure-divider {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 30px 0 20px;
+  color: var(--login-dim);
+  font-size: 11px;
+}
+
+.secure-divider::before,
+.secure-divider::after {
+  content: '';
+  height: 1px;
+  flex: 1;
+  background: var(--login-border);
+}
+
+.login-footer {
+  text-align: center;
+}
+
+.version-badge {
+  padding: 6px 13px;
+  border: 1px solid var(--login-border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.login-footer p {
+  margin: 17px auto 0;
+  max-width: 350px;
+  color: var(--login-dim);
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+@media (max-width: 980px) {
+  .login-content {
+    grid-template-columns: minmax(260px, 0.8fr) minmax(480px, 1.6fr);
+  }
+
+  .login-brand-panel {
+    padding: 32px;
+  }
+
+  .brand-copy h1 {
+    font-size: 36px;
+  }
+
+  .login-panel {
+    padding-right: 36px;
+    padding-left: 36px;
+  }
+}
+
 @media (max-width: 768px) {
-  .login-content::before {
-    display: none;
+  .login-content {
+    display: block;
+    overflow-y: auto;
   }
 
   .login-brand-panel {
     display: none;
   }
 
-  .login-row {
-    padding: 18px;
+  .login-panel {
+    min-height: 100vh;
+    padding: 76px 18px 26px;
+  }
+
+  .login-toolbar {
+    top: 20px;
+    right: 20px;
   }
 
   .login-card {
-    width: min(100%, 390px);
-    padding: 32px 24px 24px;
+    min-height: 0;
+    padding: 34px 25px 27px;
+    border-radius: 18px;
   }
 
-  .mobile-brand {
+  .card-brand {
     display: flex;
-    margin-bottom: 14px;
+    margin-bottom: 28px;
+  }
+
+  .login-heading h2 {
+    font-size: 26px;
+  }
+}
+
+@media (max-width: 420px) {
+  .login-panel {
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .login-card {
+    padding-right: 20px;
+    padding-left: 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-card,
+  .login-submit {
+    animation: none;
+    transition: none;
   }
 }
 </style>
