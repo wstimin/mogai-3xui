@@ -81,12 +81,12 @@ function onLangChange(next) {
         <div class="login-brand-panel" aria-hidden="true">
           <div class="brand-lockup">
             <div class="brand-mark">X</div>
-            <div><strong>3X-UI</strong><span>CONTROL PANEL</span></div>
+            <div><strong>X Panel</strong><span>CONTROL PANEL</span></div>
           </div>
           <div class="brand-copy">
             <SafetyCertificateOutlined />
             <h1>Secure access to your network control center.</h1>
-            <p>3X-UI v{{ panelVersion }}</p>
+            <p>X Panel v{{ panelVersion }}</p>
           </div>
           <div class="brand-grid" />
         </div>
@@ -100,7 +100,7 @@ function onLangChange(next) {
             <div v-else>
               <div class="mobile-brand">
                 <div class="brand-mark">X</div>
-                <div><strong>3X-UI</strong><span>v{{ panelVersion }}</span></div>
+                <div><strong>X Panel</strong><span>v{{ panelVersion }}</span></div>
               </div>
               <div class="login-settings">
                 <a-popover :overlay-class-name="currentTheme" :title="t('menu.settings')" placement="bottomRight"

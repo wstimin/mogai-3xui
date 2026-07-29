@@ -2,6 +2,7 @@
 import { computed, reactive, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { message } from 'ant-design-vue';
+import { ApiOutlined } from '@ant-design/icons-vue';
 
 const props = defineProps({
   open: { type: Boolean, default: false },
@@ -124,12 +125,12 @@ async function onSave() {
   >
     <a-form layout="vertical" :model="form">
       <a-row :gutter="16">
-        <a-col :span="12">
+        <a-col :xs="24" :sm="12">
           <a-form-item :label="t('pages.nodes.name')" required>
             <a-input v-model:value="form.name" :placeholder="t('pages.nodes.namePlaceholder')" />
           </a-form-item>
         </a-col>
-        <a-col :span="12">
+        <a-col :xs="24" :sm="12">
           <a-form-item :label="t('pages.nodes.remark')">
             <a-input v-model:value="form.remark" />
           </a-form-item>
@@ -137,7 +138,7 @@ async function onSave() {
       </a-row>
 
       <a-row :gutter="16">
-        <a-col :span="6">
+        <a-col :xs="24" :sm="6">
           <a-form-item :label="t('pages.nodes.scheme')">
             <a-select v-model:value="form.scheme">
               <a-select-option value="https">https</a-select-option>
@@ -145,12 +146,12 @@ async function onSave() {
             </a-select>
           </a-form-item>
         </a-col>
-        <a-col :span="12">
+        <a-col :xs="24" :sm="12">
           <a-form-item :label="t('pages.nodes.address')" required>
             <a-input v-model:value="form.address" :placeholder="t('pages.nodes.addressPlaceholder')" />
           </a-form-item>
         </a-col>
-        <a-col :span="6">
+        <a-col :xs="24" :sm="6">
           <a-form-item :label="t('pages.nodes.port')" required>
             <a-input-number v-model:value="form.port" :min="1" :max="65535" style="width: 100%" />
           </a-form-item>
@@ -158,12 +159,12 @@ async function onSave() {
       </a-row>
 
       <a-row :gutter="16">
-        <a-col :span="12">
+        <a-col :xs="24" :sm="12">
           <a-form-item :label="t('pages.nodes.basePath')">
             <a-input v-model:value="form.basePath" placeholder="/" />
           </a-form-item>
         </a-col>
-        <a-col :span="12">
+        <a-col :xs="24" :sm="12">
           <a-form-item :label="t('pages.nodes.enable')">
             <a-switch v-model:checked="form.enable" />
           </a-form-item>
@@ -180,6 +181,7 @@ async function onSave() {
 
       <div class="test-row">
         <a-button :loading="testing" @click="onTest">
+          <template #icon><ApiOutlined /></template>
           {{ t('pages.nodes.testConnection') }}
         </a-button>
         <div v-if="testResult" class="test-result">
@@ -205,16 +207,24 @@ async function onSave() {
 
 <style scoped>
 .hint {
-  font-size: 12px;
-  opacity: 0.6;
   margin-top: 4px;
+  color: var(--xui-text-muted);
+  font-size: 12px;
 }
 
 .test-row {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  margin-top: 8px;
+  margin-top: 10px;
+  padding: 14px;
+  border: 1px solid var(--xui-border);
+  border-radius: 7px;
+  background: var(--xui-surface-2);
+}
+
+.test-row :deep(.ant-btn) {
+  align-self: flex-start;
 }
 
 .test-result {

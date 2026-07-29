@@ -2,6 +2,11 @@
 import { onMounted, reactive, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Modal, message } from 'ant-design-vue';
+import {
+  CheckOutlined,
+  CopyOutlined,
+  ReloadOutlined,
+} from '@ant-design/icons-vue';
 
 import { HttpUtil, RandomUtil } from '@/utils';
 import SettingListItem from '@/components/SettingListItem.vue';
@@ -200,8 +205,11 @@ function toggleTwoFactor() {
       </SettingListItem>
 
       <a-list-item>
-        <a-space direction="horizontal" :style="{ padding: '0 20px' }">
-          <a-button type="primary" :loading="updating" @click="updateUser">{{ t('confirm') }}</a-button>
+        <a-space direction="horizontal" class="section-actions">
+          <a-button type="primary" :loading="updating" @click="updateUser">
+            <template #icon><CheckOutlined /></template>
+            {{ t('confirm') }}
+          </a-button>
         </a-space>
       </a-list-item>
     </a-collapse-panel>
@@ -230,9 +238,13 @@ function toggleTwoFactor() {
         </template>
       </SettingListItem>
       <a-list-item>
-        <a-space direction="horizontal" :style="{ padding: '0 20px' }">
-          <a-button :disabled="!apiToken" @click="copyApiToken">{{ t('copy') }}</a-button>
+        <a-space direction="horizontal" class="section-actions">
+          <a-button :disabled="!apiToken" @click="copyApiToken">
+            <template #icon><CopyOutlined /></template>
+            {{ t('copy') }}
+          </a-button>
           <a-button danger :loading="apiTokenRotating" @click="regenerateApiToken">
+            <template #icon><ReloadOutlined /></template>
             {{ t('pages.nodes.regenerate') }}
           </a-button>
         </a-space>
@@ -243,3 +255,16 @@ function toggleTwoFactor() {
   <TwoFactorModal v-model:open="tfa.open" :title="tfa.title" :description="tfa.description" :token="tfa.token"
     :type="tfa.type" @confirm="onTfaConfirm" />
 </template>
+
+<style scoped>
+.section-actions {
+  padding: 12px 16px;
+}
+
+@media (max-width: 576px) {
+  .section-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+}
+</style>

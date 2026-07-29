@@ -174,8 +174,10 @@ async function submit() {
 
 <template>
   <a-modal :open="open" :title="t('pages.client.bulk')" :ok-text="t('create')" :cancel-text="t('close')"
-    :confirm-loading="saving" :mask-closable="false" @ok="submit" @cancel="close">
-    <a-form v-if="inbound" :colon="false" :label-col="{ sm: { span: 8 } }" :wrapper-col="{ sm: { span: 14 } }">
+    :confirm-loading="saving" :mask-closable="false" width="min(720px, calc(100vw - 32px))"
+    wrap-class-name="client-bulk-modal" @ok="submit" @cancel="close">
+    <a-form v-if="inbound" :colon="false" :label-col="{ sm: { span: 8 } }" :wrapper-col="{ sm: { span: 14 } }"
+      class="bulk-form">
       <a-form-item :label="t('pages.client.method')">
         <a-select v-model:value="form.emailMethod">
           <a-select-option :value="0">Random</a-select-option>
@@ -266,8 +268,115 @@ async function submit() {
 
 <style scoped>
 .random-icon {
-  margin-left: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 5px;
   cursor: pointer;
-  color: var(--ant-primary-color, #1890ff);
+  color: var(--xui-primary, #1677ff);
+  transition: color 0.16s ease, transform 0.16s ease;
+}
+
+.random-icon:hover {
+  color: #69a7ff;
+  transform: rotate(45deg);
+}
+
+.bulk-form {
+  max-width: 620px;
+  margin: 0 auto;
+}
+
+.bulk-form :deep(.ant-form-item) {
+  margin-bottom: 14px;
+}
+
+.bulk-form :deep(.ant-form-item-label > label) {
+  color: var(--xui-text-muted);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.bulk-form :deep(.ant-input-number),
+.bulk-form :deep(.ant-picker),
+.bulk-form :deep(.ant-select) {
+  width: 100% !important;
+}
+
+:global(.client-bulk-modal .ant-modal-content) {
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid var(--xui-border);
+  border-radius: 8px;
+  background: var(--xui-surface);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.34);
+}
+
+:global(.client-bulk-modal .ant-modal-header) {
+  margin: 0;
+  padding: 17px 20px;
+  border-bottom: 1px solid var(--xui-border);
+  background: var(--xui-surface);
+}
+
+:global(.client-bulk-modal .ant-modal-title) {
+  font-size: 15px;
+  font-weight: 750;
+}
+
+:global(.client-bulk-modal .ant-modal-body) {
+  max-height: min(70vh, 700px);
+  padding: 18px 20px 4px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--xui-bg);
+}
+
+:global(.client-bulk-modal .ant-modal-footer) {
+  margin: 0;
+  padding: 13px 20px;
+  border-top: 1px solid var(--xui-border);
+  background: var(--xui-surface);
+}
+
+:global(.client-bulk-modal .ant-modal-footer .ant-btn) {
+  min-width: 84px;
+}
+
+@media (max-width: 768px) {
+  .bulk-form :deep(.ant-form-item-row) {
+    display: block;
+  }
+
+  .bulk-form :deep(.ant-form-item-label),
+  .bulk-form :deep(.ant-form-item-control) {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+
+  .bulk-form :deep(.ant-form-item-label) {
+    padding: 0 0 5px;
+    text-align: left;
+  }
+
+  :global(.client-bulk-modal .ant-modal) {
+    top: 12px;
+    padding-bottom: 12px;
+  }
+
+  :global(.client-bulk-modal .ant-modal-body) {
+    max-height: calc(100vh - 148px);
+    padding: 14px 14px 2px;
+  }
+
+  :global(.client-bulk-modal .ant-modal-footer) {
+    display: flex;
+    padding: 11px 14px;
+  }
+
+  :global(.client-bulk-modal .ant-modal-footer .ant-btn) {
+    flex: 1;
+    min-width: 0;
+  }
 }
 </style>

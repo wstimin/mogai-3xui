@@ -326,6 +326,17 @@ func (r *Remote) ResetInboundClientTraffics(ctx context.Context, ib *model.Inbou
 	return err
 }
 
+func (r *Remote) ResetInboundTraffic(ctx context.Context, ib *model.Inbound) error {
+	id, err := r.resolveRemoteID(ctx, ib.Tag)
+	if err != nil {
+		logger.Warning("remote ResetInboundTraffic: tag", ib.Tag, "not found on", r.node.Name, "— treating as success")
+		return nil
+	}
+	_, err = r.do(ctx, http.MethodPost,
+		fmt.Sprintf("panel/api/inbounds/resetTraffic/%d", id), nil)
+	return err
+}
+
 func (r *Remote) ResetAllTraffics(ctx context.Context) error {
 	_, err := r.do(ctx, http.MethodPost, "panel/api/inbounds/resetAllTraffics", nil)
 	return err

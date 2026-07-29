@@ -55,7 +55,7 @@ function pickQrMatrixWidth(value) {
 
 function buildTotp() {
   totp = new OTPAuth.TOTP({
-    issuer: '3x-ui',
+    issuer: 'X Panel',
     label: 'Administrator',
     algorithm: 'SHA1',
     digits: 6,

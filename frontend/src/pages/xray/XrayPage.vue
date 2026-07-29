@@ -10,6 +10,8 @@ import {
   DatabaseOutlined,
   CodeOutlined,
   QuestionCircleOutlined,
+  SaveOutlined,
+  ReloadOutlined,
 } from '@ant-design/icons-vue';
 
 import { theme as themeState, antdThemeConfig } from '@/composables/useTheme.js';
@@ -233,47 +235,37 @@ function confirmRestart() {
               <div class="page-heading">
                 <div>
                   <h1>{{ t('menu.xray') }}</h1>
-                  <p>{{ t('pages.xray.basicTemplate') }} · {{ t('pages.xray.advancedTemplate') }}</p>
+                  <p>{{ t('pages.xray.basicTemplate') }} / {{ t('pages.xray.advancedTemplate') }}</p>
+                </div>
+                <div class="heading-actions">
+                  <a-button type="primary" :disabled="saveDisabled" @click="saveAll">
+                    <template #icon><SaveOutlined /></template>
+                    <span v-if="!isMobile">{{ t('pages.xray.save') }}</span>
+                  </a-button>
+                  <a-button danger :disabled="!saveDisabled" @click="confirmRestart">
+                    <template #icon><ReloadOutlined /></template>
+                    <span v-if="!isMobile">{{ t('pages.xray.restart') }}</span>
+                  </a-button>
+                  <a-popover v-if="restartResult" placement="bottomRight" trigger="click">
+                    <template #title>Xray restart output</template>
+                    <template #content>
+                      <pre class="restart-result">{{ restartResult }}</pre>
+                    </template>
+                    <a-tooltip title="Xray restart output">
+                      <a-button class="result-button" shape="circle">
+                        <template #icon><QuestionCircleOutlined /></template>
+                      </a-button>
+                    </a-tooltip>
+                  </a-popover>
                 </div>
               </div>
 
               <a-row :gutter="[isMobile ? 8 : 16, isMobile ? 0 : 12]">
-                <!-- Save / Restart bar -->
-                <a-col :span="24">
-                  <div class="panel-toolbar xray-toolbar">
-                    <a-row class="header-row">
-                      <a-col :xs="24" :sm="14" class="header-actions">
-                        <a-space direction="horizontal">
-                          <a-button type="primary" :disabled="saveDisabled" @click="saveAll">
-                            {{ t('pages.xray.save') }}
-                          </a-button>
-                          <a-button type="primary" danger :disabled="!saveDisabled" @click="confirmRestart">
-                            {{ t('pages.xray.restart') }}
-                          </a-button>
-                          <a-popover v-if="restartResult" placement="rightTop">
-                            <template #title>Xray restart output</template>
-                            <template #content>
-                              <pre class="restart-result">{{ restartResult }}</pre>
-                            </template>
-                            <QuestionCircleOutlined class="restart-icon" />
-                          </a-popover>
-                        </a-space>
-                      </a-col>
-                      <a-col :xs="24" :sm="10" class="header-info">
-                        <a-back-top :target="scrollTarget" :visibility-height="200" />
-                        <a-alert
-                          type="warning"
-                          show-icon
-                          :message="t('pages.settings.infoDesc')"
-                        />
-                      </a-col>
-                    </a-row>
-                  </div>
-                </a-col>
-
                 <!-- Tabs -->
                 <a-col :span="24">
-                  <a-tabs default-active-key="tpl-basic">
+                  <a-back-top :target="scrollTarget" :visibility-height="200" />
+                  <div class="xray-workspace">
+                  <a-tabs default-active-key="tpl-basic" class="xray-tabs">
                     <a-tab-pane key="tpl-basic" class="tab-pane">
                       <template #tab>
                         <SettingOutlined /> <span>{{ t('pages.xray.basicTemplate') }}</span>
@@ -341,29 +333,36 @@ function confirmRestart() {
                       <template #tab>
                         <CodeOutlined /> <span>{{ t('pages.xray.advancedTemplate') }}</span>
                       </template>
-                      <a-list-item-meta
-                        :title="t('pages.xray.Template')"
-                        :description="t('pages.xray.TemplateDesc')"
-                      />
-                      <a-radio-group
-                        v-model:value="advSettings"
-                        button-style="solid"
-                        :size="isMobile ? 'small' : 'middle'"
-                        :style="{ margin: '12px 0' }"
-                      >
-                        <a-radio-button value="xraySetting">{{ t('pages.xray.completeTemplate') }}</a-radio-button>
-                        <a-radio-button value="inboundSettings">{{ t('pages.xray.Inbounds') }}</a-radio-button>
-                        <a-radio-button value="outboundSettings">{{ t('pages.xray.Outbounds') }}</a-radio-button>
-                        <a-radio-button value="routingRuleSettings">{{ t('pages.xray.Routings') }}</a-radio-button>
-                      </a-radio-group>
-                      <a-textarea
-                        v-model:value="advancedText"
-                        :auto-size="{ minRows: 18, maxRows: 40 }"
-                        spellcheck="false"
-                        class="json-editor"
-                      />
+                      <div class="advanced-editor">
+                        <div class="advanced-header">
+                          <a-list-item-meta
+                            :title="t('pages.xray.Template')"
+                            :description="t('pages.xray.TemplateDesc')"
+                          />
+                          <a-radio-group
+                            v-model:value="advSettings"
+                            button-style="solid"
+                            :size="isMobile ? 'small' : 'middle'"
+                            class="advanced-mode"
+                          >
+                            <a-radio-button value="xraySetting">{{ t('pages.xray.completeTemplate') }}</a-radio-button>
+                            <a-radio-button value="inboundSettings">{{ t('pages.xray.Inbounds') }}</a-radio-button>
+                            <a-radio-button value="outboundSettings">{{ t('pages.xray.Outbounds') }}</a-radio-button>
+                            <a-radio-button value="routingRuleSettings">{{ t('pages.xray.Routings') }}</a-radio-button>
+                          </a-radio-group>
+                        </div>
+                        <div class="editor-surface">
+                          <a-textarea
+                            v-model:value="advancedText"
+                            :auto-size="{ minRows: 18, maxRows: 40 }"
+                            spellcheck="false"
+                            class="json-editor"
+                          />
+                        </div>
+                      </div>
                     </a-tab-pane>
                   </a-tabs>
+                  </div>
                 </a-col>
               </a-row>
             </template>
@@ -417,25 +416,108 @@ function confirmRestart() {
 .content-shell { background: transparent; }
 .loading-spacer { min-height: calc(100vh - 120px); }
 
-.header-row {
-  width: 100%;
+.heading-actions {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-}
-.xray-toolbar { display: block; }
-.header-actions { padding: 4px; }
-.header-info {
-  display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
+  gap: 8px;
 }
 
-.tab-pane { padding-top: 20px; }
+.xray-workspace {
+  overflow: hidden;
+  border: 1px solid var(--xui-border);
+  border-radius: 8px;
+  background: var(--xui-surface);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
 
-.restart-icon {
-  font-size: 16px;
-  cursor: pointer;
-  color: var(--ant-primary-color, #1890ff);
+.xray-tabs :deep(.ant-tabs-nav) {
+  margin: 0;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--xui-border);
+  background: var(--xui-surface-2);
+}
+
+.xray-tabs :deep(.ant-tabs-tab) {
+  min-height: 54px;
+  margin: 0 24px 0 0;
+  padding: 14px 0;
+}
+
+.xray-tabs :deep(.ant-tabs-tab-btn) {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.xray-tabs :deep(.ant-tabs-content-holder) {
+  margin-top: 0;
+  padding: 16px;
+  background: var(--xui-bg);
+}
+
+.tab-pane { min-height: 420px; }
+
+.tab-pane :deep(.ant-collapse) {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+.tab-pane :deep(.ant-collapse-item) {
+  overflow: hidden;
+  border: 1px solid var(--xui-border) !important;
+  border-radius: 8px !important;
+  background: var(--xui-surface) !important;
+}
+
+.tab-pane :deep(.ant-collapse-header) {
+  min-height: 48px;
+  align-items: center !important;
+  padding: 13px 16px !important;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.tab-pane :deep(.ant-collapse-content) {
+  border-top: 1px solid var(--xui-border) !important;
+  background: var(--xui-surface) !important;
+}
+
+.tab-pane :deep(.ant-collapse-content-box) {
+  padding: 0 !important;
+}
+
+.tab-pane :deep(.ant-list-item) {
+  min-height: 66px;
+  padding: 13px 16px !important;
+  transition: background-color 0.16s ease;
+}
+
+.tab-pane :deep(.ant-list-item:hover) {
+  background: var(--xui-surface-2) !important;
+}
+
+.tab-pane :deep(.ant-list-item-meta-title) {
+  margin-bottom: 3px !important;
+  color: var(--xui-text-strong) !important;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.tab-pane :deep(.ant-list-item-meta-description) {
+  color: var(--xui-text-muted) !important;
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.result-button {
+  color: var(--xui-primary);
 }
 
 .restart-result {
@@ -448,5 +530,71 @@ function confirmRestart() {
 .json-editor {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 12px;
+}
+
+.advanced-editor {
+  overflow: hidden;
+  border: 1px solid var(--xui-border);
+  border-radius: 8px;
+  background: var(--xui-surface);
+}
+
+.advanced-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--xui-border);
+  background: var(--xui-surface-2);
+}
+
+.advanced-mode {
+  flex: 0 0 auto;
+}
+
+.editor-surface {
+  padding: 12px;
+  background: var(--xui-bg);
+}
+
+.editor-surface :deep(textarea.ant-input) {
+  resize: vertical;
+  color: var(--xui-text);
+  border-color: var(--xui-border);
+  background: var(--xui-surface-2);
+}
+
+@media (max-width: 768px) {
+  .page-heading {
+    align-items: flex-start;
+  }
+
+  .heading-actions {
+    flex: 0 0 auto;
+  }
+
+  .xray-tabs :deep(.ant-tabs-nav) {
+    padding: 0 10px;
+  }
+
+  .xray-tabs :deep(.ant-tabs-tab) {
+    margin-right: 16px;
+  }
+
+  .xray-tabs :deep(.ant-tabs-content-holder) {
+    padding: 10px;
+  }
+
+  .advanced-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .advanced-mode {
+    display: flex;
+    width: 100%;
+    overflow-x: auto;
+  }
 }
 </style>

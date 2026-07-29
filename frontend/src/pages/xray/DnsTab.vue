@@ -162,7 +162,7 @@ function updateFakednsField(idx, field, value) {
 </script>
 
 <template>
-  <a-collapse default-active-key="1">
+  <a-collapse default-active-key="1" class="dns-page">
     <!-- ============== General DNS settings ============== -->
     <a-collapse-panel key="1" :header="t('pages.xray.generalConfigs')">
       <SettingListItem paddings="small">
@@ -364,6 +364,25 @@ function updateFakednsField(idx, field, value) {
 </template>
 
 <style scoped>
+.dns-page :deep(.ant-table) {
+  background: transparent;
+}
+
+:deep(.ant-collapse-content-box > .ant-empty),
+:deep(.ant-collapse-content-box > .ant-space) {
+  margin: 0;
+  padding: 14px 16px;
+}
+
+:deep(.ant-table-thead > tr > th) {
+  color: var(--xui-text-muted);
+  background: var(--xui-surface-2) !important;
+}
+
+:deep(.ant-table-cell) {
+  border-color: var(--xui-border) !important;
+}
+
 .row-index {
   font-weight: 500;
   opacity: 0.7;

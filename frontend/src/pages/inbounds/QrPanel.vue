@@ -118,13 +118,15 @@ function download() {
 
 <style scoped>
 .qr-panel {
-  border: 1px solid rgba(128, 128, 128, 0.2);
+  border: 1px solid var(--xui-border);
   border-radius: 8px;
-  padding: 10px;
+  padding: 12px;
   margin-bottom: 10px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 10px;
+  background: var(--xui-surface);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
 }
 
 .qr-panel-header {
@@ -132,16 +134,25 @@ function download() {
   align-items: center;
   gap: 6px;
   flex-wrap: wrap;
+  min-height: 28px;
 }
 
 .qr-remark {
   margin: 0;
+  max-width: calc(100% - 76px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .qr-panel-canvas {
   display: flex;
   justify-content: center;
-  padding: 6px 0;
+  padding: 14px;
+  overflow: auto;
+  border: 1px solid var(--xui-border);
+  border-radius: 7px;
+  background: #ffffff;
 }
 
 .qr-panel-canvas canvas {
@@ -153,6 +164,21 @@ function download() {
    * same on-screen footprint without blurring. */
   image-rendering: pixelated;
   image-rendering: crisp-edges;
+}
+
+@media (max-width: 360px) {
+  .qr-panel {
+    padding: 9px;
+  }
+
+  .qr-panel-canvas {
+    padding: 8px;
+  }
+
+  .qr-panel-canvas canvas {
+    max-width: 100%;
+    height: auto !important;
+  }
 }
 
 </style>

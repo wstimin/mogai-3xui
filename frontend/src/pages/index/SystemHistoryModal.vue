@@ -109,55 +109,161 @@ watch([activeKey, bucket], () => {
 </script>
 
 <template>
-  <a-modal :open="open" :closable="true" :footer="null" :width="modalWidth" @cancel="close">
+  <a-modal :open="open" :closable="true" :footer="null" :width="modalWidth"
+    wrap-class-name="system-history-modal" @cancel="close">
     <template #title>
-      {{ t('pages.index.systemHistoryTitle') }}
-      <a-select v-model:value="bucket" size="small" class="bucket-select">
-        <a-select-option :value="2">2m</a-select-option>
-        <a-select-option :value="30">30m</a-select-option>
-        <a-select-option :value="60">1h</a-select-option>
-        <a-select-option :value="120">2h</a-select-option>
-        <a-select-option :value="180">3h</a-select-option>
-        <a-select-option :value="300">5h</a-select-option>
-      </a-select>
+      <div class="history-title">
+        <span>{{ t('pages.index.systemHistoryTitle') }}</span>
+        <a-select v-model:value="bucket" size="small" class="bucket-select">
+          <a-select-option :value="2">2m</a-select-option>
+          <a-select-option :value="30">30m</a-select-option>
+          <a-select-option :value="60">1h</a-select-option>
+          <a-select-option :value="120">2h</a-select-option>
+          <a-select-option :value="180">3h</a-select-option>
+          <a-select-option :value="300">5h</a-select-option>
+        </a-select>
+      </div>
     </template>
 
-    <a-tabs v-model:active-key="activeKey" size="small" class="history-tabs">
-      <a-tab-pane v-for="m in metrics" :key="m.key" :tab="m.tab" />
-    </a-tabs>
+    <div class="history-modal-body">
+      <a-tabs v-model:active-key="activeKey" size="small" class="history-tabs">
+        <a-tab-pane v-for="m in metrics" :key="m.key" :tab="m.tab" />
+      </a-tabs>
 
-    <div class="cpu-chart-wrap">
-      <div class="cpu-chart-meta">
-        Timeframe: {{ bucket }} sec per point (total {{ points.length }} points)
+      <div class="cpu-chart-wrap">
+        <div class="cpu-chart-meta">
+          Timeframe: {{ bucket }} sec per point (total {{ points.length }} points)
+        </div>
+        <Sparkline :data="points" :labels="labels" :vb-width="840" :height="220"
+          :stroke="strokeColor" :stroke-width="2.2"
+          :show-grid="true" :show-axes="true" :tick-count-x="5"
+          :max-points="points.length || 1"
+          :fill-opacity="0.18" :marker-radius="3.2" :show-tooltip="true"
+          :value-min="0" :value-max="activeMetric?.valueMax ?? null"
+          :y-formatter="yFormatter" />
       </div>
-      <Sparkline :data="points" :labels="labels" :vb-width="840" :height="220"
-        :stroke="strokeColor" :stroke-width="2.2"
-        :show-grid="true" :show-axes="true" :tick-count-x="5"
-        :max-points="points.length || 1"
-        :fill-opacity="0.18" :marker-radius="3.2" :show-tooltip="true"
-        :value-min="0" :value-max="activeMetric?.valueMax ?? null"
-        :y-formatter="yFormatter" />
     </div>
   </a-modal>
 </template>
 
 <style scoped>
+.history-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.history-title > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .bucket-select {
   width: 80px;
-  margin-left: 10px;
+  flex: 0 0 80px;
 }
 
 .history-tabs {
-  margin-bottom: 4px;
+  margin-bottom: 14px;
+}
+
+.history-tabs :deep(.ant-tabs-nav) {
+  margin: 0;
+}
+
+.history-tabs :deep(.ant-tabs-nav-wrap) {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+}
+
+.history-tabs :deep(.ant-tabs-tab) {
+  min-height: 38px;
+  padding: 8px 3px;
+  font-size: 12px;
 }
 
 .cpu-chart-wrap {
-  padding: 8px 16px 16px;
+  min-height: 276px;
+  padding: 14px 16px 16px;
+  overflow: hidden;
+  border: 1px solid var(--xui-border);
+  border-radius: 8px;
+  background: var(--xui-surface-2);
 }
 
 .cpu-chart-meta {
   margin-bottom: 10px;
+  color: var(--xui-text-muted);
   font-size: 11px;
-  opacity: 0.65;
+  line-height: 1.5;
+}
+
+.cpu-chart-wrap :deep(.sparkline) {
+  display: block;
+  width: 100%;
+}
+
+:global(.system-history-modal .ant-modal-content) {
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid var(--xui-border);
+  border-radius: 8px;
+  background: var(--xui-surface);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.34);
+}
+
+:global(.system-history-modal .ant-modal-header) {
+  margin: 0;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--xui-border);
+  background: var(--xui-surface);
+}
+
+:global(.system-history-modal .ant-modal-title) {
+  padding-right: 28px;
+  font-size: 15px;
+  font-weight: 750;
+}
+
+:global(.system-history-modal .ant-modal-body) {
+  max-height: min(78vh, 760px);
+  padding: 16px 20px 20px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--xui-bg);
+}
+
+@media (max-width: 576px) {
+  :global(.system-history-modal .ant-modal) {
+    top: 12px;
+    padding-bottom: 12px;
+  }
+
+  :global(.system-history-modal .ant-modal-header) {
+    padding: 14px;
+  }
+
+  :global(.system-history-modal .ant-modal-body) {
+    max-height: calc(100vh - 82px);
+    padding: 12px;
+  }
+
+  .history-title {
+    gap: 8px;
+  }
+
+  .bucket-select {
+    width: 72px;
+    flex-basis: 72px;
+  }
+
+  .cpu-chart-wrap {
+    min-height: 250px;
+    padding: 12px 10px;
+  }
 }
 </style>

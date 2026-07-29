@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { DeleteOutlined, PlusOutlined } from '@ant-design/icons-vue';
 import SettingListItem from '@/components/SettingListItem.vue';
 
 const { t } = useI18n();
@@ -338,13 +339,17 @@ const directDomains = computed({
 
             <a-space direction="horizontal" :style="{ padding: '10px 20px' }">
               <a-button v-if="noisesArray.length > 1" type="primary" danger @click="removeNoise(index)">
+                <template #icon><DeleteOutlined /></template>
                 {{ t('delete') }}
               </a-button>
             </a-space>
           </a-collapse-panel>
         </a-collapse>
 
-        <a-button type="primary" :style="{ marginTop: '10px' }" @click="addNoise">+ Noise</a-button>
+        <a-button type="primary" class="add-noise-button" @click="addNoise">
+          <template #icon><PlusOutlined /></template>
+          Noise
+        </a-button>
       </a-list-item>
     </a-collapse-panel>
 
@@ -428,6 +433,16 @@ const directDomains = computed({
 
 <style scoped>
 .nested-block {
-  padding: 10px 20px;
+  display: block;
+  padding: 14px 16px;
+  background: var(--xui-surface-2) !important;
+}
+
+.nested-block :deep(.ant-collapse-item) {
+  background: var(--xui-surface) !important;
+}
+
+.add-noise-button {
+  margin-top: 10px;
 }
 </style>

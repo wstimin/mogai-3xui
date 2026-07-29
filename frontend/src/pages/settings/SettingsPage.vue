@@ -8,6 +8,8 @@ import {
   MessageOutlined,
   CloudServerOutlined,
   CodeOutlined,
+  SaveOutlined,
+  ReloadOutlined,
 } from '@ant-design/icons-vue';
 
 import { HttpUtil, PromiseUtil } from '@/utils';
@@ -97,16 +99,17 @@ function rebuildUrlAfterRestart() {
 }
 
 async function restartPanel() {
-  await new Promise((resolve, reject) => {
+  const confirmed = await new Promise((resolve) => {
     Modal.confirm({
       title: 'Restart panel',
       content: 'Restart the panel now? Your session will reconnect once it comes back.',
       okText: 'Restart',
       cancelText: 'Cancel',
-      onOk: () => resolve(),
-      onCancel: () => reject(new Error('cancelled')),
+      onOk: () => resolve(true),
+      onCancel: () => resolve(false),
     });
-  }).catch(() => null);
+  });
+  if (!confirmed) return;
 
   spinning.value = true;
   try {
@@ -173,6 +176,16 @@ const initialTab = window.location.hash === '#subscription' ? '4' : '1';
                   <h1>{{ t('menu.settings') }}</h1>
                   <p>{{ t('pages.settings.infoDesc') }}</p>
                 </div>
+                <div class="heading-actions">
+                  <a-button type="primary" :disabled="saveDisabled" @click="saveAll">
+                    <template #icon><SaveOutlined /></template>
+                    <span v-if="!isMobile">{{ t('pages.settings.save') }}</span>
+                  </a-button>
+                  <a-button danger :disabled="!saveDisabled" @click="restartPanel">
+                    <template #icon><ReloadOutlined /></template>
+                    <span v-if="!isMobile">{{ t('pages.settings.restartPanel') }}</span>
+                  </a-button>
+                </div>
               </div>
 
               <a-alert v-if="confAlerts.length > 0 && alertVisible" type="error" show-icon closable class="conf-alert"
@@ -188,28 +201,9 @@ const initialTab = window.location.hash === '#subscription' ? '4' : '1';
 
               <a-row :gutter="[isMobile ? 8 : 16, isMobile ? 0 : 12]">
                 <a-col :span="24">
-                  <div class="panel-toolbar settings-toolbar">
-                    <a-row class="header-row">
-                      <a-col :xs="24" :sm="10" class="header-actions">
-                        <a-space direction="horizontal">
-                          <a-button type="primary" :disabled="saveDisabled" @click="saveAll">
-                            {{ t('pages.settings.save') }}
-                          </a-button>
-                          <a-button type="primary" danger :disabled="!saveDisabled" @click="restartPanel">
-                            {{ t('pages.settings.restartPanel') }}
-                          </a-button>
-                        </a-space>
-                      </a-col>
-                      <a-col :xs="24" :sm="14" class="header-info">
-                        <a-back-top :target="scrollTarget" :visibility-height="200" />
-                        <a-alert type="warning" show-icon :message="t('pages.settings.infoDesc')" />
-                      </a-col>
-                    </a-row>
-                  </div>
-                </a-col>
-
-                <a-col :span="24">
-                  <a-tabs :default-active-key="initialTab">
+                  <a-back-top :target="scrollTarget" :visibility-height="200" />
+                  <div class="settings-workspace">
+                  <a-tabs :default-active-key="initialTab" class="settings-tabs">
                     <a-tab-pane key="1" class="tab-pane">
                       <template #tab>
                         <SettingOutlined />
@@ -246,6 +240,7 @@ const initialTab = window.location.hash === '#subscription' ? '4' : '1';
                       <SubscriptionFormatsTab :all-setting="allSetting" />
                     </a-tab-pane>
                   </a-tabs>
+                  </div>
                 </a-col>
               </a-row>
             </template>
@@ -289,30 +284,155 @@ const initialTab = window.location.hash === '#subscription' ? '4' : '1';
 }
 
 .conf-alert {
-  margin-bottom: 10px;
+  margin-bottom: 16px;
 }
 
-.header-row {
-  width: 100%;
+.heading-actions {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-}
-
-.settings-toolbar {
-  display: block;
-}
-
-.header-actions {
-  padding: 4px;
-}
-
-.header-info {
-  display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
+  gap: 8px;
+}
+
+.settings-workspace {
+  overflow: hidden;
+  border: 1px solid var(--xui-border);
+  border-radius: 8px;
+  background: var(--xui-surface);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+
+.settings-tabs :deep(.ant-tabs-nav) {
+  margin: 0;
+  padding: 0 16px;
+  border: 0;
+  border-bottom: 1px solid var(--xui-border);
+  border-radius: 0;
+  background: var(--xui-surface-2);
+}
+
+.settings-tabs :deep(.ant-tabs-tab) {
+  min-height: 54px;
+  margin: 0 24px 0 0;
+  padding: 14px 0;
+}
+
+.settings-tabs :deep(.ant-tabs-tab-btn) {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.settings-tabs :deep(.ant-tabs-content-holder) {
+  margin-top: 0;
+  padding: 16px;
+  background: var(--xui-bg);
 }
 
 .tab-pane {
-  padding-top: 20px;
+  min-height: 420px;
+}
+
+.tab-pane :deep(.ant-collapse) {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+.tab-pane :deep(.ant-collapse-item) {
+  overflow: hidden;
+  border: 1px solid var(--xui-border) !important;
+  border-radius: 8px !important;
+  background: var(--xui-surface) !important;
+}
+
+.tab-pane :deep(.ant-collapse-header) {
+  min-height: 48px;
+  align-items: center !important;
+  padding: 13px 16px !important;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.tab-pane :deep(.ant-collapse-content) {
+  border-top: 1px solid var(--xui-border) !important;
+  background: var(--xui-surface) !important;
+}
+
+.tab-pane :deep(.ant-collapse-content-box) {
+  padding: 0 !important;
+}
+
+.tab-pane :deep(.ant-list-item) {
+  min-height: 66px;
+  padding: 13px 16px !important;
+  transition: background-color 0.16s ease;
+}
+
+.tab-pane :deep(.ant-list-item:hover) {
+  background: var(--xui-surface-2) !important;
+}
+
+.tab-pane :deep(.ant-list-item > .ant-row) {
+  width: 100%;
+  align-items: center;
+}
+
+.tab-pane :deep(.ant-list-item-meta) {
+  align-items: center;
+}
+
+.tab-pane :deep(.ant-list-item-meta-title) {
+  margin-bottom: 3px !important;
+  color: var(--xui-text-strong) !important;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.tab-pane :deep(.ant-list-item-meta-description) {
+  color: var(--xui-text-muted) !important;
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.tab-pane :deep(.ant-list-item .ant-input),
+.tab-pane :deep(.ant-list-item .ant-input-affix-wrapper),
+.tab-pane :deep(.ant-list-item .ant-input-number),
+.tab-pane :deep(.ant-list-item .ant-select),
+.tab-pane :deep(.ant-list-item .ant-picker) {
+  width: 100% !important;
+}
+
+.tab-pane :deep(.ant-divider) {
+  color: var(--xui-text-muted);
+  border-color: var(--xui-border);
+  font-size: 11px;
+}
+
+@media (max-width: 768px) {
+  .page-heading {
+    align-items: flex-start;
+  }
+
+  .heading-actions {
+    flex: 0 0 auto;
+  }
+
+  .settings-tabs :deep(.ant-tabs-nav) {
+    padding: 0 10px;
+  }
+
+  .settings-tabs :deep(.ant-tabs-tab) {
+    margin-right: 16px;
+  }
+
+  .settings-tabs :deep(.ant-tabs-content-holder) {
+    padding: 10px;
+  }
 }
 </style>

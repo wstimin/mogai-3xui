@@ -6,6 +6,7 @@ import {
   CloudServerOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
+  PlusOutlined,
   ThunderboltOutlined,
 } from '@ant-design/icons-vue';
 
@@ -46,6 +47,8 @@ const requestUri = window.location.pathname;
 const formOpen = ref(false);
 const formMode = ref('add');
 const formNode = ref(null);
+const probingIds = ref(new Set());
+const togglingIds = ref(new Set());
 
 function onAdd() {
   formMode.value = 'add';
@@ -83,18 +86,30 @@ function onDelete(node) {
 }
 
 async function onProbe(node) {
-  const msg = await probe(node.id);
-  if (msg?.success && msg.obj) {
-    if (msg.obj.status === 'online') {
-      message.success(t('pages.nodes.connectionOk', { ms: msg.obj.latencyMs }));
-    } else {
-      message.error(msg.obj.error || t('pages.nodes.toasts.probeFailed'));
+  if (probingIds.value.has(node.id)) return;
+  probingIds.value.add(node.id);
+  try {
+    const msg = await probe(node.id);
+    if (msg?.success && msg.obj) {
+      if (msg.obj.status === 'online') {
+        message.success(t('pages.nodes.connectionOk', { ms: msg.obj.latencyMs }));
+      } else {
+        message.error(msg.obj.error || t('pages.nodes.toasts.probeFailed'));
+      }
     }
+  } finally {
+    probingIds.value.delete(node.id);
   }
 }
 
 async function onToggleEnable(node, next) {
-  await setEnable(node.id, next);
+  if (togglingIds.value.has(node.id)) return;
+  togglingIds.value.add(node.id);
+  try {
+    await setEnable(node.id, next);
+  } finally {
+    togglingIds.value.delete(node.id);
+  }
 }
 </script>
 
@@ -118,6 +133,10 @@ async function onToggleEnable(node, next) {
                     <h1>{{ t('menu.nodes') }}</h1>
                     <p>{{ t('pages.nodes.totalNodes') }} · {{ t('pages.nodes.avgLatency') }}</p>
                   </div>
+                  <a-button type="primary" @click="onAdd">
+                    <template #icon><PlusOutlined /></template>
+                    {{ t('pages.nodes.addNode') }}
+                  </a-button>
                 </div>
               </a-col>
               <a-col :span="24">
@@ -129,7 +148,7 @@ async function onToggleEnable(node, next) {
                         :value="String(totals.total)"
                       >
                         <template #prefix>
-                          <CloudServerOutlined />
+                          <span class="metric-icon icon-blue"><CloudServerOutlined /></span>
                         </template>
                       </CustomStatistic>
                       </a-card>
@@ -141,7 +160,7 @@ async function onToggleEnable(node, next) {
                         :value="String(totals.online)"
                       >
                         <template #prefix>
-                          <CheckCircleOutlined style="color: #52c41a" />
+                          <span class="metric-icon icon-green"><CheckCircleOutlined /></span>
                         </template>
                       </CustomStatistic>
                       </a-card>
@@ -153,7 +172,7 @@ async function onToggleEnable(node, next) {
                         :value="String(totals.offline)"
                       >
                         <template #prefix>
-                          <CloseCircleOutlined style="color: #ff4d4f" />
+                          <span class="metric-icon icon-red"><CloseCircleOutlined /></span>
                         </template>
                       </CustomStatistic>
                       </a-card>
@@ -165,7 +184,7 @@ async function onToggleEnable(node, next) {
                         :value="totals.avgLatency > 0 ? `${totals.avgLatency} ms` : '-'"
                       >
                         <template #prefix>
-                          <ThunderboltOutlined />
+                          <span class="metric-icon icon-amber"><ThunderboltOutlined /></span>
                         </template>
                       </CustomStatistic>
                       </a-card>
@@ -178,8 +197,8 @@ async function onToggleEnable(node, next) {
                 <NodeList
                   :nodes="nodes"
                   :loading="loading"
-                  :is-mobile="isMobile"
-                  @add="onAdd"
+                  :probing-ids="probingIds"
+                  :toggling-ids="togglingIds"
                   @edit="onEdit"
                   @delete="onDelete"
                   @probe="onProbe"
@@ -232,6 +251,55 @@ async function onToggleEnable(node, next) {
 
 .loading-spacer {
   min-height: calc(100vh - 120px);
+}
+
+.page-heading {
+  align-items: center;
+}
+
+.metric-icon {
+  width: 38px;
+  height: 38px;
+  display: inline-grid;
+  place-items: center;
+  margin-right: 6px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  font-size: 18px;
+}
+
+.icon-blue {
+  color: #60a5fa;
+  border-color: rgba(59, 130, 246, 0.25);
+  background: rgba(59, 130, 246, 0.12);
+}
+
+.icon-green {
+  color: #34d399;
+  border-color: rgba(16, 185, 129, 0.25);
+  background: rgba(16, 185, 129, 0.12);
+}
+
+.icon-red {
+  color: #fb7185;
+  border-color: rgba(239, 68, 68, 0.25);
+  background: rgba(239, 68, 68, 0.12);
+}
+
+.icon-amber {
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.25);
+  background: rgba(245, 158, 11, 0.12);
+}
+
+@media (max-width: 576px) {
+  .page-heading {
+    align-items: flex-start;
+  }
+
+  .page-heading :deep(.ant-btn) {
+    flex: 0 0 auto;
+  }
 }
 
 </style>

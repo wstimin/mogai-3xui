@@ -142,7 +142,7 @@ const columns = computed(() => [
 </script>
 
 <template>
-  <a-space direction="vertical" size="middle" :style="{ width: '100%' }">
+  <a-space direction="vertical" size="middle" :style="{ width: '100%' }" class="balancer-panel">
     <a-empty v-if="rows.length === 0" :description="t('emptyBalancersDesc')">
       <a-button type="primary" @click="openAdd">
         <template #icon>
@@ -200,6 +200,27 @@ const columns = computed(() => [
 </template>
 
 <style scoped>
+.balancer-panel {
+  overflow: hidden;
+  padding: 12px;
+  border: 1px solid var(--xui-border);
+  border-radius: 8px;
+  background: var(--xui-surface);
+}
+
+.balancer-panel :deep(.ant-table) {
+  background: transparent;
+}
+
+.balancer-panel :deep(.ant-table-thead > tr > th) {
+  color: var(--xui-text-muted);
+  background: var(--xui-surface-2) !important;
+}
+
+.balancer-panel :deep(.ant-table-cell) {
+  border-color: var(--xui-border) !important;
+}
+
 .row-index {
   font-weight: 500;
   opacity: 0.7;

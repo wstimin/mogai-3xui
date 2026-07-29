@@ -237,13 +237,14 @@ const title = computed(() =>
 <template>
   <a-modal :open="open" :title="title"
     :ok-text="mode === 'edit' ? t('pages.client.submitEdit') : t('pages.client.submitAdd')" :cancel-text="t('close')"
-    :confirm-loading="saving" :mask-closable="false" @ok="submit" @cancel="close">
+    :confirm-loading="saving" :mask-closable="false" width="min(720px, calc(100vw - 32px))"
+    wrap-class-name="client-form-modal" @ok="submit" @cancel="close">
     <a-tag v-if="mode === 'edit' && (isExpired || isTrafficExhausted)" color="red" class="status-banner">
       {{ t('depleted') }}
     </a-tag>
 
     <a-form v-if="client && inbound" layout="horizontal" :colon="false" :label-col="{ sm: { span: 8 } }"
-      :wrapper-col="{ sm: { span: 14 } }">
+      :wrapper-col="{ sm: { span: 14 } }" class="client-form">
       <a-form-item :label="t('enable')">
         <a-switch v-model:checked="client.enable" />
       </a-form-item>
@@ -381,14 +382,136 @@ const title = computed(() =>
 <style scoped>
 .status-banner {
   display: block;
-  margin-bottom: 10px;
+  margin: 0 0 14px;
+  padding: 7px 10px;
+  border-radius: 6px;
   text-align: center;
 }
 
 .random-icon,
 .action-icon {
-  margin-left: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 5px;
   cursor: pointer;
-  color: var(--ant-primary-color, #1890ff);
+  color: var(--xui-primary, #1677ff);
+  transition: color 0.16s ease, transform 0.16s ease;
+}
+
+.random-icon:hover {
+  color: #69a7ff;
+  transform: rotate(45deg);
+}
+
+.action-icon:hover {
+  color: #69a7ff;
+  transform: scale(1.08);
+}
+
+.client-form {
+  max-width: 620px;
+  margin: 0 auto;
+}
+
+.client-form :deep(.ant-form-item) {
+  margin-bottom: 14px;
+}
+
+.client-form :deep(.ant-form-item-label > label) {
+  color: var(--xui-text-muted);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.client-form :deep(.ant-input-number),
+.client-form :deep(.ant-picker),
+.client-form :deep(.ant-select) {
+  width: 100% !important;
+}
+
+.client-form :deep(textarea.ant-input[readonly]) {
+  color: var(--xui-text);
+  border-color: var(--xui-border);
+  background: var(--xui-surface-2);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11px;
+}
+
+:global(.client-form-modal .ant-modal-content) {
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid var(--xui-border);
+  border-radius: 8px;
+  background: var(--xui-surface);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.34);
+}
+
+:global(.client-form-modal .ant-modal-header) {
+  margin: 0;
+  padding: 17px 20px;
+  border-bottom: 1px solid var(--xui-border);
+  background: var(--xui-surface);
+}
+
+:global(.client-form-modal .ant-modal-title) {
+  font-size: 15px;
+  font-weight: 750;
+}
+
+:global(.client-form-modal .ant-modal-body) {
+  max-height: min(70vh, 700px);
+  padding: 18px 20px 4px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--xui-bg);
+}
+
+:global(.client-form-modal .ant-modal-footer) {
+  margin: 0;
+  padding: 13px 20px;
+  border-top: 1px solid var(--xui-border);
+  background: var(--xui-surface);
+}
+
+:global(.client-form-modal .ant-modal-footer .ant-btn) {
+  min-width: 84px;
+}
+
+@media (max-width: 768px) {
+  .client-form :deep(.ant-form-item-row) {
+    display: block;
+  }
+
+  .client-form :deep(.ant-form-item-label),
+  .client-form :deep(.ant-form-item-control) {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+
+  .client-form :deep(.ant-form-item-label) {
+    padding: 0 0 5px;
+    text-align: left;
+  }
+
+  :global(.client-form-modal .ant-modal) {
+    top: 12px;
+    padding-bottom: 12px;
+  }
+
+  :global(.client-form-modal .ant-modal-body) {
+    max-height: calc(100vh - 148px);
+    padding: 14px 14px 2px;
+  }
+
+  :global(.client-form-modal .ant-modal-footer) {
+    display: flex;
+    padding: 11px 14px;
+  }
+
+  :global(.client-form-modal .ant-modal-footer .ant-btn) {
+    flex: 1;
+    min-width: 0;
+  }
 }
 </style>

@@ -174,9 +174,9 @@ const rows = computed(() => {
 </script>
 
 <template>
-  <a-space direction="vertical" size="middle" :style="{ width: '100%' }">
+  <a-space direction="vertical" size="middle" :style="{ width: '100%' }" class="outbounds-panel">
     <!-- Toolbar -->
-    <a-row :gutter="[12, 12]" align="middle" justify="space-between">
+    <a-row :gutter="[12, 12]" align="middle" justify="space-between" class="tab-toolbar">
       <a-col :xs="24" :sm="14">
         <a-space size="small">
           <a-button type="primary" @click="openAdd">
@@ -399,6 +399,37 @@ const rows = computed(() => {
 </template>
 
 <style scoped>
+.outbounds-panel {
+  overflow: hidden;
+  border: 1px solid var(--xui-border);
+  border-radius: 8px;
+  background: var(--xui-surface);
+}
+
+.tab-toolbar {
+  margin: 0 !important;
+  padding: 12px 6px;
+  border-bottom: 1px solid var(--xui-border);
+  background: var(--xui-surface-2);
+}
+
+.outbounds-panel > :deep(.ant-space-item:nth-child(2)) {
+  margin-top: -16px;
+}
+
+.outbounds-panel :deep(.ant-table) {
+  background: transparent;
+}
+
+.outbounds-panel :deep(.ant-table-thead > tr > th) {
+  color: var(--xui-text-muted);
+  background: var(--xui-surface-2) !important;
+}
+
+.outbounds-panel :deep(.ant-table-tbody > tr > td) {
+  border-bottom-color: var(--xui-border);
+}
+
 .toolbar-right { display: flex; justify-content: flex-end; }
 
 .card-empty {
@@ -407,10 +438,11 @@ const rows = computed(() => {
   padding: 16px 0;
 }
 .outbound-card {
-  border: 1px solid rgba(128, 128, 128, 0.2);
+  border: 1px solid var(--xui-border);
   border-radius: 8px;
   padding: 12px;
   margin-bottom: 8px;
+  background: var(--xui-surface);
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -455,11 +487,10 @@ const rows = computed(() => {
 .address-pill {
   font-size: 11px;
   padding: 2px 6px;
+  border: 1px solid var(--xui-border);
   border-radius: 4px;
-  background: rgba(0, 0, 0, 0.05);
-}
-:global(body.dark) .address-pill {
-  background: rgba(255, 255, 255, 0.06);
+  color: var(--xui-text-muted);
+  background: var(--xui-surface-2);
 }
 
 .action-cell {

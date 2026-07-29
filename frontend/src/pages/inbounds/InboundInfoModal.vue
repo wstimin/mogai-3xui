@@ -267,9 +267,10 @@ const showSubscriptionTab = computed(
 </script>
 
 <template>
-  <a-modal :open="open" :title="t('pages.inbounds.inboundData')" :footer="null" width="640px" @cancel="close">
+  <a-modal :open="open" :title="t('pages.inbounds.inboundData')" :footer="null"
+    width="min(820px, calc(100vw - 32px))" wrap-class-name="inbound-info-modal" @cancel="close">
     <template v-if="dbInbound && inbound">
-      <a-tabs v-model:active-key="activeTab">
+      <a-tabs v-model:active-key="activeTab" class="info-tabs">
         <!-- ============================================================
              TAB 1 — Client: per-client info + share links + subscription
              (subscription is folded in here so users don't need a third
@@ -787,6 +788,10 @@ const showSubscriptionTab = computed(
 .info-table {
   width: 100%;
   border-collapse: collapse;
+  overflow: hidden;
+  border: 1px solid var(--xui-border);
+  border-radius: 8px;
+  background: var(--xui-surface);
 }
 
 .info-table.block {
@@ -795,13 +800,29 @@ const showSubscriptionTab = computed(
 
 .info-table td,
 .info-table th {
-  padding: 4px 8px;
+  padding: 10px 12px;
   vertical-align: top;
+  border-bottom: 1px solid var(--xui-border);
+}
+
+.info-table tr:last-child td,
+.info-table tr:last-child th {
+  border-bottom: 0;
+}
+
+.info-table td:first-child {
+  width: 160px;
+  color: var(--xui-text-muted);
+  font-size: 12px;
+  font-weight: 650;
 }
 
 .info-table th {
   text-align: center;
-  font-weight: 500;
+  color: var(--xui-text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--xui-surface-2);
 }
 
 .info-large-tag {
@@ -819,6 +840,10 @@ const showSubscriptionTab = computed(
   padding: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--xui-border);
+  border-radius: 8px;
+  background: var(--xui-surface);
 }
 
 .info-row {
@@ -826,8 +851,8 @@ const showSubscriptionTab = computed(
   grid-template-columns: 140px minmax(0, 1fr);
   align-items: center;
   gap: 12px;
-  padding: 6px 0;
-  border-bottom: 1px solid rgba(128, 128, 128, 0.12);
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--xui-border);
 }
 
 .info-row:last-child {
@@ -855,8 +880,9 @@ const showSubscriptionTab = computed(
 
 .info-row dt {
   margin: 0;
-  font-size: 13px;
-  opacity: 0.75;
+  color: var(--xui-text-muted);
+  font-size: 12px;
+  font-weight: 650;
 }
 
 .info-row dd {
@@ -885,14 +911,11 @@ const showSubscriptionTab = computed(
   word-break: break-all;
   white-space: pre-wrap;
   padding: 4px 8px;
-  background: rgba(0, 0, 0, 0.04);
-  border-radius: 4px;
+  border: 1px solid var(--xui-border);
+  border-radius: 6px;
+  background: var(--xui-surface-2);
   user-select: all;
   min-width: 0;
-}
-
-:global(body.dark) .value-code {
-  background: rgba(255, 255, 255, 0.05);
 }
 
 .value-copy {
@@ -915,7 +938,7 @@ const showSubscriptionTab = computed(
 .summary-table {
   width: 100%;
   text-align: center;
-  margin: 10px 0;
+  margin: 12px 0;
 }
 
 .tg-row {
@@ -928,6 +951,10 @@ const showSubscriptionTab = computed(
   max-height: 150px;
   overflow-y: auto;
   text-align: left;
+  padding: 7px;
+  border: 1px solid var(--xui-border);
+  border-radius: 6px;
+  background: var(--xui-surface-2);
 }
 
 .ip-log-row {
@@ -943,6 +970,7 @@ const showSubscriptionTab = computed(
   margin-top: 5px;
   font-size: 16px;
   cursor: pointer;
+  color: var(--xui-primary);
 }
 
 .protocol-table {
@@ -955,13 +983,14 @@ const showSubscriptionTab = computed(
 
 /* Reusable copy/link panel that replaces QrPanel for the no-QR design. */
 .link-panel {
-  border: 1px solid rgba(128, 128, 128, 0.2);
+  border: 1px solid var(--xui-border);
   border-radius: 8px;
-  padding: 10px;
+  padding: 12px;
   margin-bottom: 10px;
   display: flex;
   flex-direction: column;
   gap: 6px;
+  background: var(--xui-surface);
 }
 
 .link-panel-header {
@@ -977,13 +1006,10 @@ const showSubscriptionTab = computed(
   word-break: break-all;
   white-space: pre-wrap;
   padding: 6px 8px;
-  background: rgba(0, 0, 0, 0.04);
-  border-radius: 4px;
+  border: 1px solid var(--xui-border);
+  border-radius: 6px;
+  background: var(--xui-surface-2);
   user-select: all;
-}
-
-:global(body.dark) .link-panel-text {
-  background: rgba(255, 255, 255, 0.05);
 }
 
 .link-panel-anchor {
@@ -991,24 +1017,129 @@ const showSubscriptionTab = computed(
   font-size: 11px;
   word-break: break-all;
   padding: 6px 8px;
-  background: rgba(0, 0, 0, 0.04);
-  border-radius: 4px;
-  color: var(--ant-color-primary, #1677ff);
+  border: 1px solid var(--xui-border);
+  border-radius: 6px;
+  background: var(--xui-surface-2);
+  color: var(--xui-primary, #1677ff);
   text-decoration: underline;
   text-decoration-color: rgba(22, 119, 255, 0.4);
   transition: background 120ms ease, text-decoration-color 120ms ease;
 }
 
 .link-panel-anchor:hover {
-  background: rgba(22, 119, 255, 0.08);
-  text-decoration-color: var(--ant-color-primary, #1677ff);
+  background: var(--xui-primary-soft);
+  text-decoration-color: var(--xui-primary, #1677ff);
 }
 
-:global(body.dark) .link-panel-anchor {
-  background: rgba(255, 255, 255, 0.05);
+.info-tabs :deep(.ant-tabs-nav) {
+  position: sticky;
+  z-index: 3;
+  top: 0;
+  margin: 0;
+  padding: 0 18px;
+  border-bottom: 1px solid var(--xui-border);
+  background: var(--xui-surface-2);
 }
 
-:global(body.dark) .link-panel-anchor:hover {
-  background: rgba(22, 119, 255, 0.16);
+.info-tabs :deep(.ant-tabs-nav::before) {
+  border-bottom: 0;
+}
+
+.info-tabs :deep(.ant-tabs-tab) {
+  min-height: 52px;
+  margin: 0 24px 0 0;
+  padding: 14px 0;
+}
+
+.info-tabs :deep(.ant-tabs-tab-btn) {
+  color: var(--xui-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.info-tabs :deep(.ant-tabs-content-holder) {
+  padding: 16px;
+  background: var(--xui-bg);
+}
+
+.info-tabs :deep(.ant-divider) {
+  margin: 18px 0 12px;
+  color: var(--xui-text-muted);
+  border-color: var(--xui-border);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+:global(.inbound-info-modal .ant-modal-content) {
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid var(--xui-border);
+  border-radius: 8px;
+  background: var(--xui-surface);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.34);
+}
+
+:global(.inbound-info-modal .ant-modal-header) {
+  margin: 0;
+  padding: 17px 20px;
+  border-bottom: 1px solid var(--xui-border);
+  background: var(--xui-surface);
+}
+
+:global(.inbound-info-modal .ant-modal-title) {
+  font-size: 15px;
+  font-weight: 750;
+}
+
+:global(.inbound-info-modal .ant-modal-body) {
+  max-height: min(76vh, 780px);
+  padding: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--xui-bg);
+}
+
+@media (max-width: 576px) {
+  .info-row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .info-table td,
+  .info-table th {
+    padding: 9px 8px;
+  }
+
+  .info-table td:first-child {
+    width: 108px;
+  }
+
+  .summary-table {
+    table-layout: fixed;
+  }
+
+  .summary-table :deep(.ant-tag) {
+    max-width: 100%;
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .info-tabs :deep(.ant-tabs-nav) {
+    padding: 0 12px;
+  }
+
+  .info-tabs :deep(.ant-tabs-content-holder) {
+    padding: 12px;
+  }
+
+  :global(.inbound-info-modal .ant-modal) {
+    top: 12px;
+    padding-bottom: 12px;
+  }
+
+  :global(.inbound-info-modal .ant-modal-body) {
+    max-height: calc(100vh - 82px);
+  }
 }
 </style>

@@ -4,23 +4,25 @@ import { useI18n } from 'vue-i18n';
 import {
   EditOutlined,
   DeleteOutlined,
-  PlusOutlined,
   ThunderboltOutlined,
   ExclamationCircleOutlined,
   RightOutlined,
   LinkOutlined,
   ClockCircleOutlined,
   DashboardOutlined,
+  DatabaseOutlined,
+  CodeOutlined,
 } from '@ant-design/icons-vue';
 import NodeHistoryPanel from './NodeHistoryPanel.vue';
 
 const props = defineProps({
   nodes: { type: Array, default: () => [] },
   loading: { type: Boolean, default: false },
-  isMobile: { type: Boolean, default: false },
+  probingIds: { type: Set, default: () => new Set() },
+  togglingIds: { type: Set, default: () => new Set() },
 });
 
-const emit = defineEmits(['add', 'edit', 'delete', 'probe', 'toggle-enable']);
+const emit = defineEmits(['edit', 'delete', 'probe', 'toggle-enable']);
 const { t } = useI18n();
 const expandedIds = ref(new Set());
 
@@ -71,17 +73,13 @@ function formatPct(value) {
         <strong class="toolbar-title">{{ t('menu.nodes') }}</strong>
         <span class="toolbar-subtitle">{{ dataSource.length }} {{ t('pages.nodes.totalNodes') }}</span>
       </div>
-      <a-button type="primary" @click="emit('add')">
-        <template #icon><PlusOutlined /></template>
-        {{ t('pages.nodes.addNode') }}
-      </a-button>
     </div>
 
     <a-spin :spinning="loading">
       <div class="node-grid">
         <a-empty v-if="dataSource.length === 0" :description="t('noData')" />
         <article v-for="node in dataSource" :key="node.id" class="node-card"
-          :class="`status-${node.status || 'unknown'}`">
+          :class="node.enable ? `status-${node.status || 'unknown'}` : 'status-disabled'">
           <div class="status-rail" />
           <div class="node-card-content">
             <header>
@@ -92,8 +90,10 @@ function formatPct(value) {
               <div class="node-identity">
                 <div class="node-title">
                   <h2>{{ node.name }}</h2>
-                  <span class="status-badge" :class="`status-${node.status || 'unknown'}`">
-                    {{ t(`pages.nodes.statusValues.${node.status || 'unknown'}`) }}
+                  <span class="protocol-badge">{{ String(node.scheme || 'http').toUpperCase() }}</span>
+                  <span class="port-badge">:{{ node.port }}</span>
+                  <span class="status-badge" :class="node.enable ? `status-${node.status || 'unknown'}` : 'status-disabled'">
+                    {{ node.enable ? t(`pages.nodes.statusValues.${node.status || 'unknown'}`) : t('disabled') }}
                   </span>
                   <a-tooltip v-if="node.lastError" :title="node.lastError">
                     <ExclamationCircleOutlined class="warning-icon" />
@@ -106,25 +106,32 @@ function formatPct(value) {
               </div>
               <div class="node-actions">
                 <a-tooltip :title="t('pages.nodes.probe')">
-                  <a-button @click="emit('probe', node)"><template #icon><ThunderboltOutlined /></template></a-button>
+                  <a-button :loading="probingIds.has(node.id)" :disabled="togglingIds.has(node.id)"
+                    @click="emit('probe', node)"><template #icon><ThunderboltOutlined /></template></a-button>
                 </a-tooltip>
                 <a-tooltip :title="t('edit')">
-                  <a-button @click="emit('edit', node)"><template #icon><EditOutlined /></template></a-button>
+                  <a-button :disabled="probingIds.has(node.id) || togglingIds.has(node.id)"
+                    @click="emit('edit', node)"><template #icon><EditOutlined /></template></a-button>
                 </a-tooltip>
-                <a-switch :checked="node.enable" size="small" @change="(value) => emit('toggle-enable', node, value)" />
+                <a-tooltip :title="t('pages.nodes.enable')">
+                  <a-switch :checked="node.enable" :loading="togglingIds.has(node.id)"
+                    :disabled="probingIds.has(node.id)" size="small"
+                    @change="(value) => emit('toggle-enable', node, value)" />
+                </a-tooltip>
                 <a-tooltip :title="t('delete')">
-                  <a-button danger @click="emit('delete', node)"><template #icon><DeleteOutlined /></template></a-button>
+                  <a-button danger :disabled="probingIds.has(node.id) || togglingIds.has(node.id)"
+                    @click="emit('delete', node)"><template #icon><DeleteOutlined /></template></a-button>
                 </a-tooltip>
               </div>
             </header>
 
             <div class="node-metrics">
               <div><DashboardOutlined /><span>CPU</span><strong>{{ formatPct(node.cpuPct) }}</strong></div>
-              <div><DashboardOutlined /><span>{{ t('pages.nodes.mem') }}</span><strong>{{ formatPct(node.memPct) }}</strong></div>
+              <div><DatabaseOutlined /><span>{{ t('pages.nodes.mem') }}</span><strong>{{ formatPct(node.memPct) }}</strong></div>
               <div><ThunderboltOutlined /><span>{{ t('pages.nodes.latency') }}</span><strong>{{ node.latencyMs > 0 ? `${node.latencyMs} ms` : '-' }}</strong></div>
               <div><ClockCircleOutlined /><span>{{ t('pages.nodes.uptime') }}</span><strong>{{ formatUptime(node.uptimeSecs) }}</strong></div>
               <div><ClockCircleOutlined /><span>{{ t('pages.nodes.lastHeartbeat') }}</span><strong>{{ relativeTime(node.lastHeartbeat) }}</strong></div>
-              <div><span>Xray</span><strong>{{ node.xrayVersion || '-' }}</strong></div>
+              <div><CodeOutlined /><span>Xray</span><strong>{{ node.xrayVersion || '-' }}</strong></div>
             </div>
 
             <div v-if="isExpanded(node.id)" class="history-panel">
@@ -178,6 +185,7 @@ function formatPct(value) {
 
 .node-card.status-online .status-rail { background: var(--xui-success); }
 .node-card.status-offline .status-rail { background: var(--xui-danger); }
+.node-card.status-disabled .status-rail { background: var(--xui-text-faint); }
 
 .node-card-content {
   min-width: 0;
@@ -239,19 +247,35 @@ function formatPct(value) {
   font-size: 11px;
 }
 
+.protocol-badge,
+.port-badge {
+  padding: 2px 7px;
+  border: 1px solid rgba(59, 130, 246, 0.32);
+  border-radius: 5px;
+  color: #7db3ff;
+  background: rgba(59, 130, 246, 0.1);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.port-badge {
+  color: #67e8f9;
+  border-color: rgba(6, 182, 212, 0.3);
+  background: rgba(6, 182, 212, 0.1);
+}
+
 .status-badge.status-online { color: #63e6be; border-color: rgba(16, 185, 129, 0.34); background: rgba(16, 185, 129, 0.1); }
 .status-badge.status-offline { color: #ff8a8a; border-color: rgba(239, 68, 68, 0.34); background: rgba(239, 68, 68, 0.1); }
+.status-badge.status-disabled { color: var(--xui-text-muted); }
 .warning-icon { color: var(--xui-warning); }
 
 .node-url {
   max-width: 100%;
   gap: 6px;
   margin-top: 8px;
-  overflow: hidden;
   color: #78b5ff;
   font-size: 12px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .node-identity p {
@@ -276,6 +300,7 @@ function formatPct(value) {
 
 .node-actions :deep(.ant-btn:hover) { color: #fff; background: var(--xui-primary); }
 .node-actions :deep(.ant-btn-dangerous:hover) { background: var(--xui-danger); }
+.node-actions :deep(.ant-btn[disabled]) { color: var(--xui-text-faint); background: var(--xui-surface-2); }
 
 .node-metrics {
   display: grid;
@@ -293,6 +318,10 @@ function formatPct(value) {
   border: 1px solid var(--xui-border);
   border-radius: 6px;
   background: var(--xui-surface-2);
+}
+
+.node-metrics > div > span[role='img'] {
+  color: var(--xui-primary);
 }
 
 .node-metrics span {
@@ -322,8 +351,14 @@ function formatPct(value) {
 @media (max-width: 768px) {
   .node-card-content { padding: 14px 12px; }
   .node-card header { flex-wrap: wrap; }
-  .node-actions { width: 100%; padding-left: 40px; }
+  .node-identity { width: calc(100% - 40px); }
+  .node-actions { width: 100%; padding-left: 40px; flex-wrap: wrap; }
   .node-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-left: 0; }
   .history-panel { margin-left: 0; }
+}
+
+@media (max-width: 420px) {
+  .node-actions { padding-left: 0; }
+  .node-metrics { grid-template-columns: 1fr; }
 }
 </style>

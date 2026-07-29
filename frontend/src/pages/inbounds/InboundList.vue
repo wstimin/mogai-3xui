@@ -62,6 +62,7 @@ const emit = defineEmits([
 const searchKey = ref('');
 const statusFilter = ref('all');
 const expandedIds = ref(new Set());
+const togglingIds = ref(new Set());
 
 function statusOf(record) {
   const now = Date.now();
@@ -132,15 +133,17 @@ function isExpanded(id) {
 }
 
 async function onSwitchEnable(record, next) {
-  const previous = record.enable;
-  record.enable = next;
+  if (togglingIds.value.has(record.id)) return;
+  togglingIds.value = new Set(togglingIds.value).add(record.id);
   try {
     const formData = new FormData();
     formData.append('enable', String(next));
     const msg = await HttpUtil.post(`/panel/api/inbounds/setEnable/${record.id}`, formData);
-    if (!msg?.success) record.enable = previous;
-  } catch (_e) {
-    record.enable = previous;
+    if (msg?.success) emit('refresh');
+  } finally {
+    const pending = new Set(togglingIds.value);
+    pending.delete(record.id);
+    togglingIds.value = pending;
   }
 }
 
@@ -298,6 +301,7 @@ function nodeText(record) {
               </a-tooltip>
               <a-tooltip :title="record.enable ? t('pages.index.stopXray') : t('pages.index.xrayStatusRunning')">
                 <a-button class="icon-action power" :class="{ enabled: record.enable }"
+                  :loading="togglingIds.has(record.id)"
                   @click="onSwitchEnable(record, !record.enable)"><template #icon><PoweroffOutlined /></template></a-button>
               </a-tooltip>
               <a-tooltip :title="t('delete')">
@@ -309,6 +313,7 @@ function nodeText(record) {
                   <a-menu @click="({ key }) => emit('row-action', { key, dbInbound: record })">
                     <a-menu-item v-if="record.isMultiUser()" key="addClient"><UserAddOutlined /> {{ t('pages.client.add') }}</a-menu-item>
                     <a-menu-item v-if="record.isMultiUser()" key="addBulkClient"><UsergroupAddOutlined /> {{ t('pages.client.bulk') }}</a-menu-item>
+                    <a-menu-item v-if="record.isMultiUser()" key="copyClients"><CopyOutlined /> {{ t('pages.client.copyFromInbound') }}</a-menu-item>
                     <a-menu-item v-if="!record.isMultiUser()" key="showInfo"><InfoCircleOutlined /> {{ t('info') }}</a-menu-item>
                     <a-menu-item key="clipboard"><CopyOutlined /> {{ t('pages.inbounds.exportInbound') }}</a-menu-item>
                     <a-menu-item v-if="subEnable && record.isMultiUser()" key="subs"><LinkOutlined /> {{ t('pages.settings.subSettings') }}</a-menu-item>

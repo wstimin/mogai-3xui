@@ -59,6 +59,9 @@ type Runtime interface {
 	// Local/Remote split as ResetClientTraffic.
 	ResetInboundClientTraffics(ctx context.Context, ib *model.Inbound) error
 
+	// ResetInboundTraffic zeros the aggregate up/down counters for one inbound.
+	ResetInboundTraffic(ctx context.Context, ib *model.Inbound) error
+
 	// ResetAllTraffics zeros every inbound counter on the engine. Used by
 	// the panel-wide "reset all traffic" action; called once per affected
 	// node so that nodes with no inbounds for the current panel are skipped.

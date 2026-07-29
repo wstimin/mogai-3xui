@@ -548,8 +548,9 @@ watch(
 
 <template>
   <a-modal :open="open" :title="title" :ok-text="okText" :cancel-text="t('close')" :confirm-loading="saving"
-    :mask-closable="false" width="780px" @ok="submit" @cancel="close">
-    <a-tabs v-if="inbound && dbForm" default-active-key="basic">
+    :mask-closable="false" width="min(960px, calc(100vw - 32px))" wrap-class-name="inbound-form-modal"
+    @ok="submit" @cancel="close">
+    <a-tabs v-if="inbound && dbForm" default-active-key="basic" class="inbound-tabs">
       <!-- ============================== BASICS ============================== -->
       <a-tab-pane key="basic" :tab="t('pages.xray.basicTemplate')">
         <a-form :colon="false" :label-col="{ sm: { span: 8 } }" :wrapper-col="{ sm: { span: 14 } }">
@@ -1738,39 +1739,83 @@ watch(
 }
 
 .random-icon {
-  margin-left: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 5px;
   cursor: pointer;
-  color: var(--ant-primary-color, #1890ff);
+  color: var(--xui-primary, #1677ff);
+  transition: color 0.16s ease, transform 0.16s ease;
+}
+
+.random-icon:hover {
+  color: #69a7ff;
+  transform: rotate(45deg);
 }
 
 .danger-icon {
-  margin-left: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 7px;
   cursor: pointer;
-  color: #ff4d4f;
+  color: var(--xui-danger, #ff4d4f);
+  transition: color 0.16s ease, transform 0.16s ease;
+}
+
+.danger-icon:hover {
+  color: #ff7875;
+  transform: scale(1.08);
 }
 
 .json-editor {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 12px;
+  line-height: 1.65;
 }
 
 .client-summary {
   width: 100%;
+  overflow: hidden;
   border-collapse: collapse;
+  border: 1px solid var(--xui-border);
+  border-radius: 7px;
+  background: var(--xui-surface-2);
 }
 
 .client-summary th,
 .client-summary td {
-  padding: 4px 8px;
+  padding: 9px 12px;
   text-align: left;
-  border-bottom: 1px solid rgba(128, 128, 128, 0.15);
+  border-bottom: 1px solid var(--xui-border);
+  word-break: break-word;
+}
+
+.client-summary th {
+  color: var(--xui-text-muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.client-summary td {
+  color: var(--xui-text);
+  font-size: 12px;
+}
+
+.client-summary tbody tr:last-child td {
+  border-bottom: 0;
 }
 
 .fallbacks-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
-  margin: 8px 0;
+  margin: 10px 0 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--xui-border);
+  border-radius: 7px;
+  background: var(--xui-surface-2);
 }
 
 .fallbacks-title {
@@ -1779,12 +1824,290 @@ watch(
 }
 
 .wg-peer {
-  margin-top: 4px;
+  margin-top: 10px;
+  padding: 0 14px 6px;
+  border: 1px solid var(--xui-border);
+  border-radius: 7px;
+  background: var(--xui-surface-2);
 }
 
 .section-heading {
   font-weight: 500;
   margin: 12px 0 6px;
   opacity: 0.85;
+}
+
+.inbound-tabs {
+  min-height: 500px;
+}
+
+.inbound-tabs :deep(.ant-tabs-nav) {
+  position: sticky;
+  z-index: 3;
+  top: 0;
+  margin: 0;
+  padding: 0 18px;
+  border-bottom: 1px solid var(--xui-border);
+  background: var(--xui-surface-2);
+}
+
+.inbound-tabs :deep(.ant-tabs-nav::before) {
+  border-bottom: 0;
+}
+
+.inbound-tabs :deep(.ant-tabs-nav-wrap) {
+  overflow-x: auto;
+}
+
+.inbound-tabs :deep(.ant-tabs-tab) {
+  min-height: 52px;
+  margin: 0 26px 0 0;
+  padding: 14px 0;
+}
+
+.inbound-tabs :deep(.ant-tabs-tab-btn) {
+  color: var(--xui-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.inbound-tabs :deep(.ant-tabs-tab-active .ant-tabs-tab-btn) {
+  color: var(--xui-primary);
+}
+
+.inbound-tabs :deep(.ant-tabs-content-holder) {
+  padding: 18px 20px 8px;
+  background: var(--xui-bg);
+}
+
+.inbound-tabs :deep(.ant-tabs-tabpane) {
+  min-height: 410px;
+}
+
+.inbound-tabs :deep(.ant-form) {
+  max-width: 820px;
+  margin: 0 auto;
+}
+
+.inbound-tabs :deep(.ant-form-item) {
+  margin-bottom: 14px;
+}
+
+.inbound-tabs :deep(.ant-form-item-label > label) {
+  color: var(--xui-text-muted);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.inbound-tabs :deep(.ant-input),
+.inbound-tabs :deep(.ant-input-affix-wrapper),
+.inbound-tabs :deep(.ant-input-number),
+.inbound-tabs :deep(.ant-picker),
+.inbound-tabs :deep(.ant-select) {
+  max-width: 100%;
+}
+
+.inbound-tabs :deep(.ant-input-number) {
+  width: 100%;
+}
+
+.inbound-tabs :deep(.ant-divider) {
+  margin: 16px 0;
+  color: var(--xui-text-muted);
+  border-color: var(--xui-border);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.inbound-tabs :deep(.ant-collapse) {
+  max-width: 820px;
+  margin: 0 auto 14px;
+  overflow: hidden;
+  border: 1px solid var(--xui-border);
+  border-radius: 8px;
+  background: var(--xui-surface);
+}
+
+.inbound-tabs :deep(.ant-collapse-item) {
+  border-bottom-color: var(--xui-border);
+}
+
+.inbound-tabs :deep(.ant-collapse-header) {
+  min-height: 48px;
+  align-items: center !important;
+  padding: 13px 16px !important;
+  color: var(--xui-text-strong) !important;
+  font-size: 12px;
+  font-weight: 700;
+  background: var(--xui-surface-2);
+}
+
+.inbound-tabs :deep(.ant-collapse-content) {
+  border-top-color: var(--xui-border);
+  background: var(--xui-surface);
+}
+
+.inbound-tabs :deep(.ant-collapse-content-box) {
+  padding: 16px 16px 2px;
+}
+
+.inbound-tabs :deep(.ant-alert) {
+  max-width: 820px;
+  margin-right: auto;
+  margin-left: auto;
+  border: 1px solid var(--xui-border);
+  border-radius: 7px;
+}
+
+.inbound-tabs :deep(textarea.json-editor) {
+  resize: vertical;
+  color: var(--xui-text);
+  border-color: var(--xui-border);
+  background: var(--xui-surface-2);
+}
+
+.inbound-tabs :deep(.ant-checkbox-group) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  padding: 12px;
+  border: 1px solid var(--xui-border);
+  border-radius: 7px;
+  background: var(--xui-surface-2);
+}
+
+:global(.inbound-form-modal .ant-modal-content) {
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid var(--xui-border);
+  border-radius: 8px;
+  background: var(--xui-surface);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.34);
+}
+
+:global(.inbound-form-modal .ant-modal-header) {
+  margin: 0;
+  padding: 17px 20px;
+  border-bottom: 1px solid var(--xui-border);
+  background: var(--xui-surface);
+}
+
+:global(.inbound-form-modal .ant-modal-title) {
+  color: var(--xui-text-strong);
+  font-size: 15px;
+  font-weight: 750;
+}
+
+:global(.inbound-form-modal .ant-modal-close) {
+  top: 12px;
+  right: 12px;
+  color: var(--xui-text-muted);
+}
+
+:global(.inbound-form-modal .ant-modal-body) {
+  max-height: min(72vh, 760px);
+  padding: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--xui-bg);
+}
+
+:global(.inbound-form-modal .ant-modal-footer) {
+  margin: 0;
+  padding: 13px 20px;
+  border-top: 1px solid var(--xui-border);
+  background: var(--xui-surface);
+}
+
+:global(.inbound-form-modal .ant-modal-footer .ant-btn) {
+  min-width: 84px;
+}
+
+@media (max-width: 768px) {
+  .inbound-tabs {
+    min-height: 440px;
+  }
+
+  .inbound-tabs :deep(.ant-tabs-nav) {
+    padding: 0 12px;
+  }
+
+  .inbound-tabs :deep(.ant-tabs-tab) {
+    min-height: 48px;
+    margin-right: 18px;
+    padding: 12px 0;
+  }
+
+  .inbound-tabs :deep(.ant-tabs-content-holder) {
+    padding: 14px 12px 4px;
+  }
+
+  .inbound-tabs :deep(.ant-form-item) {
+    margin-bottom: 13px;
+  }
+
+  .inbound-tabs :deep(.ant-form-item-row) {
+    display: block;
+  }
+
+  .inbound-tabs :deep(.ant-form-item-label),
+  .inbound-tabs :deep(.ant-form-item-control) {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+
+  .inbound-tabs :deep(.ant-form-item-label) {
+    padding: 0 0 5px;
+    text-align: left;
+  }
+
+  .inbound-tabs :deep(.ant-select),
+  .inbound-tabs :deep(.ant-picker),
+  .inbound-tabs :deep(.ant-input-number) {
+    width: 100% !important;
+  }
+
+  .inbound-tabs :deep(.ant-input-group.ant-input-group-compact) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .inbound-tabs :deep(.ant-input-group.ant-input-group-compact > *) {
+    width: 100% !important;
+    border-radius: 6px !important;
+  }
+
+  .inbound-tabs :deep(.ant-space) {
+    flex-wrap: wrap;
+  }
+
+  .wg-peer {
+    padding-right: 10px;
+    padding-left: 10px;
+  }
+
+  :global(.inbound-form-modal .ant-modal) {
+    top: 12px;
+    padding-bottom: 12px;
+  }
+
+  :global(.inbound-form-modal .ant-modal-header) {
+    padding: 15px 16px;
+  }
+
+  :global(.inbound-form-modal .ant-modal-body) {
+    max-height: calc(100vh - 148px);
+  }
+
+  :global(.inbound-form-modal .ant-modal-footer) {
+    display: flex;
+    padding: 11px 14px;
+  }
+
+  :global(.inbound-form-modal .ant-modal-footer .ant-btn) {
+    flex: 1;
+    min-width: 0;
+  }
 }
 </style>

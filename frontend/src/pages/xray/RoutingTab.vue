@@ -167,11 +167,14 @@ const columns = computed(() => (props.isMobile ? mobileColumns.value : desktopCo
 </script>
 
 <template>
-  <a-space direction="vertical" size="middle" :style="{ width: '100%' }">
-    <a-button type="primary" @click="openAdd">
-      <template #icon><PlusOutlined /></template>
-      {{ t('pages.xray.Routings') }}
-    </a-button>
+  <a-space direction="vertical" size="middle" :style="{ width: '100%' }" class="routing-panel">
+    <div class="tab-toolbar">
+      <a-button type="primary" @click="openAdd">
+        <template #icon><PlusOutlined /></template>
+        {{ t('pages.xray.Routings') }}
+      </a-button>
+      <span class="record-count">{{ rows.length }}</span>
+    </div>
 
     <a-table
       :columns="columns"
@@ -344,6 +347,56 @@ const columns = computed(() => (props.isMobile ? mobileColumns.value : desktopCo
 </template>
 
 <style scoped>
+.routing-panel {
+  overflow: hidden;
+  border: 1px solid var(--xui-border);
+  border-radius: 8px;
+  background: var(--xui-surface);
+}
+
+.tab-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border-bottom: 1px solid var(--xui-border);
+  background: var(--xui-surface-2);
+}
+
+.record-count {
+  min-width: 28px;
+  padding: 3px 8px;
+  border: 1px solid var(--xui-border);
+  border-radius: 7px;
+  color: var(--xui-text-muted);
+  background: var(--xui-surface);
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.routing-table {
+  margin-top: -16px;
+}
+
+.routing-table :deep(.ant-table) {
+  background: transparent;
+}
+
+.routing-table :deep(.ant-table-thead > tr > th) {
+  color: var(--xui-text-muted);
+  background: var(--xui-surface-2) !important;
+}
+
+.routing-table :deep(.ant-table-tbody > tr > td) {
+  border-bottom-color: var(--xui-border);
+}
+
+.routing-table :deep(.ant-table-tbody > tr:last-child > td) {
+  border-bottom: 0;
+}
+
 .action-cell {
   display: flex;
   align-items: center;
@@ -372,7 +425,7 @@ const columns = computed(() => (props.isMobile ? mobileColumns.value : desktopCo
   font-size: 10px;
   text-transform: uppercase;
   opacity: 0.55;
-  letter-spacing: 0.04em;
+  letter-spacing: 0;
 }
 .criterion-value {
   font-weight: 500;
@@ -380,11 +433,9 @@ const columns = computed(() => (props.isMobile ? mobileColumns.value : desktopCo
 .criterion-more {
   font-size: 11px;
   padding: 0 5px;
-  border-radius: 8px;
-  background: rgba(0, 0, 0, 0.06);
-}
-:global(body.dark) .criterion-more {
-  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--xui-border);
+  border-radius: 6px;
+  background: var(--xui-surface-2);
 }
 .criterion-empty {
   opacity: 0.4;

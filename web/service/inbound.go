@@ -2951,7 +2951,7 @@ func (s *InboundService) ResetAllTraffics() error {
 			logger.Warning("ResetAllTraffics: runtime lookup for inbound", ib.Id, "failed:", rterr)
 			continue
 		}
-		if e := rt.ResetInboundClientTraffics(context.Background(), ib); e != nil {
+		if e := rt.ResetInboundTraffic(context.Background(), ib); e != nil {
 			logger.Warning("ResetAllTraffics: remote propagation to", rt.Name(), "failed:", e)
 		}
 	}
@@ -2960,12 +2960,36 @@ func (s *InboundService) ResetAllTraffics() error {
 
 func (s *InboundService) ResetInboundTraffic(id int) error {
 	db := database.GetDB()
+	now := time.Now().UnixMilli()
+
+	inbound, err := s.GetInbound(id)
+	if err != nil {
+		return err
+	}
 
 	result := db.Model(model.Inbound{}).
 		Where("id = ?", id).
-		Updates(map[string]any{"up": 0, "down": 0})
+		Updates(map[string]any{
+			"up":                      0,
+			"down":                    0,
+			"last_traffic_reset_time": now,
+		})
+	if result.Error != nil {
+		return result.Error
+	}
 
-	return result.Error
+	if inbound.NodeID != nil {
+		rt, rterr := s.runtimeFor(inbound)
+		if rterr != nil {
+			logger.Warning("ResetInboundTraffic: runtime lookup failed:", rterr)
+			return nil
+		}
+		if e := rt.ResetInboundTraffic(context.Background(), inbound); e != nil {
+			logger.Warning("ResetInboundTraffic: remote propagation to", rt.Name(), "failed:", e)
+		}
+	}
+
+	return nil
 }
 
 func (s *InboundService) DelDepletedClients(id int) (err error) {

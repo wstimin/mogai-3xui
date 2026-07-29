@@ -83,7 +83,7 @@ watch(() => props.node?.id, (a, b) => {
         :data="cpuPoints"
         :labels="cpuLabels"
         :vb-width="640" :height="120"
-        stroke="#008771"
+        stroke="#22d3ee"
         :show-grid="true" :show-axes="true"
         :tick-count-x="4"
         :max-points="cpuPoints.length || 1"
@@ -98,7 +98,7 @@ watch(() => props.node?.id, (a, b) => {
         :data="memPoints"
         :labels="memLabels"
         :vb-width="640" :height="120"
-        stroke="#7c4dff"
+        stroke="#60a5fa"
         :show-grid="true" :show-axes="true"
         :tick-count-x="4"
         :max-points="memPoints.length || 1"
@@ -112,10 +112,17 @@ watch(() => props.node?.id, (a, b) => {
 
 <style scoped>
 .node-history-panel {
-  padding: 8px 0;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 24px;
+  gap: 12px;
+}
+
+.series {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--xui-border);
+  border-radius: 7px;
+  background: var(--xui-surface-2);
 }
 
 @media (max-width: 768px) {
@@ -126,9 +133,9 @@ watch(() => props.node?.id, (a, b) => {
 }
 
 .series-title {
+  margin-bottom: 8px;
+  color: var(--xui-text-strong);
   font-size: 12px;
-  font-weight: 500;
-  opacity: 0.75;
-  margin-bottom: 4px;
+  font-weight: 650;
 }
 </style>

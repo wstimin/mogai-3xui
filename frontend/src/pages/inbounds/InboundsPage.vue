@@ -1,7 +1,7 @@
 <script setup>
 import { computed, defineAsyncComponent, nextTick, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { Modal, message } from 'ant-design-vue';
+import { Modal } from 'ant-design-vue';
 import {
   BarsOutlined,
   CheckCircleOutlined,
@@ -23,6 +23,7 @@ import { useWebSocket } from '@/composables/useWebSocket.js';
 const InboundFormModal = defineAsyncComponent(() => import('./InboundFormModal.vue'));
 const ClientFormModal = defineAsyncComponent(() => import('./ClientFormModal.vue'));
 const ClientBulkModal = defineAsyncComponent(() => import('./ClientBulkModal.vue'));
+const CopyClientsModal = defineAsyncComponent(() => import('./CopyClientsModal.vue'));
 const InboundInfoModal = defineAsyncComponent(() => import('./InboundInfoModal.vue'));
 const QrCodeModal = defineAsyncComponent(() => import('./QrCodeModal.vue'));
 const TextModal = defineAsyncComponent(() => import('@/components/TextModal.vue'));
@@ -101,6 +102,9 @@ const clientIndex = ref(null);
 
 const bulkOpen = ref(false);
 const bulkDbInbound = ref(null);
+
+const copyClientsOpen = ref(false);
+const copyClientsTarget = ref(null);
 
 // === Info / QR-code modals ===========================================
 const infoOpen = ref(false);
@@ -398,7 +402,7 @@ function confirmResetTraffic(dbInbound) {
     okText: 'Reset',
     cancelText: 'Cancel',
     onOk: async () => {
-      const msg = await HttpUtil.post(`/panel/api/inbounds/resetAllTraffics`);
+      const msg = await HttpUtil.post(`/panel/api/inbounds/resetTraffic/${dbInbound.id}`);
       if (msg?.success) await refresh();
     },
   });
@@ -484,8 +488,6 @@ function onGeneralAction(key) {
     case 'delDepletedClients':
       confirmDelDepleted(-1);
       break;
-    default:
-      message.info(`General action "${key}" — coming in a later 5f subphase`);
   }
 }
 
@@ -520,10 +522,8 @@ function onRowAction({ key, dbInbound }) {
       exportInboundClipboard(dbInbound);
       break;
     case 'copyClients':
-      // Copy-clients-from-inbound is a tiny dedicated modal in legacy
-      // (lets you tick clients to copy across inbounds). Defer to a
-      // future commit — surface a friendly message for now.
-      message.info('Copy clients across inbounds — coming soon');
+      copyClientsTarget.value = dbInbound;
+      copyClientsOpen.value = true;
       break;
     case 'delete':
       confirmDelete(dbInbound);
@@ -548,8 +548,6 @@ function onRowAction({ key, dbInbound }) {
     case 'delDepletedClients':
       confirmDelDepleted(dbInbound.id);
       break;
-    default:
-      message.info(`Action "${key}" — coming in a later 5f subphase`);
   }
 }
 </script>
@@ -628,6 +626,8 @@ function onRowAction({ key, dbInbound }) {
         :ip-limit-enable="ipLimitEnable" :traffic-diff="trafficDiff" @saved="refresh" />
       <ClientBulkModal v-model:open="bulkOpen" :db-inbound="bulkDbInbound" :sub-enable="subSettings.enable"
         :tg-bot-enable="tgBotEnable" :ip-limit-enable="ipLimitEnable" @saved="refresh" />
+      <CopyClientsModal v-model:open="copyClientsOpen" :target-inbound="copyClientsTarget"
+        :db-inbounds="dbInbounds" @saved="refresh" />
       <InboundInfoModal v-model:open="infoOpen" :db-inbound="infoDbInbound" :client-index="infoClientIndex"
         :remark-model="remarkModel" :expire-diff="expireDiff" :traffic-diff="trafficDiff"
         :ip-limit-enable="ipLimitEnable" :tg-bot-enable="tgBotEnable" :sub-settings="subSettings"

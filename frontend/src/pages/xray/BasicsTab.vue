@@ -495,6 +495,24 @@ const localOutboundTestUrl = computed({
 }
 
 .hint-alert {
-  text-align: center;
+  margin: 12px 16px;
+  border: 1px solid rgba(245, 158, 11, 0.24);
+  border-radius: 7px;
+  text-align: left;
+  background: rgba(245, 158, 11, 0.08);
+}
+
+:deep(.ant-collapse-content-box > .ant-space) {
+  padding: 14px 16px !important;
+}
+
+:deep(.ant-collapse-content-box > .ant-list-item + .hint-alert) {
+  margin-top: 16px;
+}
+
+@media (max-width: 768px) {
+  .hint-alert {
+    margin: 10px;
+  }
 }
 </style>
