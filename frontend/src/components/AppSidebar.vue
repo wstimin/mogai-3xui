@@ -13,7 +13,6 @@ import {
 } from '@ant-design/icons-vue';
 
 import { currentTheme } from '@/composables/useTheme.js';
-import ThemeSwitch from '@/components/ThemeSwitch.vue';
 
 const { t, locale } = useI18n();
 const panelVersion = (typeof window !== 'undefined' && window.__X_UI_CUR_VER__) || '2.9.5';
@@ -84,7 +83,6 @@ function openLink(key) {
       </a-menu>
 
       <div class="sidebar-bottom">
-        <ThemeSwitch />
         <a-menu :theme="currentTheme" mode="inline" :selected-keys="[]" @click="openLink(`${prefix}logout`)">
           <a-menu-item :key="`${prefix}logout`">
             <LogoutOutlined />
