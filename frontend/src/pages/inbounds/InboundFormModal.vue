@@ -1356,9 +1356,15 @@ watch(
             </a-form-item>
           </template>
 
-          <!-- ====== Security section ====== -->
-          <a-form-item :label="uiText('Security', '安全类型')">
-            <a-select v-model:value="security" :style="{ width: '160px' }" :disabled="!canEnableTls">
+        </a-form>
+      </section>
+
+      <!-- ============================== SECURITY ============================== -->
+      <section v-if="canEnableStream" class="inbound-form-section">
+        <h3 class="form-section-title">{{ uiText('Security', '安全配置') }}</h3>
+        <a-form :colon="false" :label-col="{ sm: { span: 8 } }" :wrapper-col="{ sm: { span: 14 } }">
+          <a-form-item :label="uiText('Security type', '安全类型')">
+            <a-select v-model:value="security" :style="{ width: '75%' }" :disabled="!canEnableTls">
               <a-select-option value="none">none</a-select-option>
               <a-select-option value="tls">tls</a-select-option>
               <a-select-option v-if="canEnableReality" value="reality">reality</a-select-option>
@@ -1555,6 +1561,13 @@ watch(
             </a-form-item>
           </template>
 
+        </a-form>
+      </section>
+
+      <!-- ============================== CONNECTION OPTIONS ============================== -->
+      <section v-if="canEnableStream" class="inbound-form-section">
+        <h3 class="form-section-title">{{ uiText('Connection options', '连接选项') }}</h3>
+        <a-form :colon="false" :label-col="{ sm: { span: 8 } }" :wrapper-col="{ sm: { span: 14 } }">
           <!-- ====== External Proxy ====== -->
           <a-form-item :label="uiText('External Proxy', '外部代理')">
             <a-switch v-model:checked="externalProxy" />

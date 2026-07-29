@@ -323,6 +323,17 @@ function onLangChange(next) {
   white-space: nowrap;
 }
 
+.brand-lockup .brand-mark > span,
+.card-brand .brand-mark > span {
+  margin: 0;
+  overflow: visible;
+  color: #fff;
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1;
+  text-shadow: 0 1px 8px rgba(255, 255, 255, 0.28);
+}
+
 .brand-copy {
   max-width: 460px;
   margin: auto 0;

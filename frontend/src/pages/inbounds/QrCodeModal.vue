@@ -7,10 +7,7 @@ import QrPanel from './QrPanel.vue';
 
 const { t } = useI18n();
 
-// Light QR-only modal — used for the "qrcode" row action on
-// single-user Shadowsocks and WireGuard inbounds. The big info modal
-// (InboundInfoModal) is too detailed when the user just wants the
-// share link as a QR.
+// QR-only modal for inbound-level and per-client share actions.
 
 const props = defineProps({
   open: { type: Boolean, default: false },
@@ -40,9 +37,29 @@ watch(() => props.open, (next) => {
     wireguardLinks.value = inbound.genWireguardLinks(peerRemark, '-ieo', props.nodeAddress).split('\r\n');
     links.value = [];
   } else {
-    // When a client is provided we generate per-client share links;
-    // otherwise (single-user SS) fall back to the inbound's settings.
-    links.value = inbound.genAllLinks(props.dbInbound.remark, props.remarkModel, props.client, props.nodeAddress);
+    const clients = Array.isArray(inbound.clients) ? inbound.clients : [];
+    if (props.client) {
+      links.value = inbound.genAllLinks(
+        props.dbInbound.remark,
+        props.remarkModel,
+        props.client,
+        props.nodeAddress,
+      );
+    } else if (props.dbInbound.isMultiUser()) {
+      links.value = clients.flatMap((client) => inbound.genAllLinks(
+        props.dbInbound.remark,
+        props.remarkModel,
+        client,
+        props.nodeAddress,
+      ));
+    } else {
+      links.value = inbound.genAllLinks(
+        props.dbInbound.remark,
+        props.remarkModel,
+        null,
+        props.nodeAddress,
+      );
+    }
     wireguardConfigs.value = [];
     wireguardLinks.value = [];
   }

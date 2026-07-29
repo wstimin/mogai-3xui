@@ -173,21 +173,8 @@ function specialTags(record) {
   return tags;
 }
 
-function showQrCodeMenu(record) {
-  if (record.isWireguard) return true;
-  if (!record.isSS) return false;
-  const inbound = safeInbound(record);
-  return !!inbound && !inbound.isSSMultiUser;
-}
-
 function onQrAction(record) {
-  if (showQrCodeMenu(record)) {
-    emit('row-action', { key: 'qrcode', dbInbound: record });
-  } else if (record.isMultiUser()) {
-    toggleExpanded(record.id);
-  } else {
-    emit('row-action', { key: 'showInfo', dbInbound: record });
-  }
+  emit('row-action', { key: 'qrcode', dbInbound: record });
 }
 
 function trafficPercent(record) {
@@ -294,7 +281,7 @@ function nodeText(record) {
             </div>
 
             <div class="primary-actions">
-              <a-tooltip :title="t('qrCode')">
+              <a-tooltip v-if="record.hasLink() || record.isWireguard" :title="t('qrCode')">
                 <a-button class="icon-action qr" @click="onQrAction(record)"><template #icon><QrcodeOutlined /></template></a-button>
               </a-tooltip>
               <a-tooltip :title="t('pages.inbounds.export')">
