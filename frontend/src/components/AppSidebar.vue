@@ -22,7 +22,10 @@ const isChinese = computed(() => locale.value === 'zh-CN');
 const props = defineProps({
   basePath: { type: String, default: '' },
   requestUri: { type: String, default: '' },
+  dashboardStyle: { type: Boolean, default: false },
 });
+
+const sidebarWidth = computed(() => (props.dashboardStyle ? 260 : 240));
 
 const iconByName = {
   dashboard: DashboardOutlined,
@@ -61,8 +64,9 @@ function openLink(key) {
 </script>
 
 <template>
-  <aside class="panel-sidebar">
-    <a-layout-sider :theme="currentTheme" :width="240" class="desktop-sider">
+  <aside class="panel-sidebar" :class="{ 'dashboard-sidebar': dashboardStyle }"
+    :style="{ '--sidebar-width': `${sidebarWidth}px` }">
+    <a-layout-sider :theme="currentTheme" :width="sidebarWidth" class="desktop-sider">
       <div class="brand-block">
         <div class="brand-mark">X</div>
         <div class="brand-copy">
@@ -122,8 +126,8 @@ function openLink(key) {
 
 <style scoped>
 .panel-sidebar {
-  flex: 0 0 240px;
-  min-width: 240px;
+  flex: 0 0 var(--sidebar-width, 240px);
+  min-width: var(--sidebar-width, 240px);
 }
 
 .desktop-sider {
@@ -236,6 +240,95 @@ function openLink(key) {
   border-radius: 6px;
   color: var(--xui-text);
   background: transparent;
+}
+
+.dashboard-sidebar .desktop-sider {
+  border-right-color: rgba(255, 255, 255, 0.06);
+  background: #0c0e13 !important;
+}
+
+.dashboard-sidebar .desktop-sider :deep(.ant-layout-sider-children),
+.dashboard-sidebar .desktop-sider :deep(.ant-menu),
+.dashboard-sidebar .desktop-sider :deep(.ant-menu-sub) {
+  background: #0c0e13 !important;
+}
+
+.dashboard-sidebar .brand-block {
+  height: 88px;
+  padding: 0 28px;
+  border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+.dashboard-sidebar .brand-mark {
+  width: 40px;
+  height: 40px;
+  flex-basis: 40px;
+  border-radius: 11px;
+  background: linear-gradient(135deg, #6366f1, #a78bfa);
+  box-shadow: 0 6px 18px rgba(99, 102, 241, 0.34);
+}
+
+.dashboard-sidebar .brand-copy strong {
+  color: #f1f5f9;
+  font-size: 18px;
+}
+
+.dashboard-sidebar .brand-copy span,
+.dashboard-sidebar .nav-label {
+  color: #64748b;
+}
+
+.dashboard-sidebar .nav-label {
+  padding: 25px 28px 9px;
+  font-size: 10px;
+  letter-spacing: 0.8px;
+}
+
+.dashboard-sidebar .desktop-sider :deep(.ant-menu) {
+  padding: 0 16px;
+}
+
+.dashboard-sidebar .desktop-sider :deep(.ant-menu-item) {
+  position: relative;
+  height: 44px;
+  line-height: 44px;
+  margin: 3px 0;
+  color: #64748b !important;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  transition: color 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+}
+
+.dashboard-sidebar .desktop-sider :deep(.ant-menu-item:hover) {
+  color: #cbd5e1 !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+
+.dashboard-sidebar .desktop-sider :deep(.ant-menu-item-selected) {
+  color: #a5b4fc !important;
+  border-color: rgba(99, 102, 241, 0.12);
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.18), rgba(99, 102, 241, 0.06)) !important;
+}
+
+.dashboard-sidebar .desktop-sider :deep(.ant-menu-item-selected::before) {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: -1px;
+  width: 3px;
+  height: 20px;
+  border-radius: 0 4px 4px 0;
+  background: #6366f1;
+  transform: translateY(-50%);
+}
+
+.dashboard-sidebar .desktop-sider :deep(.ant-menu-item-selected::after) {
+  display: none;
+}
+
+.dashboard-sidebar .sidebar-bottom {
+  padding: 12px 16px 18px;
+  border-top-color: rgba(255, 255, 255, 0.06);
 }
 
 @media (max-width: 768px) {

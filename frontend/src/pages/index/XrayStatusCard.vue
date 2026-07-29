@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
+  ApiOutlined,
   BarsOutlined,
   PoweroffOutlined,
   ReloadOutlined,
@@ -40,12 +41,13 @@ function badgeAnimationClass(color) {
 <template>
   <a-card class="xray-card" hoverable>
     <template #title>
-      <a-space direction="horizontal">
-        <span>{{ t('pages.index.xrayStatus') }}</span>
-        <a-tag v-if="isMobile && status.xray.version && status.xray.version !== 'Unknown'" color="green">
-          v{{ status.xray.version }}
-        </a-tag>
-      </a-space>
+      <div class="xray-title">
+        <span class="xray-title-icon"><ApiOutlined /></span>
+        <div>
+          <strong>{{ t('pages.index.xrayStatus') }}</strong>
+          <span>Xray Core</span>
+        </div>
+      </div>
     </template>
 
     <template #extra>
@@ -79,29 +81,32 @@ function badgeAnimationClass(color) {
         </div>
       </div>
       <div class="xray-version">
+        <span class="version-icon"><ToolOutlined /></span>
+        <div>
         <span>{{ t('pages.index.xraySwitch') }}</span>
         <strong>{{ status.xray.version && status.xray.version !== 'Unknown' ? `v${status.xray.version}` : '-' }}</strong>
+        </div>
       </div>
     </div>
 
     <div class="xray-actions">
       <a-tooltip v-if="ipLimitEnable" :title="t('pages.index.logs')">
-        <a-button @click="$emit('open-xray-logs')">
+        <a-button class="xray-button" @click="$emit('open-xray-logs')">
           <template #icon><BarsOutlined /></template>
           <span v-if="!isMobile">{{ t('pages.index.logs') }}</span>
         </a-button>
       </a-tooltip>
-      <a-button danger :loading="controlLoading === 'stop'" :disabled="!!controlLoading && controlLoading !== 'stop'"
+      <a-button class="xray-button stop-button" danger :loading="controlLoading === 'stop'" :disabled="!!controlLoading && controlLoading !== 'stop'"
         @click="$emit('stop-xray')">
         <template #icon><PoweroffOutlined /></template>
         {{ t('pages.index.stopXray') }}
       </a-button>
-      <a-button type="primary" :loading="controlLoading === 'restart'"
+      <a-button class="xray-button restart-button" type="primary" :loading="controlLoading === 'restart'"
         :disabled="!!controlLoading && controlLoading !== 'restart'" @click="$emit('restart-xray')">
         <template #icon><ReloadOutlined /></template>
         {{ t('pages.index.restartXray') }}
       </a-button>
-      <a-button @click="$emit('open-version-switch')">
+      <a-button class="xray-button" @click="$emit('open-version-switch')">
         <template #icon><ToolOutlined /></template>
         <span v-if="!isMobile">{{ t('pages.index.xraySwitch') }}</span>
       </a-button>
@@ -112,25 +117,96 @@ function badgeAnimationClass(color) {
 <style scoped>
 .xray-card {
   height: 100%;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border-radius: 18px !important;
+  background: rgba(18, 21, 28, 0.75) !important;
+  backdrop-filter: blur(16px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14) !important;
+  transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+}
+
+.xray-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.3) !important;
+}
+
+:deep(.ant-card-head) {
+  min-height: 66px;
+  padding: 0 22px;
+  border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+:deep(.ant-card-body) {
+  padding: 22px;
+}
+
+.xray-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.xray-title-icon,
+.version-icon {
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(99, 102, 241, 0.18);
+  color: #a5b4fc;
+  background: rgba(99, 102, 241, 0.14);
+}
+
+.xray-title-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  font-size: 17px;
+}
+
+.xray-title > div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.xray-title strong {
+  color: #f1f5f9;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.xray-title span:not(.xray-title-icon) {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 500;
 }
 
 .xray-summary {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(120px, 0.6fr);
-  gap: 12px;
+  gap: 14px;
 }
 
 .xray-state,
 .xray-version {
   min-width: 0;
-  min-height: 74px;
+  min-height: 88px;
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 14px;
-  border: 1px solid var(--xui-border);
-  border-radius: 7px;
-  background: var(--xui-surface-2);
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.025);
+  transition: border-color 0.18s ease, background 0.18s ease;
+}
+
+.xray-state:hover,
+.xray-version:hover {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.035);
 }
 
 .state-dot {
@@ -138,24 +214,34 @@ function badgeAnimationClass(color) {
   height: 11px;
   flex: 0 0 11px;
   border-radius: 50%;
-  background: var(--xui-text-faint);
+  background: #64748b;
   box-shadow: 0 0 0 5px rgba(101, 121, 145, 0.12);
 }
 
-.state-running .state-dot { background: var(--xui-success); box-shadow: 0 0 0 5px rgba(16, 185, 129, 0.12); }
-.state-stop .state-dot { background: var(--xui-warning); box-shadow: 0 0 0 5px rgba(245, 158, 11, 0.12); }
-.state-error .state-dot { background: var(--xui-danger); box-shadow: 0 0 0 5px rgba(239, 68, 68, 0.12); }
+.state-running .state-dot { background: #10b981; box-shadow: 0 0 0 5px rgba(16, 185, 129, 0.12), 0 0 16px rgba(16, 185, 129, 0.28); }
+.state-stop .state-dot { background: #f59e0b; box-shadow: 0 0 0 5px rgba(245, 158, 11, 0.12); }
+.state-error .state-dot { background: #ef4444; box-shadow: 0 0 0 5px rgba(239, 68, 68, 0.12); }
 
 .xray-state div,
-.xray-version {
+.xray-version > div {
   min-width: 0;
+}
+
+.version-icon {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  border-radius: 9px;
+  color: #c4b5fd;
+  border-color: rgba(167, 139, 250, 0.18);
+  background: rgba(167, 139, 250, 0.12);
 }
 
 .xray-state span:not(.state-dot),
 .xray-version span {
   display: block;
   margin-bottom: 4px;
-  color: var(--xui-text-muted);
+  color: #64748b;
   font-size: 12px;
 }
 
@@ -163,7 +249,7 @@ function badgeAnimationClass(color) {
 .xray-version strong {
   display: block;
   overflow: hidden;
-  color: var(--xui-text-strong);
+  color: #f1f5f9;
   font-size: 17px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -173,9 +259,44 @@ function badgeAnimationClass(color) {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid var(--xui-border);
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.xray-button {
+  min-height: 36px;
+  color: #94a3b8;
+  border-color: rgba(255, 255, 255, 0.06);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.xray-button:hover,
+.xray-button:focus {
+  color: #f1f5f9 !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.xray-button.stop-button {
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.18);
+  background: rgba(239, 68, 68, 0.07);
+}
+
+.xray-button.stop-button:hover,
+.xray-button.stop-button:focus {
+  color: #fca5a5 !important;
+  border-color: rgba(239, 68, 68, 0.32) !important;
+  background: rgba(239, 68, 68, 0.12) !important;
+}
+
+.xray-button.restart-button {
+  color: #fff;
+  border: 0;
+  background: linear-gradient(135deg, #6366f1, #7c3aed) !important;
+  box-shadow: 0 5px 16px rgba(99, 102, 241, 0.28);
 }
 
 .error-line {
@@ -195,6 +316,14 @@ function badgeAnimationClass(color) {
 
   .xray-actions :deep(.ant-btn) {
     flex: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .xray-card,
+  .xray-state,
+  .xray-version {
+    transition: none;
   }
 }
 </style>
