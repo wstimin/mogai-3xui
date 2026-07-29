@@ -1,7 +1,9 @@
+# syntax=docker/dockerfile:1
+
 # ========================================================
 # Stage: Frontend (Vite)
 # ========================================================
-FROM node:22-alpine AS frontend
+FROM --platform=$BUILDPLATFORM node:22-alpine AS frontend
 WORKDIR /src/frontend
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
@@ -15,6 +17,7 @@ RUN npm run build
 FROM golang:1.26-alpine AS builder
 WORKDIR /app
 ARG TARGETARCH
+ARG TARGETVARIANT
 
 RUN apk --no-cache --update add \
   build-base \
@@ -28,7 +31,7 @@ COPY --from=frontend /src/web/dist ./web/dist
 ENV CGO_ENABLED=1
 ENV CGO_CFLAGS="-D_LARGEFILE64_SOURCE"
 RUN go build -ldflags "-w -s" -o build/x-ui main.go
-RUN ./DockerInit.sh "$TARGETARCH"
+RUN sh ./DockerInit.sh "$TARGETARCH" "$TARGETVARIANT"
 
 # ========================================================
 # Stage: Final Image of 3x-ui

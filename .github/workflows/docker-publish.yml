@@ -2,8 +2,8 @@ name: Build and Publish Docker Image
 
 on:
   push:
-    branches: [ "main", "master" ]
-  workflow_dispatch: # 允许你手动点击按钮触发打包
+    branches: ["main", "master"]
+  workflow_dispatch:
 
 jobs:
   build-and-push:
@@ -12,20 +12,30 @@ jobs:
       contents: read
       packages: write
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-    
-    - name: Log in to GitHub Container Registry
-      uses: docker/login-action@v2
-      with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-        
-    - name: Build and push Docker image
-      uses: docker/build-push-action@v4
-      with:
-        context: .
-        push: true
-        # 这里的标签会自动读取你的用户名，打包成你的专属镜像
-        tags: ghcr.io/${{ github.repository_owner }}/my-3x-ui:latest
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Read panel version
+        id: version
+        shell: bash
+        run: echo "version=$(cat config/version)" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64,linux/arm64/v8,linux/arm/v7,linux/arm/v6,linux/386
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/my-3x-ui:latest
+            ghcr.io/${{ github.repository_owner }}/my-3x-ui:${{ steps.version.outputs.version }}

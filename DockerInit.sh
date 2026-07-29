@@ -1,24 +1,35 @@
 #!/bin/sh
+set -eu
+
 case $1 in
     amd64)
         ARCH="64"
         FNAME="amd64"
         ;;
-    i386)
+    386 | i386)
         ARCH="32"
-        FNAME="i386"
+        FNAME="386"
         ;;
     armv8 | arm64 | aarch64)
         ARCH="arm64-v8a"
         FNAME="arm64"
         ;;
-    armv7 | arm | arm32)
-        ARCH="arm32-v7a"
-        FNAME="arm32"
-        ;;
     armv6)
         ARCH="arm32-v6"
-        FNAME="armv6"
+        FNAME="arm"
+        ;;
+    armv7 | arm32)
+        ARCH="arm32-v7a"
+        FNAME="arm"
+        ;;
+    arm)
+        if [ "${2:-}" = "v6" ]; then
+            ARCH="arm32-v6"
+            FNAME="arm"
+        else
+            ARCH="arm32-v7a"
+            FNAME="arm"
+        fi
         ;;
     *)
         ARCH="64"
