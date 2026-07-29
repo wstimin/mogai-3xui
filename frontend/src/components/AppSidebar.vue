@@ -15,8 +15,9 @@ import {
 import { currentTheme } from '@/composables/useTheme.js';
 import ThemeSwitch from '@/components/ThemeSwitch.vue';
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const panelVersion = (typeof window !== 'undefined' && window.__X_UI_CUR_VER__) || '2.9.5';
+const isChinese = computed(() => locale.value === 'zh-CN');
 
 const props = defineProps({
   basePath: { type: String, default: '' },
@@ -70,7 +71,7 @@ function openLink(key) {
         </div>
       </div>
 
-      <div class="nav-label">X PANEL CONTROL</div>
+      <div class="nav-label">{{ isChinese ? 'X PANEL 控制台' : 'X PANEL CONTROL' }}</div>
       <a-menu :theme="currentTheme" mode="inline" :selected-keys="activeTab" @click="({ key }) => openLink(key)">
         <a-menu-item v-for="tab in tabs" :key="tab.key">
           <component :is="iconByName[tab.icon]" />
@@ -89,7 +90,7 @@ function openLink(key) {
       </div>
     </a-layout-sider>
 
-    <button class="drawer-handle" type="button" aria-label="Open navigation" @click="drawerOpen = true">
+    <button class="drawer-handle" type="button" :aria-label="isChinese ? '打开导航' : 'Open navigation'" @click="drawerOpen = true">
       <MenuOutlined />
     </button>
 

@@ -33,7 +33,10 @@ import FinalMaskForm from '@/components/FinalMaskForm.vue';
 import DateTimePicker from '@/components/DateTimePicker.vue';
 import { useNodeList } from '@/composables/useNodeList.js';
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
+
+const isChinese = computed(() => locale.value === 'zh-CN');
+const uiText = (english, chinese) => (isChinese.value ? chinese : english);
 
 // Node selector — Phase 1 multi-node deployment. Shows all enabled
 // nodes regardless of online state so the form is usable while a node
@@ -453,13 +456,13 @@ async function submit() {
         : (inbound.value.stream?.sockopt
           ? JSON.stringify({ sockopt: inbound.value.stream.sockopt.toJson() })
           : '');
-    } catch (e) { message.error(`Stream JSON invalid: ${e.message}`); return; }
+    } catch (e) { message.error(uiText(`Stream JSON invalid: ${e.message}`, `传输配置 JSON 无效：${e.message}`)); return; }
     try {
       sniffing = JSON.stringify(JSON.parse(advancedJson.value.sniffing || inbound.value.sniffing.toString()));
-    } catch (e) { message.error(`Sniffing JSON invalid: ${e.message}`); return; }
+    } catch (e) { message.error(uiText(`Sniffing JSON invalid: ${e.message}`, `流量探测 JSON 无效：${e.message}`)); return; }
     try {
       settings = JSON.stringify(JSON.parse(advancedJson.value.settings || inbound.value.settings.toString()));
-    } catch (e) { message.error(`Settings JSON invalid: ${e.message}`); return; }
+    } catch (e) { message.error(uiText(`Settings JSON invalid: ${e.message}`, `协议设置 JSON 无效：${e.message}`)); return; }
 
     // The structured form mutates `inbound.stream` directly when the
     // user edits TCP/WS/gRPC/HTTPUpgrade fields, but if they touched
@@ -548,11 +551,12 @@ watch(
 
 <template>
   <a-modal :open="open" :title="title" :ok-text="okText" :cancel-text="t('close')" :confirm-loading="saving"
-    :mask-closable="false" width="min(960px, calc(100vw - 32px))" wrap-class-name="inbound-form-modal"
+    :mask-closable="false" width="min(720px, calc(100vw - 24px))" wrap-class-name="inbound-form-modal"
     @ok="submit" @cancel="close">
-    <a-tabs v-if="inbound && dbForm" default-active-key="basic" class="inbound-tabs">
+    <div v-if="inbound && dbForm" class="inbound-form-stack">
       <!-- ============================== BASICS ============================== -->
-      <a-tab-pane key="basic" :tab="t('pages.xray.basicTemplate')">
+      <section class="inbound-form-section">
+        <h3 class="form-section-title">{{ t('pages.xray.basicTemplate') }}</h3>
         <a-form :colon="false" :label-col="{ sm: { span: 8 } }" :wrapper-col="{ sm: { span: 14 } }">
           <a-form-item :label="t('enable')">
             <a-switch v-model:checked="dbForm.enable" />
@@ -574,7 +578,7 @@ watch(
                 :value="n.id"
                 :disabled="n.status === 'offline'"
               >
-                {{ n.name }}{{ n.status === 'offline' ? ' (offline)' : '' }}
+                {{ n.name }}{{ n.status === 'offline' ? uiText(' (offline)', '（离线）') : '' }}
               </a-select-option>
             </a-select>
           </a-form-item>
@@ -610,26 +614,27 @@ watch(
             <DateTimePicker v-model:value="expiryDate" />
           </a-form-item>
         </a-form>
-      </a-tab-pane>
+      </section>
 
       <!-- ============================== PROTOCOL ============================== -->
       <!-- TUN has no per-protocol form yet (interface/mtu/gateway live in
            settings JSON), so the tab would render empty — hide it until
            a TUN form is added. -->
-      <a-tab-pane v-if="protocol !== Protocols.TUN" key="protocol" :tab="t('pages.inbounds.protocol')">
+      <section v-if="protocol !== Protocols.TUN" class="inbound-form-section">
+        <h3 class="form-section-title">{{ t('pages.inbounds.protocol') }}</h3>
         <!-- Multi-user inbounds: in add mode embed the first client form,
              in edit mode show a count summary. -->
         <template v-if="isMultiUser">
           <a-collapse v-if="mode === 'add' && firstClient" default-active-key="0">
-            <a-collapse-panel key="0" header="Client">
+            <a-collapse-panel key="0" :header="uiText('Client', '客户端')">
               <a-form :colon="false" :label-col="{ sm: { span: 8 } }" :wrapper-col="{ sm: { span: 14 } }">
-                <a-form-item label="Enable">
+                <a-form-item :label="uiText('Enable', '启用')">
                   <a-switch v-model:checked="firstClient.enable" />
                 </a-form-item>
                 <a-form-item>
                   <template #label>
-                    <a-tooltip title="Friendly identifier">
-                      Email
+                    <a-tooltip :title="uiText('Friendly identifier', '用于识别客户端的名称')">
+                      {{ uiText('Email', '邮箱') }}
                       <SyncOutlined class="random-icon" @click="randomEmail(firstClient)" />
                     </a-tooltip>
                   </template>
@@ -638,7 +643,7 @@ watch(
 
                 <a-form-item v-if="protocol === Protocols.VMESS || protocol === Protocols.VLESS">
                   <template #label>
-                    <a-tooltip title="Reset to a fresh UUID">
+                    <a-tooltip :title="uiText('Reset to a fresh UUID', '重新生成 UUID')">
                       ID
                       <SyncOutlined class="random-icon" @click="randomUuid(firstClient)" />
                     </a-tooltip>
@@ -646,7 +651,7 @@ watch(
                   <a-input v-model:value="firstClient.id" />
                 </a-form-item>
 
-                <a-form-item v-if="protocol === Protocols.VMESS" label="Security">
+                <a-form-item v-if="protocol === Protocols.VMESS" :label="uiText('Security', '安全')">
                   <a-select v-model:value="firstClient.security">
                     <a-select-option v-for="k in SECURITY_OPTIONS" :key="k" :value="k">{{ k }}</a-select-option>
                   </a-select>
@@ -654,8 +659,8 @@ watch(
 
                 <a-form-item v-if="protocol === Protocols.TROJAN || protocol === Protocols.SHADOWSOCKS">
                   <template #label>
-                    <a-tooltip title="Reset to a fresh random value">
-                      Password
+                    <a-tooltip :title="uiText('Reset to a fresh random value', '重新生成随机值')">
+                      {{ uiText('Password', '密码') }}
                       <SyncOutlined v-if="protocol === Protocols.SHADOWSOCKS" class="random-icon"
                         @click="randomSSPassword(firstClient)" />
                       <SyncOutlined v-else class="random-icon" @click="randomPasswordSeq(firstClient)" />
@@ -666,25 +671,25 @@ watch(
 
                 <a-form-item v-if="protocol === Protocols.HYSTERIA">
                   <template #label>
-                    <a-tooltip title="Reset"><span>Auth password</span>
+                    <a-tooltip :title="uiText('Reset', '重新生成')"><span>{{ uiText('Auth password', '认证密码') }}</span>
                       <SyncOutlined class="random-icon" @click="randomAuth(firstClient)" />
                     </a-tooltip>
                   </template>
                   <a-input v-model:value="firstClient.auth" />
                 </a-form-item>
 
-                <a-form-item v-if="canEnableTlsFlow" label="Flow">
+                <a-form-item v-if="canEnableTlsFlow" :label="uiText('Flow', '流控')">
                   <a-select v-model:value="firstClient.flow">
-                    <a-select-option value="">none</a-select-option>
+                    <a-select-option value="">{{ uiText('none', '无') }}</a-select-option>
                     <a-select-option v-for="k in FLOW_OPTIONS" :key="k" :value="k">{{ k }}</a-select-option>
                   </a-select>
                 </a-form-item>
 
-                <a-form-item v-if="protocol === Protocols.VLESS" label="Reverse tag">
-                  <a-input v-model:value="firstClient.reverseTag" placeholder="Optional reverse tag" />
+                <a-form-item v-if="protocol === Protocols.VLESS" :label="uiText('Reverse tag', '反向标签')">
+                  <a-input v-model:value="firstClient.reverseTag" :placeholder="uiText('Optional reverse tag', '可选的反向标签')" />
                 </a-form-item>
 
-                <a-form-item label="Subscription">
+                <a-form-item :label="uiText('Subscription', '订阅标识')">
                   <a-input v-model:value="firstClient.subId">
                     <template #addonAfter>
                       <SyncOutlined class="random-icon" @click="randomSubId(firstClient)" />
@@ -692,15 +697,15 @@ watch(
                   </a-input>
                 </a-form-item>
 
-                <a-form-item label="Comment">
+                <a-form-item :label="uiText('Comment', '备注')">
                   <a-input v-model:value="firstClient.comment" />
                 </a-form-item>
 
-                <a-form-item label="Total traffic (GB)">
+                <a-form-item :label="uiText('Total traffic (GB)', '总流量（GB）')">
                   <a-input-number v-model:value="clientTotalGB" :min="0" :step="0.1" />
                 </a-form-item>
 
-                <a-form-item label="Expiry">
+                <a-form-item :label="uiText('Expiry', '到期时间')">
                   <DateTimePicker v-model:value="clientExpiryDate" />
                 </a-form-item>
               </a-form>
@@ -708,14 +713,14 @@ watch(
           </a-collapse>
 
           <a-collapse v-else>
-            <a-collapse-panel key="summary" :header="`Clients: ${clientsArray.length}`">
+            <a-collapse-panel key="summary" :header="`${uiText('Clients', '客户端')}：${clientsArray.length}`">
               <table class="client-summary">
                 <thead>
                   <tr>
-                    <th>Email</th>
-                    <th>{{ protocol === Protocols.TROJAN || protocol === Protocols.SHADOWSOCKS ? 'Password' : (protocol
+                    <th>{{ uiText('Email', '邮箱') }}</th>
+                    <th>{{ protocol === Protocols.TROJAN || protocol === Protocols.SHADOWSOCKS ? uiText('Password', '密码') : (protocol
                       ===
-                      Protocols.HYSTERIA ? 'Auth' : 'ID') }}</th>
+                      Protocols.HYSTERIA ? uiText('Auth', '认证') : 'ID') }}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -732,10 +737,10 @@ watch(
         <!-- VLess decryption / encryption -->
         <a-form v-if="protocol === Protocols.VLESS" :colon="false" :label-col="{ sm: { span: 8 } }"
           :wrapper-col="{ sm: { span: 14 } }" class="mt-12">
-          <a-form-item label="Decryption">
+          <a-form-item :label="uiText('Decryption', '解密')">
             <a-input v-model:value="inbound.settings.decryption" />
           </a-form-item>
-          <a-form-item label="Encryption">
+          <a-form-item :label="uiText('Encryption', '加密')">
             <a-input v-model:value="inbound.settings.encryption" />
           </a-form-item>
           <a-form-item label=" ">
@@ -746,7 +751,7 @@ watch(
               <a-button type="primary" :loading="saving" @click="getNewVlessEnc('ML-KEM-768, Post-Quantum')">
                 ML-KEM-768
               </a-button>
-              <a-button danger @click="clearVlessEnc">Clear</a-button>
+              <a-button danger @click="clearVlessEnc">{{ uiText('Clear', '清除') }}</a-button>
             </a-space>
           </a-form-item>
         </a-form>
@@ -754,19 +759,19 @@ watch(
         <!-- Shadowsocks shared fields (method/network/ivCheck) -->
         <a-form v-if="protocol === Protocols.SHADOWSOCKS" :colon="false" :label-col="{ sm: { span: 8 } }"
           :wrapper-col="{ sm: { span: 14 } }" class="mt-12">
-          <a-form-item label="Encryption method">
+          <a-form-item :label="uiText('Encryption method', '加密方式')">
             <a-select v-model:value="inbound.settings.method" @change="onSSMethodChange">
               <a-select-option v-for="(m, k) in SSMethods" :key="k" :value="m">{{ k }}</a-select-option>
             </a-select>
           </a-form-item>
           <a-form-item v-if="inbound.isSS2022">
             <template #label>
-              Password
+              {{ uiText('Password', '密码') }}
               <SyncOutlined class="random-icon" @click="randomSSPassword(inbound.settings)" />
             </template>
             <a-input v-model:value="inbound.settings.password" />
           </a-form-item>
-          <a-form-item label="Network">
+          <a-form-item :label="uiText('Network', '网络')">
             <a-select v-model:value="inbound.settings.network" :style="{ width: '120px' }">
               <a-select-option value="tcp,udp">TCP, UDP</a-select-option>
               <a-select-option value="tcp">TCP</a-select-option>
@@ -781,22 +786,22 @@ watch(
         <!-- HTTP / Mixed accounts -->
         <a-form v-if="protocol === Protocols.HTTP || protocol === Protocols.MIXED" :colon="false"
           :label-col="{ sm: { span: 8 } }" :wrapper-col="{ sm: { span: 14 } }" class="mt-12">
-          <a-form-item label="Accounts">
+          <a-form-item :label="uiText('Accounts', '账户')">
             <a-button size="small" @click="protocol === Protocols.HTTP
               ? inbound.settings.addAccount(new Inbound.HttpSettings.HttpAccount())
               : inbound.settings.addAccount(new Inbound.MixedSettings.SocksAccount())">
               <template #icon>
                 <PlusOutlined />
               </template>
-              Add
+              {{ uiText('Add', '添加') }}
             </a-button>
           </a-form-item>
           <a-form-item :wrapper-col="{ span: 24 }">
             <a-input-group v-for="(account, idx) in inbound.settings.accounts" :key="idx" compact class="mb-8">
-              <a-input :style="{ width: '45%' }" v-model:value="account.user" placeholder="Username">
+              <a-input :style="{ width: '45%' }" v-model:value="account.user" :placeholder="uiText('Username', '用户名')">
                 <template #addonBefore>{{ idx + 1 }}</template>
               </a-input>
-              <a-input :style="{ width: '45%' }" v-model:value="account.pass" placeholder="Password" />
+              <a-input :style="{ width: '45%' }" v-model:value="account.pass" :placeholder="uiText('Password', '密码')" />
               <a-button @click="inbound.settings.delAccount(idx)">
                 <template #icon>
                   <MinusOutlined />
@@ -804,11 +809,11 @@ watch(
               </a-button>
             </a-input-group>
           </a-form-item>
-          <a-form-item v-if="protocol === Protocols.HTTP" label="Allow transparent">
+          <a-form-item v-if="protocol === Protocols.HTTP" :label="uiText('Allow transparent', '允许透明代理')">
             <a-switch v-model:checked="inbound.settings.allowTransparent" />
           </a-form-item>
           <template v-if="protocol === Protocols.MIXED">
-            <a-form-item label="Auth">
+            <a-form-item :label="uiText('Auth', '认证方式')">
               <a-select v-model:value="inbound.settings.auth">
                 <a-select-option value="noauth">noauth</a-select-option>
                 <a-select-option value="password">password</a-select-option>
@@ -817,7 +822,7 @@ watch(
             <a-form-item label="UDP">
               <a-switch v-model:checked="inbound.settings.udp" />
             </a-form-item>
-            <a-form-item v-if="inbound.settings.udp" label="UDP IP">
+            <a-form-item v-if="inbound.settings.udp" :label="uiText('UDP IP', 'UDP 地址')">
               <a-input v-model:value="inbound.settings.ip" />
             </a-form-item>
           </template>
@@ -826,20 +831,20 @@ watch(
         <!-- Tunnel -->
         <a-form v-if="protocol === Protocols.TUNNEL" :colon="false" :label-col="{ sm: { span: 8 } }"
           :wrapper-col="{ sm: { span: 14 } }" class="mt-12">
-          <a-form-item label="Address">
+          <a-form-item :label="uiText('Address', '地址')">
             <a-input v-model:value="inbound.settings.address" />
           </a-form-item>
-          <a-form-item label="Destination port">
+          <a-form-item :label="uiText('Destination port', '目标端口')">
             <a-input-number v-model:value="inbound.settings.port" :min="1" :max="65535" />
           </a-form-item>
-          <a-form-item label="Network">
+          <a-form-item :label="uiText('Network', '网络')">
             <a-select v-model:value="inbound.settings.network">
               <a-select-option value="tcp,udp">TCP, UDP</a-select-option>
               <a-select-option value="tcp">TCP</a-select-option>
               <a-select-option value="udp">UDP</a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item label="Follow redirect">
+          <a-form-item :label="uiText('Follow redirect', '跟随重定向')">
             <a-switch v-model:checked="inbound.settings.followRedirect" />
           </a-form-item>
         </a-form>
@@ -849,48 +854,48 @@ watch(
           :wrapper-col="{ sm: { span: 14 } }" class="mt-12">
           <a-form-item>
             <template #label>
-              Secret key
+              {{ uiText('Secret key', '私钥') }}
               <SyncOutlined class="random-icon" @click="regenInboundWg" />
             </template>
             <a-input v-model:value="inbound.settings.secretKey" />
           </a-form-item>
-          <a-form-item label="Public key">
+          <a-form-item :label="uiText('Public key', '公钥')">
             <a-input v-model:value="inbound.settings.pubKey" disabled />
           </a-form-item>
           <a-form-item label="MTU">
             <a-input-number v-model:value="inbound.settings.mtu" />
           </a-form-item>
-          <a-form-item label="No-kernel TUN">
+          <a-form-item :label="uiText('No-kernel TUN', '无内核 TUN')">
             <a-switch v-model:checked="inbound.settings.noKernelTun" />
           </a-form-item>
-          <a-form-item label="Peers">
+          <a-form-item :label="uiText('Peers', '对等节点')">
             <a-button size="small" @click="inbound.settings.addPeer()">
               <template #icon>
                 <PlusOutlined />
               </template>
-              Add peer
+              {{ uiText('Add peer', '添加对等节点') }}
             </a-button>
           </a-form-item>
           <div v-for="(peer, idx) in inbound.settings.peers" :key="idx" class="wg-peer">
             <a-divider style="margin: 8px 0">
-              Peer {{ idx + 1 }}
+              {{ uiText('Peer', '对等节点') }} {{ idx + 1 }}
               <DeleteOutlined v-if="inbound.settings.peers.length > 1" class="danger-icon"
                 @click="inbound.settings.delPeer(idx)" />
             </a-divider>
             <a-form-item>
               <template #label>
-                Secret key
+                {{ uiText('Secret key', '私钥') }}
                 <SyncOutlined class="random-icon" @click="regenWgKeypair(peer)" />
               </template>
               <a-input v-model:value="peer.privateKey" />
             </a-form-item>
-            <a-form-item label="Public key">
+            <a-form-item :label="uiText('Public key', '公钥')">
               <a-input v-model:value="peer.publicKey" />
             </a-form-item>
             <a-form-item label="PSK">
               <a-input v-model:value="peer.psk" />
             </a-form-item>
-            <a-form-item label="Allowed IPs">
+            <a-form-item :label="uiText('Allowed IPs', '允许的 IP')">
               <a-button size="small" @click="peer.allowedIPs.push('')">
                 <template #icon>
                   <PlusOutlined />
@@ -906,7 +911,7 @@ watch(
                 </template>
               </a-input>
             </a-form-item>
-            <a-form-item label="Keep-alive">
+            <a-form-item :label="uiText('Keep-alive', '保持连接')">
               <a-input-number v-model:value="peer.keepAlive" :min="0" />
             </a-form-item>
           </div>
@@ -917,66 +922,66 @@ watch(
           <a-divider style="margin: 12px 0" />
           <div class="fallbacks-header">
             <a-tooltip
-              title="Route incoming TLS traffic to a backend when it doesn't match a valid VLESS/Trojan handshake. Match by SNI, ALPN, and HTTP path; the most precise rule wins. Fallbacks require TCP+TLS transport.">
+              :title="uiText('Route incoming TLS traffic to a backend when it does not match a valid VLESS/Trojan handshake. Match by SNI, ALPN, and HTTP path; the most precise rule wins. Fallbacks require TCP+TLS transport.', '当传入的 TLS 流量不符合有效的 VLESS/Trojan 握手时，将其转发到后端。可按 SNI、ALPN 和 HTTP 路径匹配，优先使用最精确的规则。回落要求使用 TCP+TLS 传输。')">
               <span class="fallbacks-title">
-                Fallbacks ({{ inbound.settings.fallbacks.length }})
+                {{ uiText('Fallbacks', '回落配置') }} ({{ inbound.settings.fallbacks.length }})
               </span>
             </a-tooltip>
             <a-button type="primary" size="small" @click="addFallback">
               <template #icon>
                 <PlusOutlined />
               </template>
-              Add
+              {{ uiText('Add', '添加') }}
             </a-button>
           </div>
 
           <a-form v-for="(fallback, idx) in inbound.settings.fallbacks" :key="idx" :colon="false"
             :label-col="{ sm: { span: 8 } }" :wrapper-col="{ sm: { span: 14 } }">
             <a-divider style="margin: 0">
-              Fallback {{ idx + 1 }}
+              {{ uiText('Fallback', '回落') }} {{ idx + 1 }}
               <DeleteOutlined class="danger-icon" @click="delFallback(idx)" />
             </a-divider>
 
             <a-form-item>
               <template #label>
-                <a-tooltip title="Match TLS SNI (server name). Leave empty to match any SNI.">
+                <a-tooltip :title="uiText('Match TLS SNI (server name). Leave empty to match any SNI.', '匹配 TLS SNI（服务器名称）。留空表示匹配任意 SNI。')">
                   SNI
                 </a-tooltip>
               </template>
-              <a-input v-model:value.trim="fallback.name" placeholder="any (leave empty)" />
+              <a-input v-model:value.trim="fallback.name" :placeholder="uiText('any (leave empty)', '任意（留空）')" />
             </a-form-item>
 
             <a-form-item>
               <template #label>
                 <a-tooltip
-                  title="Match TLS ALPN. 'any' = no ALPN constraint. Use h2/http/1.1 split when the inbound advertises both.">
+                  :title="uiText(`Match TLS ALPN. 'any' means no ALPN constraint. Use h2/http/1.1 split when the inbound advertises both.`, '匹配 TLS ALPN。“任意”表示不限制 ALPN；当入站同时声明两者时，可用 h2/http/1.1 分流。')">
                   ALPN
                 </a-tooltip>
               </template>
               <a-select v-model:value="fallback.alpn">
-                <a-select-option value="">any</a-select-option>
+                <a-select-option value="">{{ uiText('any', '任意') }}</a-select-option>
                 <a-select-option value="h2">h2</a-select-option>
                 <a-select-option value="http/1.1">http/1.1</a-select-option>
               </a-select>
             </a-form-item>
 
             <a-form-item :validate-status="fallback.path && !fallback.path.startsWith('/') ? 'error' : ''"
-              :help="fallback.path && !fallback.path.startsWith('/') ? 'Path must start with /' : ''">
+              :help="fallback.path && !fallback.path.startsWith('/') ? uiText('Path must start with /', '路径必须以 / 开头') : ''">
               <template #label>
                 <a-tooltip
-                  title="Match the HTTP request path of the first packet. Must start with '/'. Leave empty to match any.">
-                  Path
+                  :title="uiText(`Match the HTTP request path of the first packet. Must start with '/'. Leave empty to match any.`, '匹配首个数据包的 HTTP 请求路径。路径必须以 / 开头，留空表示匹配任意路径。')">
+                  {{ uiText('Path', '路径') }}
                 </a-tooltip>
               </template>
-              <a-input v-model:value.trim="fallback.path" placeholder="any (leave empty) or /ws" />
+              <a-input v-model:value.trim="fallback.path" :placeholder="uiText('any (leave empty) or /ws', '任意（留空）或 /ws')" />
             </a-form-item>
 
             <a-form-item :validate-status="!fallback.dest ? 'error' : ''"
-              :help="!fallback.dest ? 'Destination is required' : ''">
+              :help="!fallback.dest ? uiText('Destination is required', '必须填写目标地址') : ''">
               <template #label>
                 <a-tooltip
-                  title="Where matching traffic is forwarded. Accepts a port number (80), an addr:port (127.0.0.1:8080), or a Unix socket path (/dev/shm/x.sock or @abstract).">
-                  Destination
+                  :title="uiText('Where matching traffic is forwarded. Accepts a port number (80), an address and port (127.0.0.1:8080), or a Unix socket path (/dev/shm/x.sock or @abstract).', '匹配流量的转发目标。可填写端口（80）、地址和端口（127.0.0.1:8080），或 Unix 套接字路径（/dev/shm/x.sock 或 @abstract）。')">
+                  {{ uiText('Destination', '目标地址') }}
                 </a-tooltip>
               </template>
               <a-input v-model:value.trim="fallback.dest" placeholder="80 | 127.0.0.1:8080 | /dev/shm/x.sock" />
@@ -985,25 +990,25 @@ watch(
             <a-form-item>
               <template #label>
                 <a-tooltip
-                  title="PROXY protocol version sent to the destination. Off (0) for plain TCP; v1/v2 to preserve client IP if the backend supports it.">
+                  :title="uiText('PROXY protocol version sent to the destination. Off (0) for plain TCP; v1/v2 preserves the client IP when supported by the backend.', '发送到目标的 PROXY 协议版本。关闭（0）表示普通 TCP；后端支持时可用 v1/v2 保留客户端 IP。')">
                   PROXY
                 </a-tooltip>
               </template>
               <a-select v-model:value="fallback.xver">
-                <a-select-option :value="0">Off</a-select-option>
+                <a-select-option :value="0">{{ uiText('Off', '关闭') }}</a-select-option>
                 <a-select-option :value="1">v1</a-select-option>
                 <a-select-option :value="2">v2</a-select-option>
               </a-select>
             </a-form-item>
           </a-form>
         </template>
-      </a-tab-pane>
+      </section>
 
       <!-- ============================== STREAM ============================== -->
-      <a-tab-pane v-if="canEnableStream" key="stream"
-        tab="Stream"><!-- "Stream" stays literal — it's a wire-format identifier -->
+      <section v-if="canEnableStream" class="inbound-form-section">
+        <h3 class="form-section-title">{{ uiText('Stream', '传输配置') }}</h3>
         <a-form :colon="false" :label-col="{ sm: { span: 8 } }" :wrapper-col="{ sm: { span: 14 } }">
-          <a-form-item v-if="protocol !== Protocols.HYSTERIA" label="Transmission">
+          <a-form-item v-if="protocol !== Protocols.HYSTERIA" :label="uiText('Transmission', '传输方式')">
             <a-select v-model:value="network" :style="{ width: '75%' }">
               <a-select-option value="tcp">TCP (RAW)</a-select-option>
               <a-select-option value="kcp">mKCP</a-select-option>
@@ -1016,7 +1021,7 @@ watch(
 
           <!-- TCP (RAW) — proxy-protocol + optional HTTP camouflage with full request/response editor -->
           <template v-if="network === 'tcp'">
-            <a-form-item v-if="canEnableTls" label="Proxy Protocol">
+            <a-form-item v-if="canEnableTls" :label="uiText('Proxy Protocol', '代理协议')">
               <a-switch v-model:checked="inbound.stream.tcp.acceptProxyProtocol" />
             </a-form-item>
             <a-form-item :label="`HTTP ${t('camouflage')}`">
@@ -1126,23 +1131,23 @@ watch(
             <a-form-item label="TTI (ms)">
               <a-input-number v-model:value="inbound.stream.kcp.tti" :min="10" :max="100" />
             </a-form-item>
-            <a-form-item label="Uplink (MB/s)">
+            <a-form-item :label="uiText('Uplink (MB/s)', '上行（MB/s）')">
               <a-input-number v-model:value="inbound.stream.kcp.upCap" :min="0" />
             </a-form-item>
-            <a-form-item label="Downlink (MB/s)">
+            <a-form-item :label="uiText('Downlink (MB/s)', '下行（MB/s）')">
               <a-input-number v-model:value="inbound.stream.kcp.downCap" :min="0" />
             </a-form-item>
-            <a-form-item label="CWND Multiplier">
+            <a-form-item :label="uiText('CWND Multiplier', 'CWND 倍数')">
               <a-input-number v-model:value="inbound.stream.kcp.cwndMultiplier" :min="1" />
             </a-form-item>
-            <a-form-item label="Max Sending Window">
+            <a-form-item :label="uiText('Max Sending Window', '最大发送窗口')">
               <a-input-number v-model:value="inbound.stream.kcp.maxSendingWindow" :min="0" />
             </a-form-item>
           </template>
 
           <!-- WebSocket -->
           <template v-if="network === 'ws'">
-            <a-form-item label="Proxy Protocol">
+            <a-form-item :label="uiText('Proxy Protocol', '代理协议')">
               <a-switch v-model:checked="inbound.stream.ws.acceptProxyProtocol" />
             </a-form-item>
             <a-form-item :label="t('host')">
@@ -1151,7 +1156,7 @@ watch(
             <a-form-item :label="t('path')">
               <a-input v-model:value="inbound.stream.ws.path" />
             </a-form-item>
-            <a-form-item label="Heartbeat Period">
+            <a-form-item :label="uiText('Heartbeat Period', '心跳周期')">
               <a-input-number v-model:value="inbound.stream.ws.heartbeatPeriod" :min="0" />
             </a-form-item>
             <a-form-item :label="t('pages.inbounds.stream.tcp.requestHeader')">
@@ -1180,20 +1185,20 @@ watch(
 
           <!-- gRPC -->
           <template v-if="network === 'grpc'">
-            <a-form-item label="Service Name">
+            <a-form-item :label="uiText('Service Name', '服务名称')">
               <a-input v-model:value="inbound.stream.grpc.serviceName" />
             </a-form-item>
-            <a-form-item label="Authority">
+            <a-form-item :label="uiText('Authority', '授权域名')">
               <a-input v-model:value="inbound.stream.grpc.authority" />
             </a-form-item>
-            <a-form-item label="Multi Mode">
+            <a-form-item :label="uiText('Multi Mode', '多路模式')">
               <a-switch v-model:checked="inbound.stream.grpc.multiMode" />
             </a-form-item>
           </template>
 
           <!-- HTTPUpgrade -->
           <template v-if="network === 'httpupgrade'">
-            <a-form-item label="Proxy Protocol">
+            <a-form-item :label="uiText('Proxy Protocol', '代理协议')">
               <a-switch v-model:checked="inbound.stream.httpupgrade.acceptProxyProtocol" />
             </a-form-item>
             <a-form-item :label="t('host')">
@@ -1257,57 +1262,57 @@ watch(
                 </a-button>
               </a-input-group>
             </a-form-item>
-            <a-form-item label="Mode">
+            <a-form-item :label="uiText('Mode', '模式')">
               <a-select v-model:value="inbound.stream.xhttp.mode" :style="{ width: '50%' }">
                 <a-select-option v-for="m in MODE_OPTIONS" :key="m" :value="m">{{ m }}</a-select-option>
               </a-select>
             </a-form-item>
-            <a-form-item v-if="inbound.stream.xhttp.mode === 'packet-up'" label="Max Buffered Upload">
+            <a-form-item v-if="inbound.stream.xhttp.mode === 'packet-up'" :label="uiText('Max Buffered Upload', '最大缓冲上传数')">
               <a-input-number v-model:value="inbound.stream.xhttp.scMaxBufferedPosts" />
             </a-form-item>
-            <a-form-item v-if="inbound.stream.xhttp.mode === 'packet-up'" label="Max Upload Size (Byte)">
+            <a-form-item v-if="inbound.stream.xhttp.mode === 'packet-up'" :label="uiText('Max Upload Size (Byte)', '最大上传大小（字节）')">
               <a-input v-model:value="inbound.stream.xhttp.scMaxEachPostBytes" />
             </a-form-item>
-            <a-form-item v-if="inbound.stream.xhttp.mode === 'stream-up'" label="Stream-Up Server">
+            <a-form-item v-if="inbound.stream.xhttp.mode === 'stream-up'" :label="uiText('Stream-Up Server', '流式上传服务器时间')">
               <a-input v-model:value="inbound.stream.xhttp.scStreamUpServerSecs" />
             </a-form-item>
-            <a-form-item label="Server Max Header Bytes">
+            <a-form-item :label="uiText('Server Max Header Bytes', '服务器最大请求头字节数')">
               <a-input-number v-model:value="inbound.stream.xhttp.serverMaxHeaderBytes" :min="0"
-                placeholder="0 (default)" />
+                :placeholder="uiText('0 (default)', '0（默认）')" />
             </a-form-item>
-            <a-form-item label="Padding Bytes">
+            <a-form-item :label="uiText('Padding Bytes', '填充字节')">
               <a-input v-model:value="inbound.stream.xhttp.xPaddingBytes" />
             </a-form-item>
-            <a-form-item label="Padding Obfs Mode">
+            <a-form-item :label="uiText('Padding Obfs Mode', '填充混淆模式')">
               <a-switch v-model:checked="inbound.stream.xhttp.xPaddingObfsMode" />
             </a-form-item>
             <template v-if="inbound.stream.xhttp.xPaddingObfsMode">
-              <a-form-item label="Padding Key">
+              <a-form-item :label="uiText('Padding Key', '填充键名')">
                 <a-input v-model:value="inbound.stream.xhttp.xPaddingKey" placeholder="x_padding" />
               </a-form-item>
-              <a-form-item label="Padding Header">
+              <a-form-item :label="uiText('Padding Header', '填充请求头')">
                 <a-input v-model:value="inbound.stream.xhttp.xPaddingHeader" placeholder="X-Padding" />
               </a-form-item>
-              <a-form-item label="Padding Placement">
+              <a-form-item :label="uiText('Padding Placement', '填充位置')">
                 <a-select v-model:value="inbound.stream.xhttp.xPaddingPlacement">
-                  <a-select-option value="">Default (queryInHeader)</a-select-option>
+                  <a-select-option value="">{{ uiText('Default (queryInHeader)', '默认（queryInHeader）') }}</a-select-option>
                   <a-select-option value="queryInHeader">queryInHeader</a-select-option>
                   <a-select-option value="header">header</a-select-option>
                   <a-select-option value="cookie">cookie</a-select-option>
                   <a-select-option value="query">query</a-select-option>
                 </a-select>
               </a-form-item>
-              <a-form-item label="Padding Method">
+              <a-form-item :label="uiText('Padding Method', '填充方式')">
                 <a-select v-model:value="inbound.stream.xhttp.xPaddingMethod">
-                  <a-select-option value="">Default (repeat-x)</a-select-option>
+                  <a-select-option value="">{{ uiText('Default (repeat-x)', '默认（repeat-x）') }}</a-select-option>
                   <a-select-option value="repeat-x">repeat-x</a-select-option>
                   <a-select-option value="tokenish">tokenish</a-select-option>
                 </a-select>
               </a-form-item>
             </template>
-            <a-form-item label="Session Placement">
+            <a-form-item :label="uiText('Session Placement', '会话标识位置')">
               <a-select v-model:value="inbound.stream.xhttp.sessionPlacement">
-                <a-select-option value="">Default (path)</a-select-option>
+                <a-select-option value="">{{ uiText('Default (path)', '默认（path）') }}</a-select-option>
                 <a-select-option value="path">path</a-select-option>
                 <a-select-option value="header">header</a-select-option>
                 <a-select-option value="cookie">cookie</a-select-option>
@@ -1316,12 +1321,12 @@ watch(
             </a-form-item>
             <a-form-item
               v-if="inbound.stream.xhttp.sessionPlacement && inbound.stream.xhttp.sessionPlacement !== 'path'"
-              label="Session Key">
+              :label="uiText('Session Key', '会话键名')">
               <a-input v-model:value="inbound.stream.xhttp.sessionKey" placeholder="x_session" />
             </a-form-item>
-            <a-form-item label="Sequence Placement">
+            <a-form-item :label="uiText('Sequence Placement', '序列标识位置')">
               <a-select v-model:value="inbound.stream.xhttp.seqPlacement">
-                <a-select-option value="">Default (path)</a-select-option>
+                <a-select-option value="">{{ uiText('Default (path)', '默认（path）') }}</a-select-option>
                 <a-select-option value="path">path</a-select-option>
                 <a-select-option value="header">header</a-select-option>
                 <a-select-option value="cookie">cookie</a-select-option>
@@ -1329,12 +1334,12 @@ watch(
               </a-select>
             </a-form-item>
             <a-form-item v-if="inbound.stream.xhttp.seqPlacement && inbound.stream.xhttp.seqPlacement !== 'path'"
-              label="Sequence Key">
+              :label="uiText('Sequence Key', '序列键名')">
               <a-input v-model:value="inbound.stream.xhttp.seqKey" placeholder="x_seq" />
             </a-form-item>
-            <a-form-item v-if="inbound.stream.xhttp.mode === 'packet-up'" label="Uplink Data Placement">
+            <a-form-item v-if="inbound.stream.xhttp.mode === 'packet-up'" :label="uiText('Uplink Data Placement', '上行数据位置')">
               <a-select v-model:value="inbound.stream.xhttp.uplinkDataPlacement">
-                <a-select-option value="">Default (body)</a-select-option>
+                <a-select-option value="">{{ uiText('Default (body)', '默认（body）') }}</a-select-option>
                 <a-select-option value="body">body</a-select-option>
                 <a-select-option value="header">header</a-select-option>
                 <a-select-option value="cookie">cookie</a-select-option>
@@ -1343,16 +1348,16 @@ watch(
             </a-form-item>
             <a-form-item
               v-if="inbound.stream.xhttp.mode === 'packet-up' && inbound.stream.xhttp.uplinkDataPlacement && inbound.stream.xhttp.uplinkDataPlacement !== 'body'"
-              label="Uplink Data Key">
+              :label="uiText('Uplink Data Key', '上行数据键名')">
               <a-input v-model:value="inbound.stream.xhttp.uplinkDataKey" placeholder="x_data" />
             </a-form-item>
-            <a-form-item label="No SSE Header">
+            <a-form-item :label="uiText('No SSE Header', '不发送 SSE 请求头')">
               <a-switch v-model:checked="inbound.stream.xhttp.noSSEHeader" />
             </a-form-item>
           </template>
 
           <!-- ====== Security section ====== -->
-          <a-form-item label="Security">
+          <a-form-item :label="uiText('Security', '安全类型')">
             <a-select v-model:value="security" :style="{ width: '160px' }" :disabled="!canEnableTls">
               <a-select-option value="none">none</a-select-option>
               <a-select-option value="tls">tls</a-select-option>
@@ -1364,14 +1369,14 @@ watch(
             <a-form-item label="SNI">
               <a-input v-model:value="inbound.stream.tls.sni" placeholder="Server Name Indication" />
             </a-form-item>
-            <a-form-item label="Cipher Suites">
+            <a-form-item :label="uiText('Cipher Suites', '密码套件')">
               <a-select v-model:value="inbound.stream.tls.cipherSuites">
-                <a-select-option value="">Auto</a-select-option>
+                <a-select-option value="">{{ uiText('Auto', '自动') }}</a-select-option>
                 <a-select-option v-for="[label, val] in CIPHER_SUITES" :key="val" :value="val">{{ label
                 }}</a-select-option>
               </a-select>
             </a-form-item>
-            <a-form-item label="Min/Max Version">
+            <a-form-item :label="uiText('Min/Max Version', '最低/最高版本')">
               <a-input-group compact>
                 <a-select v-model:value="inbound.stream.tls.minVersion" :style="{ width: '50%' }">
                   <a-select-option v-for="v in TLS_VERSIONS" :key="v" :value="v">{{ v }}</a-select-option>
@@ -1383,7 +1388,7 @@ watch(
             </a-form-item>
             <a-form-item label="uTLS">
               <a-select v-model:value="inbound.stream.tls.settings.fingerprint" :style="{ width: '100%' }">
-                <a-select-option value="">None</a-select-option>
+                <a-select-option value="">{{ uiText('None', '无') }}</a-select-option>
                 <a-select-option v-for="fp in FINGERPRINTS" :key="fp" :value="fp">{{ fp }}</a-select-option>
               </a-select>
             </a-form-item>
@@ -1393,13 +1398,13 @@ watch(
                 <a-select-option v-for="a in ALPNS" :key="a" :value="a">{{ a }}</a-select-option>
               </a-select>
             </a-form-item>
-            <a-form-item label="Reject Unknown SNI">
+            <a-form-item :label="uiText('Reject Unknown SNI', '拒绝未知 SNI')">
               <a-switch v-model:checked="inbound.stream.tls.rejectUnknownSni" />
             </a-form-item>
-            <a-form-item label="Disable System Root">
+            <a-form-item :label="uiText('Disable System Root', '禁用系统根证书')">
               <a-switch v-model:checked="inbound.stream.tls.disableSystemRoot" />
             </a-form-item>
-            <a-form-item label="Session Resumption">
+            <a-form-item :label="uiText('Session Resumption', '会话恢复')">
               <a-switch v-model:checked="inbound.stream.tls.enableSessionResumption" />
             </a-form-item>
 
@@ -1448,15 +1453,15 @@ watch(
                   <a-textarea v-model:value="cert.key" :auto-size="{ minRows: 3, maxRows: 8 }" />
                 </a-form-item>
               </template>
-              <a-form-item label="One Time Loading">
+              <a-form-item :label="uiText('One Time Loading', '仅加载一次')">
                 <a-switch v-model:checked="cert.oneTimeLoading" />
               </a-form-item>
-              <a-form-item label="Usage Option">
+              <a-form-item :label="uiText('Usage Option', '用途选项')">
                 <a-select v-model:value="cert.usage" :style="{ width: '50%' }">
                   <a-select-option v-for="u in USAGES" :key="u" :value="u">{{ u }}</a-select-option>
                 </a-select>
               </a-form-item>
-              <a-form-item v-if="cert.usage === 'issue'" label="Build Chain">
+              <a-form-item v-if="cert.usage === 'issue'" :label="uiText('Build Chain', '构建证书链')">
                 <a-switch v-model:checked="cert.buildChain" />
               </a-form-item>
             </template>
@@ -1471,14 +1476,14 @@ watch(
             </a-form-item>
             <a-form-item label=" ">
               <a-space>
-                <a-button type="primary" :loading="saving" @click="getNewEchCert">Get New ECH Cert</a-button>
-                <a-button danger @click="clearEchCert">Clear</a-button>
+                <a-button type="primary" :loading="saving" @click="getNewEchCert">{{ uiText('Get New ECH Cert', '生成新 ECH 证书') }}</a-button>
+                <a-button danger @click="clearEchCert">{{ uiText('Clear', '清除') }}</a-button>
               </a-space>
             </a-form-item>
           </template>
 
           <template v-if="security === 'reality' && inbound.stream.reality">
-            <a-form-item label="Show">
+            <a-form-item :label="uiText('Show', '显示调试信息')">
               <a-switch v-model:checked="inbound.stream.reality.show" />
             </a-form-item>
             <a-form-item label="Xver">
@@ -1491,7 +1496,7 @@ watch(
             </a-form-item>
             <a-form-item>
               <template #label>
-                Target
+                {{ uiText('Target', '目标地址') }}
                 <SyncOutlined class="random-icon" @click="randomizeRealityTarget" />
               </template>
               <a-input v-model:value="inbound.stream.reality.target" />
@@ -1503,18 +1508,18 @@ watch(
               </template>
               <a-input v-model:value="inbound.stream.reality.serverNames" />
             </a-form-item>
-            <a-form-item label="Max Time Diff (ms)">
+            <a-form-item :label="uiText('Max Time Diff (ms)', '最大时间差（毫秒）')">
               <a-input-number v-model:value="inbound.stream.reality.maxTimediff" :min="0" />
             </a-form-item>
-            <a-form-item label="Min Client Ver">
+            <a-form-item :label="uiText('Min Client Ver', '最低客户端版本')">
               <a-input v-model:value="inbound.stream.reality.minClientVer" placeholder="25.9.11" />
             </a-form-item>
-            <a-form-item label="Max Client Ver">
+            <a-form-item :label="uiText('Max Client Ver', '最高客户端版本')">
               <a-input v-model:value="inbound.stream.reality.maxClientVer" placeholder="25.9.11" />
             </a-form-item>
             <a-form-item>
               <template #label>
-                Short IDs
+                {{ uiText('Short IDs', '短 ID') }}
                 <SyncOutlined class="random-icon" @click="randomizeShortIds" />
               </template>
               <a-textarea v-model:value="inbound.stream.reality.shortIds" :auto-size="{ minRows: 1, maxRows: 4 }" />
@@ -1531,8 +1536,8 @@ watch(
             </a-form-item>
             <a-form-item label=" ">
               <a-space>
-                <a-button type="primary" :loading="saving" @click="genRealityKeypair">Get New Cert</a-button>
-                <a-button danger @click="clearRealityKeypair">Clear</a-button>
+                <a-button type="primary" :loading="saving" @click="genRealityKeypair">{{ uiText('Get New Cert', '生成新密钥') }}</a-button>
+                <a-button danger @click="clearRealityKeypair">{{ uiText('Clear', '清除') }}</a-button>
               </a-space>
             </a-form-item>
             <a-form-item label="mldsa65 Seed">
@@ -1544,14 +1549,14 @@ watch(
             </a-form-item>
             <a-form-item label=" ">
               <a-space>
-                <a-button type="primary" :loading="saving" @click="genMldsa65">Get New Seed</a-button>
-                <a-button danger @click="clearMldsa65">Clear</a-button>
+                <a-button type="primary" :loading="saving" @click="genMldsa65">{{ uiText('Get New Seed', '生成新种子') }}</a-button>
+                <a-button danger @click="clearMldsa65">{{ uiText('Clear', '清除') }}</a-button>
               </a-space>
             </a-form-item>
           </template>
 
           <!-- ====== External Proxy ====== -->
-          <a-form-item label="External Proxy">
+          <a-form-item :label="uiText('External Proxy', '外部代理')">
             <a-switch v-model:checked="externalProxy" />
             <a-button v-if="externalProxy" size="small" type="primary" :style="{ marginLeft: '10px' }"
               @click="inbound.stream.externalProxy.push({ forceTls: 'same', dest: '', port: 443, remark: '' })">
@@ -1563,7 +1568,7 @@ watch(
           <a-form-item v-if="externalProxy" :wrapper-col="{ span: 24 }">
             <a-input-group v-for="(row, idx) in inbound.stream.externalProxy" :key="`ep-${idx}`" compact
               :style="{ margin: '8px 0' }">
-              <a-tooltip title="Force TLS">
+              <a-tooltip :title="uiText('Force TLS', '强制 TLS')">
                 <a-select v-model:value="row.forceTls" :style="{ width: '20%' }">
                   <a-select-option value="same">{{ t('pages.inbounds.same') }}</a-select-option>
                   <a-select-option value="none">{{ t('none') }}</a-select-option>
@@ -1583,67 +1588,67 @@ watch(
           </a-form-item>
 
           <!-- ====== Sockopt ====== -->
-          <a-form-item label="Sockopt">
+          <a-form-item :label="uiText('Sockopt', '套接字选项')">
             <a-switch v-model:checked="inbound.stream.sockoptSwitch" />
           </a-form-item>
           <template v-if="inbound.stream.sockoptSwitch && inbound.stream.sockopt">
-            <a-form-item label="Route Mark">
+            <a-form-item :label="uiText('Route Mark', '路由标记')">
               <a-input-number v-model:value="inbound.stream.sockopt.mark" :min="0" />
             </a-form-item>
-            <a-form-item label="TCP Keep Alive Interval">
+            <a-form-item :label="uiText('TCP Keep Alive Interval', 'TCP 保活间隔')">
               <a-input-number v-model:value="inbound.stream.sockopt.tcpKeepAliveInterval" :min="0" />
             </a-form-item>
-            <a-form-item label="TCP Keep Alive Idle">
+            <a-form-item :label="uiText('TCP Keep Alive Idle', 'TCP 保活空闲时间')">
               <a-input-number v-model:value="inbound.stream.sockopt.tcpKeepAliveIdle" :min="0" />
             </a-form-item>
-            <a-form-item label="TCP Max Seg">
+            <a-form-item :label="uiText('TCP Max Seg', 'TCP 最大报文段')">
               <a-input-number v-model:value="inbound.stream.sockopt.tcpMaxSeg" :min="0" />
             </a-form-item>
-            <a-form-item label="TCP User Timeout">
+            <a-form-item :label="uiText('TCP User Timeout', 'TCP 用户超时')">
               <a-input-number v-model:value="inbound.stream.sockopt.tcpUserTimeout" :min="0" />
             </a-form-item>
-            <a-form-item label="TCP Window Clamp">
+            <a-form-item :label="uiText('TCP Window Clamp', 'TCP 窗口限制')">
               <a-input-number v-model:value="inbound.stream.sockopt.tcpWindowClamp" :min="0" />
             </a-form-item>
-            <a-form-item label="Proxy Protocol">
+            <a-form-item :label="uiText('Proxy Protocol', '代理协议')">
               <a-switch v-model:checked="inbound.stream.sockopt.acceptProxyProtocol" />
             </a-form-item>
-            <a-form-item label="TCP Fast Open">
+            <a-form-item :label="uiText('TCP Fast Open', 'TCP 快速打开')">
               <a-switch v-model:checked="inbound.stream.sockopt.tcpFastOpen" />
             </a-form-item>
-            <a-form-item label="Multipath TCP">
+            <a-form-item :label="uiText('Multipath TCP', '多路径 TCP')">
               <a-switch v-model:checked="inbound.stream.sockopt.tcpMptcp" />
             </a-form-item>
-            <a-form-item label="Penetrate">
+            <a-form-item :label="uiText('Penetrate', '穿透')">
               <a-switch v-model:checked="inbound.stream.sockopt.penetrate" />
             </a-form-item>
-            <a-form-item label="V6 Only">
+            <a-form-item :label="uiText('V6 Only', '仅 IPv6')">
               <a-switch v-model:checked="inbound.stream.sockopt.V6Only" />
             </a-form-item>
-            <a-form-item label="Domain Strategy">
+            <a-form-item :label="uiText('Domain Strategy', '域名解析策略')">
               <a-select v-model:value="inbound.stream.sockopt.domainStrategy" :style="{ width: '50%' }">
                 <a-select-option v-for="d in DOMAIN_STRATEGIES" :key="d" :value="d">{{ d }}</a-select-option>
               </a-select>
             </a-form-item>
-            <a-form-item label="TCP Congestion">
+            <a-form-item :label="uiText('TCP Congestion', 'TCP 拥塞控制')">
               <a-select v-model:value="inbound.stream.sockopt.tcpcongestion" :style="{ width: '50%' }">
                 <a-select-option v-for="c in TCP_CONGESTIONS" :key="c" :value="c">{{ c }}</a-select-option>
               </a-select>
             </a-form-item>
             <a-form-item label="TProxy">
               <a-select v-model:value="inbound.stream.sockopt.tproxy" :style="{ width: '50%' }">
-                <a-select-option value="off">Off</a-select-option>
-                <a-select-option value="redirect">Redirect</a-select-option>
+                <a-select-option value="off">{{ uiText('Off', '关闭') }}</a-select-option>
+                <a-select-option value="redirect">{{ uiText('Redirect', '重定向') }}</a-select-option>
                 <a-select-option value="tproxy">TProxy</a-select-option>
               </a-select>
             </a-form-item>
-            <a-form-item label="Dialer Proxy">
+            <a-form-item :label="uiText('Dialer Proxy', '拨号代理')">
               <a-input v-model:value="inbound.stream.sockopt.dialerProxy" />
             </a-form-item>
-            <a-form-item label="Interface Name">
+            <a-form-item :label="uiText('Interface Name', '网卡名称')">
               <a-input v-model:value="inbound.stream.sockopt.interfaceName" />
             </a-form-item>
-            <a-form-item label="Trusted X-Forwarded-For">
+            <a-form-item :label="uiText('Trusted X-Forwarded-For', '可信 X-Forwarded-For')">
               <a-select v-model:value="inbound.stream.sockopt.trustedXForwardedFor" mode="tags"
                 :style="{ width: '100%' }" :token-separators="[',']">
                 <a-select-option value="CF-Connecting-IP">CF-Connecting-IP</a-select-option>
@@ -1657,12 +1662,13 @@ watch(
 
         <!-- ====== FinalMask (TCP/UDP masks + QUIC params) ====== -->
         <FinalMaskForm :stream="inbound.stream" :protocol="protocol" />
-      </a-tab-pane>
+      </section>
 
       <!-- ============================== SNIFFING ============================== -->
-      <a-tab-pane key="sniffing" tab="Sniffing"><!-- "Sniffing" stays literal — xray config term -->
+      <section class="inbound-form-section">
+        <h3 class="form-section-title">{{ uiText('Sniffing', '流量探测') }}</h3>
         <a-form :colon="false" :label-col="{ sm: { span: 8 } }" :wrapper-col="{ sm: { span: 14 } }">
-          <a-form-item label="Enabled">
+          <a-form-item :label="uiText('Enabled', '启用')">
             <a-switch v-model:checked="inbound.sniffing.enabled" />
           </a-form-item>
           <template v-if="inbound.sniffing.enabled">
@@ -1671,31 +1677,32 @@ watch(
                 <a-checkbox v-for="(value, key) in SNIFFING_OPTION" :key="key" :value="value">{{ key }}</a-checkbox>
               </a-checkbox-group>
             </a-form-item>
-            <a-form-item label="Metadata only">
+            <a-form-item :label="uiText('Metadata only', '仅元数据')">
               <a-switch v-model:checked="inbound.sniffing.metadataOnly" />
             </a-form-item>
-            <a-form-item label="Route only">
+            <a-form-item :label="uiText('Route only', '仅路由')">
               <a-switch v-model:checked="inbound.sniffing.routeOnly" />
             </a-form-item>
-            <a-form-item label="IPs excluded">
+            <a-form-item :label="uiText('IPs excluded', '排除的 IP')">
               <a-select v-model:value="inbound.sniffing.ipsExcluded" mode="tags" :token-separators="[',']"
                 placeholder="IP/CIDR/geoip:*/ext:*" :style="{ width: '100%' }" />
             </a-form-item>
-            <a-form-item label="Domains excluded">
+            <a-form-item :label="uiText('Domains excluded', '排除的域名')">
               <a-select v-model:value="inbound.sniffing.domainsExcluded" mode="tags" :token-separators="[',']"
                 placeholder="domain:*/ext:*" :style="{ width: '100%' }" />
             </a-form-item>
           </template>
         </a-form>
-      </a-tab-pane>
+      </section>
 
       <!-- ============================== ADVANCED ============================== -->
-      <a-tab-pane key="advanced" :tab="t('pages.xray.advancedTemplate')">
+      <section class="inbound-form-section">
+        <h3 class="form-section-title">{{ t('pages.xray.advancedTemplate') }}</h3>
         <a-alert type="info" show-icon
-          message="Edit raw stream JSON to access advanced fields we don't yet expose through the form."
+          :message="uiText('Edit raw stream JSON to access advanced fields we do not yet expose through the form.', '可在此编辑原始 JSON，以配置表单尚未提供的高级字段。')"
           class="mb-12" />
         <a-form layout="vertical">
-          <a-form-item label="settings (clients, encryption, fallbacks, …)">
+          <a-form-item :label="uiText('settings (clients, encryption, fallbacks, ...)', 'settings（客户端、加密、回落等）')">
             <a-textarea v-model:value="advancedJson.settings" :auto-size="{ minRows: 10, maxRows: 24 }"
               spellcheck="false" class="json-editor" />
           </a-form-item>
@@ -1703,13 +1710,13 @@ watch(
             <a-textarea v-model:value="advancedJson.stream" :auto-size="{ minRows: 10, maxRows: 24 }" spellcheck="false"
               class="json-editor" />
           </a-form-item>
-          <a-form-item label="sniffing (overrides the Sniffing tab when set)">
+          <a-form-item :label="uiText('sniffing (overrides the structured fields when set)', 'sniffing（填写后覆盖上方流量探测配置）')">
             <a-textarea v-model:value="advancedJson.sniffing" :auto-size="{ minRows: 6, maxRows: 16 }"
               spellcheck="false" class="json-editor" />
           </a-form-item>
         </a-form>
-      </a-tab-pane>
-    </a-tabs>
+      </section>
+    </div>
   </a-modal>
 </template>
 
@@ -1837,81 +1844,62 @@ watch(
   opacity: 0.85;
 }
 
-.inbound-tabs {
-  min-height: 500px;
-}
-
-.inbound-tabs :deep(.ant-tabs-nav) {
-  position: sticky;
-  z-index: 3;
-  top: 0;
-  margin: 0;
-  padding: 0 18px;
-  border-bottom: 1px solid var(--xui-border);
-  background: var(--xui-surface-2);
-}
-
-.inbound-tabs :deep(.ant-tabs-nav::before) {
-  border-bottom: 0;
-}
-
-.inbound-tabs :deep(.ant-tabs-nav-wrap) {
-  overflow-x: auto;
-}
-
-.inbound-tabs :deep(.ant-tabs-tab) {
-  min-height: 52px;
-  margin: 0 26px 0 0;
-  padding: 14px 0;
-}
-
-.inbound-tabs :deep(.ant-tabs-tab-btn) {
-  color: var(--xui-text-muted);
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.inbound-tabs :deep(.ant-tabs-tab-active .ant-tabs-tab-btn) {
-  color: var(--xui-primary);
-}
-
-.inbound-tabs :deep(.ant-tabs-content-holder) {
-  padding: 18px 20px 8px;
+.inbound-form-stack {
+  max-height: calc(100vh - 190px);
+  overflow-y: auto;
+  padding: 16px 18px 30px;
   background: var(--xui-bg);
 }
 
-.inbound-tabs :deep(.ant-tabs-tabpane) {
-  min-height: 410px;
+.inbound-form-section {
+  padding: 0 0 22px;
+  border-bottom: 1px solid var(--xui-border);
 }
 
-.inbound-tabs :deep(.ant-form) {
+.inbound-form-section + .inbound-form-section {
+  padding-top: 22px;
+}
+
+.inbound-form-section:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.form-section-title {
+  margin: 0 0 18px;
+  color: var(--xui-text-strong);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.inbound-form-stack :deep(.ant-form) {
   max-width: 820px;
   margin: 0 auto;
 }
 
-.inbound-tabs :deep(.ant-form-item) {
+.inbound-form-stack :deep(.ant-form-item) {
   margin-bottom: 14px;
 }
 
-.inbound-tabs :deep(.ant-form-item-label > label) {
+.inbound-form-stack :deep(.ant-form-item-label > label) {
   color: var(--xui-text-muted);
   font-size: 12px;
   font-weight: 650;
 }
 
-.inbound-tabs :deep(.ant-input),
-.inbound-tabs :deep(.ant-input-affix-wrapper),
-.inbound-tabs :deep(.ant-input-number),
-.inbound-tabs :deep(.ant-picker),
-.inbound-tabs :deep(.ant-select) {
+.inbound-form-stack :deep(.ant-input),
+.inbound-form-stack :deep(.ant-input-affix-wrapper),
+.inbound-form-stack :deep(.ant-input-number),
+.inbound-form-stack :deep(.ant-picker),
+.inbound-form-stack :deep(.ant-select) {
   max-width: 100%;
 }
 
-.inbound-tabs :deep(.ant-input-number) {
+.inbound-form-stack :deep(.ant-input-number) {
   width: 100%;
 }
 
-.inbound-tabs :deep(.ant-divider) {
+.inbound-form-stack :deep(.ant-divider) {
   margin: 16px 0;
   color: var(--xui-text-muted);
   border-color: var(--xui-border);
@@ -1919,7 +1907,7 @@ watch(
   font-weight: 700;
 }
 
-.inbound-tabs :deep(.ant-collapse) {
+.inbound-form-stack :deep(.ant-collapse) {
   max-width: 820px;
   margin: 0 auto 14px;
   overflow: hidden;
@@ -1928,11 +1916,11 @@ watch(
   background: var(--xui-surface);
 }
 
-.inbound-tabs :deep(.ant-collapse-item) {
+.inbound-form-stack :deep(.ant-collapse-item) {
   border-bottom-color: var(--xui-border);
 }
 
-.inbound-tabs :deep(.ant-collapse-header) {
+.inbound-form-stack :deep(.ant-collapse-header) {
   min-height: 48px;
   align-items: center !important;
   padding: 13px 16px !important;
@@ -1942,16 +1930,16 @@ watch(
   background: var(--xui-surface-2);
 }
 
-.inbound-tabs :deep(.ant-collapse-content) {
+.inbound-form-stack :deep(.ant-collapse-content) {
   border-top-color: var(--xui-border);
   background: var(--xui-surface);
 }
 
-.inbound-tabs :deep(.ant-collapse-content-box) {
+.inbound-form-stack :deep(.ant-collapse-content-box) {
   padding: 16px 16px 2px;
 }
 
-.inbound-tabs :deep(.ant-alert) {
+.inbound-form-stack :deep(.ant-alert) {
   max-width: 820px;
   margin-right: auto;
   margin-left: auto;
@@ -1959,14 +1947,14 @@ watch(
   border-radius: 7px;
 }
 
-.inbound-tabs :deep(textarea.json-editor) {
+.inbound-form-stack :deep(textarea.json-editor) {
   resize: vertical;
   color: var(--xui-text);
   border-color: var(--xui-border);
   background: var(--xui-surface-2);
 }
 
-.inbound-tabs :deep(.ant-checkbox-group) {
+.inbound-form-stack :deep(.ant-checkbox-group) {
   display: flex;
   flex-wrap: wrap;
   gap: 10px 16px;
@@ -2024,61 +2012,48 @@ watch(
 }
 
 @media (max-width: 768px) {
-  .inbound-tabs {
+  .inbound-form-stack {
     min-height: 440px;
+    padding: 14px 12px 24px;
   }
 
-  .inbound-tabs :deep(.ant-tabs-nav) {
-    padding: 0 12px;
-  }
-
-  .inbound-tabs :deep(.ant-tabs-tab) {
-    min-height: 48px;
-    margin-right: 18px;
-    padding: 12px 0;
-  }
-
-  .inbound-tabs :deep(.ant-tabs-content-holder) {
-    padding: 14px 12px 4px;
-  }
-
-  .inbound-tabs :deep(.ant-form-item) {
+  .inbound-form-stack :deep(.ant-form-item) {
     margin-bottom: 13px;
   }
 
-  .inbound-tabs :deep(.ant-form-item-row) {
+  .inbound-form-stack :deep(.ant-form-item-row) {
     display: block;
   }
 
-  .inbound-tabs :deep(.ant-form-item-label),
-  .inbound-tabs :deep(.ant-form-item-control) {
+  .inbound-form-stack :deep(.ant-form-item-label),
+  .inbound-form-stack :deep(.ant-form-item-control) {
     flex: 0 0 100%;
     max-width: 100%;
   }
 
-  .inbound-tabs :deep(.ant-form-item-label) {
+  .inbound-form-stack :deep(.ant-form-item-label) {
     padding: 0 0 5px;
     text-align: left;
   }
 
-  .inbound-tabs :deep(.ant-select),
-  .inbound-tabs :deep(.ant-picker),
-  .inbound-tabs :deep(.ant-input-number) {
+  .inbound-form-stack :deep(.ant-select),
+  .inbound-form-stack :deep(.ant-picker),
+  .inbound-form-stack :deep(.ant-input-number) {
     width: 100% !important;
   }
 
-  .inbound-tabs :deep(.ant-input-group.ant-input-group-compact) {
+  .inbound-form-stack :deep(.ant-input-group.ant-input-group-compact) {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
   }
 
-  .inbound-tabs :deep(.ant-input-group.ant-input-group-compact > *) {
+  .inbound-form-stack :deep(.ant-input-group.ant-input-group-compact > *) {
     width: 100% !important;
     border-radius: 6px !important;
   }
 
-  .inbound-tabs :deep(.ant-space) {
+  .inbound-form-stack :deep(.ant-space) {
     flex-wrap: wrap;
   }
 

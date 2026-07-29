@@ -18,8 +18,20 @@ import {
 
 const ThemeSwitchLogin = defineAsyncComponent(() => import('@/components/ThemeSwitchLogin.vue'));
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const panelVersion = (typeof window !== 'undefined' && window.__X_UI_CUR_VER__) || '2.9.5';
+const isChinese = computed(() => locale.value === 'zh-CN');
+const loginCopy = computed(() => (isChinese.value
+  ? {
+    controlPanel: '控制面板',
+    securityTitle: '安全访问您的网络控制中心',
+    subtitle: '登录后继续使用控制面板',
+  }
+  : {
+    controlPanel: 'CONTROL PANEL',
+    securityTitle: 'Secure access to your network control center.',
+    subtitle: 'Sign in to continue to the control panel',
+  }));
 
 const headlineWords = computed(() => [t('pages.login.hello'), t('pages.login.title')]);
 const HEADLINE_INTERVAL_MS = 2000;
@@ -81,11 +93,11 @@ function onLangChange(next) {
         <div class="login-brand-panel" aria-hidden="true">
           <div class="brand-lockup">
             <div class="brand-mark">X</div>
-            <div><strong>X Panel</strong><span>CONTROL PANEL</span></div>
+            <div><strong>X Panel</strong><span>{{ loginCopy.controlPanel }}</span></div>
           </div>
           <div class="brand-copy">
             <SafetyCertificateOutlined />
-            <h1>Secure access to your network control center.</h1>
+            <h1>{{ loginCopy.securityTitle }}</h1>
             <p>X Panel v{{ panelVersion }}</p>
           </div>
           <div class="brand-grid" />
@@ -133,7 +145,7 @@ function onLangChange(next) {
                       <b :key="headlineIndex">{{ headlineWords[headlineIndex] }}</b>
                     </Transition>
                   </h2>
-                  <p class="login-subtitle">Sign in to continue to the control panel</p>
+                  <p class="login-subtitle">{{ loginCopy.subtitle }}</p>
                 </a-col>
               </a-row>
 
