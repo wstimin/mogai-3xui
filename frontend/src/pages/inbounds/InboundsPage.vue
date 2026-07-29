@@ -172,7 +172,7 @@ async function onPromptConfirm(value) {
 function exportInboundLinks(dbInbound) {
   const projected = checkFallback(dbInbound);
   openText({
-    title: 'Export inbound links',
+    title: t('pages.inbounds.exportInboundLinksTitle'),
     content: projected.genInboundLinks(remarkModel.value, hostOverrideFor(dbInbound)),
     fileName: projected.remark || 'inbound',
   });
@@ -180,7 +180,7 @@ function exportInboundLinks(dbInbound) {
 
 function exportInboundClipboard(dbInbound) {
   openText({
-    title: 'Inbound JSON',
+    title: t('pages.inbounds.inboundJsonTitle'),
     content: JSON.stringify(dbInbound, null, 2),
   });
 }
@@ -195,7 +195,7 @@ function exportInboundSubs(dbInbound) {
     }
   }
   openText({
-    title: 'Export subscription links',
+    title: t('pages.inbounds.exportSubscriptionLinksTitle'),
     content: [...new Set(subLinks)].join('\n'),
     fileName: `${dbInbound.remark || 'inbound'}-Subs`,
   });
@@ -207,7 +207,7 @@ function exportAllLinks() {
     out.push(ib.genInboundLinks(remarkModel.value, hostOverrideFor(ib)));
   }
   openText({
-    title: 'Export all inbound links',
+    title: t('pages.inbounds.exportAllInboundLinksTitle'),
     content: out.join('\r\n'),
     fileName: 'All-Inbounds',
   });
@@ -225,7 +225,7 @@ function exportAllSubs() {
     }
   }
   openText({
-    title: 'Export all subscription links',
+    title: t('pages.inbounds.exportAllSubscriptionLinksTitle'),
     content: [...new Set(out)].join('\r\n'),
     fileName: 'All-Inbounds-Subs',
   });
@@ -233,8 +233,8 @@ function exportAllSubs() {
 
 function importInbound() {
   openPrompt({
-    title: 'Import inbound',
-    okText: 'Import',
+    title: t('pages.inbounds.importInbound'),
+    okText: t('pages.inbounds.import'),
     type: 'textarea',
     value: '',
     confirm: async (value) => {
@@ -383,11 +383,12 @@ function openAddBulkClient(dbInbound) {
 // Per-row destructive actions go through Modal.confirm (matches legacy).
 function confirmDelete(dbInbound) {
   Modal.confirm({
-    title: `Delete inbound "${dbInbound.remark}"?`,
-    content: 'This removes the inbound and all its clients. This cannot be undone.',
-    okText: 'Delete',
+    class: 'inbound-confirm-modal',
+    title: `${t('pages.inbounds.deleteInbound')} "${dbInbound.remark}"?`,
+    content: t('pages.inbounds.deleteInboundContent'),
+    okText: t('delete'),
     okType: 'danger',
-    cancelText: 'Cancel',
+    cancelText: t('cancel'),
     onOk: async () => {
       const msg = await HttpUtil.post(`/panel/api/inbounds/del/${dbInbound.id}`);
       if (msg?.success) await refresh();
@@ -397,10 +398,11 @@ function confirmDelete(dbInbound) {
 
 function confirmResetTraffic(dbInbound) {
   Modal.confirm({
-    title: `Reset traffic for "${dbInbound.remark}"?`,
-    content: 'Resets up/down counters to 0 for this inbound.',
-    okText: 'Reset',
-    cancelText: 'Cancel',
+    class: 'inbound-confirm-modal',
+    title: `${t('pages.inbounds.resetTraffic')} "${dbInbound.remark}"?`,
+    content: t('pages.inbounds.resetTrafficContent'),
+    okText: t('reset'),
+    cancelText: t('cancel'),
     onOk: async () => {
       const msg = await HttpUtil.post(`/panel/api/inbounds/resetTraffic/${dbInbound.id}`);
       if (msg?.success) await refresh();
@@ -410,11 +412,12 @@ function confirmResetTraffic(dbInbound) {
 
 function confirmDelDepleted(dbInboundId) {
   Modal.confirm({
-    title: 'Delete depleted clients?',
-    content: 'Removes every client whose traffic is exhausted or whose expiry has passed.',
-    okText: 'Delete',
+    class: 'inbound-confirm-modal',
+    title: t('pages.inbounds.delDepletedClientsTitle'),
+    content: t('pages.inbounds.delDepletedClientsContent'),
+    okText: t('delete'),
     okType: 'danger',
-    cancelText: 'Cancel',
+    cancelText: t('cancel'),
     onOk: async () => {
       const msg = await HttpUtil.post(`/panel/api/inbounds/delDepletedClients/${dbInboundId}`);
       if (msg?.success) await refresh();
@@ -426,17 +429,18 @@ function confirmDelDepleted(dbInboundId) {
 // but a fresh remark/port and an empty client list.
 function confirmClone(dbInbound) {
   Modal.confirm({
-    title: `Clone inbound "${dbInbound.remark}"?`,
-    content: 'Creates a copy with a new port and an empty client list.',
-    okText: 'Clone',
-    cancelText: 'Cancel',
+    class: 'inbound-confirm-modal',
+    title: `${t('pages.inbounds.cloneInbound')} "${dbInbound.remark}"?`,
+    content: t('pages.inbounds.cloneInboundContent'),
+    okText: t('pages.inbounds.cloneInboundOk'),
+    cancelText: t('cancel'),
     onOk: async () => {
       const baseInbound = dbInbound.toInbound();
       const data = {
         up: 0,
         down: 0,
         total: 0,
-        remark: `${dbInbound.remark} (clone)`,
+        remark: `${dbInbound.remark} (${t('pages.inbounds.clone')})`,
         enable: false,
         expiryTime: 0,
         listen: '',
@@ -465,9 +469,11 @@ function onGeneralAction(key) {
       break;
     case 'resetInbounds':
       Modal.confirm({
-        title: 'Reset all inbound traffic?',
-        okText: 'Reset',
-        cancelText: 'Cancel',
+        class: 'inbound-confirm-modal',
+        title: t('pages.inbounds.resetAllTrafficTitle'),
+        content: t('pages.inbounds.resetAllTrafficContent'),
+        okText: t('reset'),
+        cancelText: t('cancel'),
         onOk: async () => {
           const msg = await HttpUtil.post('/panel/api/inbounds/resetAllTraffics');
           if (msg?.success) await refresh();
@@ -476,9 +482,11 @@ function onGeneralAction(key) {
       break;
     case 'resetClients':
       Modal.confirm({
-        title: 'Reset all client traffic across all inbounds?',
-        okText: 'Reset',
-        cancelText: 'Cancel',
+        class: 'inbound-confirm-modal',
+        title: t('pages.inbounds.resetAllClientTrafficTitle'),
+        content: t('pages.inbounds.resetAllClientTrafficContent'),
+        okText: t('reset'),
+        cancelText: t('cancel'),
         onOk: async () => {
           const msg = await HttpUtil.post('/panel/api/inbounds/resetAllClientTraffics/-1');
           if (msg?.success) await refresh();
@@ -536,9 +544,11 @@ function onRowAction({ key, dbInbound }) {
       break;
     case 'resetClients':
       Modal.confirm({
-        title: `Reset client traffic on "${dbInbound.remark}"?`,
-        okText: 'Reset',
-        cancelText: 'Cancel',
+        class: 'inbound-confirm-modal',
+        title: `${t('pages.inbounds.resetInboundClientTrafficTitle')} "${dbInbound.remark}"?`,
+        content: t('pages.inbounds.resetInboundClientTrafficContent'),
+        okText: t('reset'),
+        cancelText: t('cancel'),
         onOk: async () => {
           const msg = await HttpUtil.post(`/panel/api/inbounds/resetAllClientTraffics/${dbInbound.id}`);
           if (msg?.success) await refresh();
@@ -555,11 +565,11 @@ function onRowAction({ key, dbInbound }) {
 <template>
   <a-config-provider :theme="antdThemeConfig">
     <a-layout class="inbounds-page" :class="{ 'is-dark': themeState.isDark, 'is-ultra': themeState.isUltra }">
-      <AppSidebar :base-path="basePath" :request-uri="requestUri" />
+      <AppSidebar :base-path="basePath" :request-uri="requestUri" dashboard-style />
 
       <a-layout class="content-shell">
         <a-layout-content id="content-layout" class="content-area">
-          <a-spin :spinning="!fetched" :delay="200" tip="Loading…" size="large">
+          <a-spin :spinning="!fetched" :delay="200" :tip="t('loading')" size="large">
             <div v-if="!fetched" class="loading-spacer" />
 
             <a-row v-else :gutter="[isMobile ? 8 : 16, 12]">
@@ -644,21 +654,50 @@ function onRowAction({ key, dbInbound }) {
 
 <style scoped>
 .inbounds-page {
-  --bg-page: #e6e8ec;
-  --bg-card: #ffffff;
+  --xui-bg: #07080b;
+  --xui-surface: rgba(15, 17, 23, 0.94);
+  --xui-surface-2: rgba(255, 255, 255, 0.035);
+  --xui-surface-3: rgba(255, 255, 255, 0.055);
+  --xui-border: rgba(255, 255, 255, 0.065);
+  --xui-border-strong: rgba(255, 255, 255, 0.13);
+  --xui-primary: #6366f1;
+  --xui-primary-soft: rgba(99, 102, 241, 0.14);
+  --xui-text-strong: #f1f5f9;
+  --xui-text: #cbd5e1;
+  --xui-text-muted: #64748b;
+  --xui-text-faint: #475569;
+  --xui-success: #10b981;
+  --xui-warning: #f59e0b;
+  --xui-danger: #ef4444;
+  --xui-shadow: 0 18px 46px rgba(0, 0, 0, 0.28);
+  --bg-page: #07080b;
+  --bg-card: rgba(15, 17, 23, 0.82);
 
+  position: relative;
   min-height: 100vh;
   background: var(--bg-page);
+  color: var(--xui-text);
 }
 
 .inbounds-page.is-dark {
-  --bg-page: #0a1222;
-  --bg-card: #151f31;
+  --bg-page: #07080b;
+  --bg-card: rgba(15, 17, 23, 0.82);
 }
 
 .inbounds-page.is-dark.is-ultra {
-  --bg-page: #050505;
-  --bg-card: #0c0e12;
+  --bg-page: #050609;
+  --bg-card: rgba(12, 14, 19, 0.9);
+}
+
+.inbounds-page::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 72% 42% at 9% -12%, rgba(99, 102, 241, 0.14), transparent 56%),
+    radial-gradient(ellipse 52% 38% at 96% 4%, rgba(139, 92, 246, 0.075), transparent 52%);
 }
 
 .inbounds-page :deep(.ant-layout),
@@ -667,50 +706,176 @@ function onRowAction({ key, dbInbound }) {
 }
 
 .content-shell {
+  position: relative;
+  z-index: 1;
   background: transparent;
+}
+
+.content-area {
+  padding: 28px 32px 40px !important;
+}
+
+.page-heading {
+  margin-bottom: 4px;
+}
+
+.page-heading h1 {
+  color: #f1f5f9;
+  font-size: 24px;
+}
+
+.page-heading p {
+  color: #64748b;
 }
 
 .loading-spacer {
   min-height: calc(100vh - 120px);
 }
 
-.summary-card {
-  background: transparent !important;
-  border: 0 !important;
+.metric-grid {
+  margin: 4px 0 6px;
 }
 
-.summary-card :deep(.ant-card-body) {
-  padding: 0;
+.metric-card {
+  min-height: 104px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.065) !important;
+  border-radius: 12px !important;
+  background: rgba(15, 17, 23, 0.78) !important;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.16) !important;
+  backdrop-filter: blur(16px);
 }
 
-.summary-card :deep(.ant-row) {
-  row-gap: 12px;
+.metric-card:hover {
+  border-color: rgba(255, 255, 255, 0.13) !important;
 }
 
-.summary-card :deep(.ant-col) {
-  min-height: 92px;
-  padding: 20px !important;
-  background: var(--xui-surface);
-  border: 1px solid var(--xui-border);
-  border-radius: 8px;
+.metric-card :deep(.ant-card-body) {
+  min-height: 104px;
+  padding: 20px;
 }
 
-.summary-card :deep(.ant-statistic-content) {
-  font-size: 19px !important;
+.metric-card :deep(.ant-statistic-title) {
+  margin-bottom: 7px;
+  color: #64748b !important;
+  font-size: 12px;
+}
+
+.metric-card :deep(.ant-statistic-content) {
+  color: #f1f5f9 !important;
+  font-size: 21px !important;
   font-weight: 750;
 }
 
-.summary-card :deep(.ant-statistic-content-prefix) {
-  color: var(--xui-primary);
+.metric-card :deep(.ant-statistic-content-prefix) {
+  margin-inline-end: 10px;
+}
+
+:global(.inbound-form-modal),
+:global(.client-form-modal),
+:global(.client-bulk-modal),
+:global(.copy-clients-modal),
+:global(.inbound-info-modal),
+:global(.qr-code-modal),
+:global(.shared-text-modal),
+:global(.shared-prompt-modal) {
+  --xui-bg: #07080b;
+  --xui-surface: #0f1117;
+  --xui-surface-2: rgba(255, 255, 255, 0.035);
+  --xui-surface-3: rgba(255, 255, 255, 0.055);
+  --xui-border: rgba(255, 255, 255, 0.065);
+  --xui-border-strong: rgba(255, 255, 255, 0.13);
+  --xui-primary: #6366f1;
+  --xui-primary-soft: rgba(99, 102, 241, 0.14);
+  --xui-text-strong: #f1f5f9;
+  --xui-text: #cbd5e1;
+  --xui-text-muted: #64748b;
+  --xui-danger: #ef4444;
+}
+
+:global(.inbound-confirm-modal) {
+  --xui-bg: #07080b;
+  --xui-surface: #0f1117;
+  --xui-surface-2: rgba(255, 255, 255, 0.035);
+  --xui-border: rgba(255, 255, 255, 0.065);
+  --xui-text-strong: #f1f5f9;
+  --xui-text: #cbd5e1;
+  --xui-text-muted: #64748b;
+  --xui-primary: #6366f1;
+}
+
+:global(.ant-modal.inbound-confirm-modal .ant-modal-content) {
+  border: 1px solid rgba(255, 255, 255, 0.065) !important;
+  border-radius: 14px !important;
+  color: #cbd5e1;
+  background: #0f1117 !important;
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.52) !important;
+}
+
+:global(.ant-modal.inbound-confirm-modal .ant-modal-confirm-title) {
+  color: #f1f5f9 !important;
+}
+
+:global(.ant-modal.inbound-confirm-modal .ant-modal-confirm-content) {
+  color: #64748b !important;
+}
+
+:global(.ant-modal.inbound-confirm-modal .ant-btn-primary:not(.ant-btn-dangerous)) {
+  border-color: transparent !important;
+  background: linear-gradient(135deg, #6366f1, #7c3aed) !important;
+}
+
+:global(:is(.inbound-form-modal, .client-form-modal, .client-bulk-modal, .copy-clients-modal, .inbound-info-modal, .qr-code-modal, .shared-text-modal, .shared-prompt-modal) .ant-modal-content) {
+  border-color: rgba(255, 255, 255, 0.065) !important;
+  border-radius: 14px !important;
+  color: #cbd5e1;
+  background: #0f1117 !important;
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.52) !important;
+}
+
+:global(:is(.inbound-form-modal, .client-form-modal, .client-bulk-modal, .copy-clients-modal, .inbound-info-modal, .qr-code-modal, .shared-text-modal, .shared-prompt-modal) .ant-modal-header),
+:global(:is(.inbound-form-modal, .client-form-modal, .client-bulk-modal, .copy-clients-modal, .inbound-info-modal, .qr-code-modal, .shared-text-modal, .shared-prompt-modal) .ant-modal-footer) {
+  border-color: rgba(255, 255, 255, 0.065) !important;
+  background: #0f1117 !important;
+}
+
+:global(:is(.inbound-form-modal, .client-form-modal, .client-bulk-modal, .copy-clients-modal, .inbound-info-modal, .qr-code-modal, .shared-text-modal, .shared-prompt-modal) .ant-modal-title) {
+  color: #f1f5f9 !important;
+}
+
+:global(:is(.inbound-form-modal, .client-form-modal, .client-bulk-modal, .copy-clients-modal, .inbound-info-modal, .qr-code-modal, .shared-text-modal, .shared-prompt-modal) .ant-modal-body) {
+  color: #cbd5e1;
+  background: #090b10 !important;
+}
+
+:global(:is(.inbound-form-modal, .client-form-modal, .client-bulk-modal, .copy-clients-modal, .inbound-info-modal, .qr-code-modal, .shared-text-modal, .shared-prompt-modal) .ant-btn-primary) {
+  border-color: transparent !important;
+  background: linear-gradient(135deg, #6366f1, #7c3aed) !important;
+  box-shadow: 0 5px 16px rgba(99, 102, 241, 0.28);
+}
+
+:global(:is(.inbound-form-modal, .client-form-modal, .client-bulk-modal, .copy-clients-modal, .inbound-info-modal, .qr-code-modal, .shared-text-modal, .shared-prompt-modal) :is(.ant-input, .ant-input-affix-wrapper, .ant-input-number, .ant-picker, .ant-select-selector)) {
+  border-color: rgba(255, 255, 255, 0.075) !important;
+  color: #cbd5e1 !important;
+  background: rgba(255, 255, 255, 0.035) !important;
 }
 
 @media (max-width: 768px) {
-  .summary-card {
-    padding: 0;
+  .content-area {
+    padding: 76px 12px 28px !important;
   }
 
-  .summary-card :deep(.ant-col) {
-    padding: 14px 10px !important;
+  .page-heading h1 {
+    font-size: 21px;
+  }
+
+  .metric-card {
+    min-height: 94px;
+  }
+
+  .metric-card :deep(.ant-card-body) {
+    min-height: 94px;
+    padding: 15px 13px;
   }
 }
 </style>

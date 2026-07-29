@@ -82,6 +82,7 @@ function onConfirm(outbound) {
 
 function confirmDelete(idx) {
   Modal.confirm({
+    class: 'xray-confirm-modal',
     title: `${t('delete')} ${t('pages.xray.Outbounds')} #${idx + 1}?`,
     okText: t('delete'),
     okType: 'danger',
@@ -235,7 +236,7 @@ const rows = computed(() => {
             <template #overlay>
               <a-menu>
                 <a-menu-item v-if="index > 0" @click="setFirst(index)">
-                  <VerticalAlignTopOutlined />
+                  <VerticalAlignTopOutlined /> {{ t('pages.xray.ui.moveToTop') }}
                 </a-menu-item>
                 <a-menu-item @click="openEdit(index)">
                   <EditOutlined /> {{ t('edit') }}
@@ -264,7 +265,7 @@ const rows = computed(() => {
               <CheckCircleFilled v-if="testResult(index).success" />
               <CloseCircleFilled v-else />
               <span v-if="testResult(index).success">{{ testResult(index).delay }}&nbsp;ms</span>
-              <span v-else>failed</span>
+              <span v-else>{{ t('pages.xray.outbound.testFailed') }}</span>
             </span>
             <LoadingOutlined v-else-if="isTesting(index)" />
             <a-button
@@ -302,22 +303,22 @@ const rows = computed(() => {
               <template #overlay>
                 <a-menu>
                   <a-menu-item v-if="index > 0" @click="setFirst(index)">
-                    <VerticalAlignTopOutlined /> Move to top
+                    <VerticalAlignTopOutlined /> {{ t('pages.xray.ui.moveToTop') }}
                   </a-menu-item>
                   <a-menu-item @click="openEdit(index)">
-                    <EditOutlined /> Edit
+                    <EditOutlined /> {{ t('edit') }}
                   </a-menu-item>
                   <a-menu-item :disabled="index === 0" @click="moveUp(index)">
-                    <ArrowUpOutlined />
+                    <ArrowUpOutlined /> {{ t('pages.xray.ui.moveUp') }}
                   </a-menu-item>
                   <a-menu-item :disabled="index === rows.length - 1" @click="moveDown(index)">
-                    <ArrowDownOutlined />
+                    <ArrowDownOutlined /> {{ t('pages.xray.ui.moveDown') }}
                   </a-menu-item>
                   <a-menu-item @click="emit('reset-traffic', record.tag || '')">
-                    <RetweetOutlined /> Reset traffic
+                    <RetweetOutlined /> {{ t('pages.xray.ui.resetTraffic') }}
                   </a-menu-item>
                   <a-menu-item class="danger" @click="confirmDelete(index)">
-                    <DeleteOutlined /> Delete
+                    <DeleteOutlined /> {{ t('delete') }}
                   </a-menu-item>
                 </a-menu>
               </template>
@@ -365,7 +366,7 @@ const rows = computed(() => {
             <CloseCircleFilled v-else />
             <span v-if="testResult(index).success">{{ testResult(index).delay }}&nbsp;ms</span>
             <a-tooltip v-else :title="testResult(index).error">
-              <span>failed</span>
+              <span>{{ t('pages.xray.outbound.testFailed') }}</span>
             </a-tooltip>
           </span>
           <LoadingOutlined v-else-if="isTesting(index)" />
@@ -402,13 +403,14 @@ const rows = computed(() => {
 .outbounds-panel {
   overflow: hidden;
   border: 1px solid var(--xui-border);
-  border-radius: 8px;
-  background: var(--xui-surface);
+  border-radius: 14px;
+  background: rgba(15, 17, 23, 0.82);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.16);
 }
 
 .tab-toolbar {
   margin: 0 !important;
-  padding: 12px 6px;
+  padding: 14px 16px;
   border-bottom: 1px solid var(--xui-border);
   background: var(--xui-surface-2);
 }
@@ -439,10 +441,10 @@ const rows = computed(() => {
 }
 .outbound-card {
   border: 1px solid var(--xui-border);
-  border-radius: 8px;
-  padding: 12px;
-  margin-bottom: 8px;
-  background: var(--xui-surface);
+  border-radius: 12px;
+  padding: 14px;
+  margin: 0 10px 10px;
+  background: rgba(255, 255, 255, 0.025);
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -486,9 +488,9 @@ const rows = computed(() => {
 }
 .address-pill {
   font-size: 11px;
-  padding: 2px 6px;
+  padding: 3px 7px;
   border: 1px solid var(--xui-border);
-  border-radius: 4px;
+  border-radius: 7px;
   color: var(--xui-text-muted);
   background: var(--xui-surface-2);
 }
@@ -525,8 +527,8 @@ const rows = computed(() => {
   gap: 8px;
 }
 
-.traffic-up { color: #008771; font-size: 12px; }
-.traffic-down { color: #3c89e8; font-size: 12px; }
+.traffic-up { color: #34d399; font-size: 12px; }
+.traffic-down { color: #60a5fa; font-size: 12px; }
 .traffic-sep { display: inline-block; width: 4px; }
 
 .pill-ok,
@@ -538,8 +540,8 @@ const rows = computed(() => {
   border-radius: 12px;
   font-size: 12px;
 }
-.pill-ok { color: #008771; background: rgba(0, 135, 113, 0.12); }
-.pill-fail { color: #e04141; background: rgba(224, 65, 65, 0.12); }
+.pill-ok { color: #34d399; background: rgba(16, 185, 129, 0.12); }
+.pill-fail { color: #f87171; background: rgba(239, 68, 68, 0.12); }
 
 .empty { opacity: 0.4; }
 .danger { color: #ff4d4f; }

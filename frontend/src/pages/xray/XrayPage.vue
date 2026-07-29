@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { Modal, message } from 'ant-design-vue';
+import { Modal } from 'ant-design-vue';
 import {
   SettingOutlined,
   SwapOutlined,
@@ -9,7 +9,7 @@ import {
   ClusterOutlined,
   DatabaseOutlined,
   CodeOutlined,
-  QuestionCircleOutlined,
+  FileTextOutlined,
   SaveOutlined,
   ReloadOutlined,
 } from '@ant-design/icons-vue';
@@ -46,6 +46,7 @@ const {
   resetOutboundsTraffic,
   testOutbound,
   saveAll,
+  discardChanges,
   resetToDefault,
   restartXray,
   applyOutboundsEvent,
@@ -73,7 +74,7 @@ function onDeleteOutbound(idx) {
 // of the xray config the textarea edits — the full config, just the
 // inbounds, just the outbounds, or just the routing rules. Each slice
 // reads/writes through templateSettings so edits propagate to the
-// dirty-poll and structured tabs.
+// dirty state and structured tabs.
 const advSettings = ref('xraySetting');
 
 const advancedText = computed({
@@ -102,7 +103,7 @@ const advancedText = computed({
       return;
     }
     // Slice edits: parse-then-merge into templateSettings so the
-    // structured tabs and the dirty-poll re-stringify it cleanly.
+    // structured tabs and the dirty state re-stringify it cleanly.
     let parsed;
     try { parsed = JSON.parse(next); } catch (_e) { return; }
     const t = templateSettings.value;
@@ -124,8 +125,8 @@ const advancedText = computed({
 
 // `WarpExist` / `NordExist` derive from the parsed templateSettings —
 // the Basics tab gates its WARP / NordVPN domain selectors on whether
-// the matching outbound is provisioned, falling back to a "configure"
-// button that today just toasts (the modals land in 6-v).
+// the matching outbound is provisioned and opens the real setup modal
+// when the corresponding outbound is missing.
 const warpExist = computed(
   () => !!templateSettings.value?.outbounds?.find((o) => o?.tag === 'warp'),
 );
@@ -183,9 +184,6 @@ function onRemoveRoutingRules({ prefix }) {
   );
 }
 
-// `message` is used by some of the in-progress UX flows (kept around
-// because future provisioning errors will surface through it).
-void message;
 const { isMobile } = useMediaQuery();
 
 const basePath = window.__X_UI_BASE_PATH__ || '';
@@ -198,10 +196,11 @@ function scrollTarget() {
 
 function confirmRestart() {
   Modal.confirm({
-    title: 'Restart xray?',
-    content: 'Reloads the xray service with the saved configuration.',
-    okText: 'Restart',
-    cancelText: 'Cancel',
+    class: 'xray-confirm-modal',
+    title: t('pages.xray.restartConfirmTitle'),
+    content: t('pages.xray.restartConfirmDesc'),
+    okText: t('pages.xray.restart'),
+    cancelText: t('cancel'),
     onOk: () => restartXray(),
   });
 }
@@ -213,11 +212,11 @@ function confirmRestart() {
       class="xray-page"
       :class="{ 'is-dark': themeState.isDark, 'is-ultra': themeState.isUltra }"
     >
-      <AppSidebar :base-path="basePath" :request-uri="requestUri" />
+      <AppSidebar :base-path="basePath" :request-uri="requestUri" dashboard-style />
 
       <a-layout class="content-shell">
         <a-layout-content id="content-layout" class="content-area">
-          <a-spin :spinning="spinning || !fetched" :delay="200" tip="Loading…" size="large">
+          <a-spin :spinning="spinning || !fetched" :delay="200" :tip="t('loading')" size="large">
             <div v-if="!fetched" class="loading-spacer" />
 
             <a-result
@@ -234,26 +233,22 @@ function confirmRestart() {
             <template v-else>
               <div class="page-heading">
                 <div>
-                  <h1>{{ t('menu.xray') }}</h1>
-                  <p>{{ t('pages.xray.basicTemplate') }} / {{ t('pages.xray.advancedTemplate') }}</p>
+                  <h1>{{ t('pages.xray.title') }}</h1>
+                  <p>{{ t('pages.xray.subtitle') }}</p>
                 </div>
                 <div class="heading-actions">
-                  <a-button type="primary" :disabled="saveDisabled" @click="saveAll">
-                    <template #icon><SaveOutlined /></template>
-                    <span v-if="!isMobile">{{ t('pages.xray.save') }}</span>
-                  </a-button>
-                  <a-button danger :disabled="!saveDisabled" @click="confirmRestart">
+                  <a-button class="restart-button" :disabled="!saveDisabled" @click="confirmRestart">
                     <template #icon><ReloadOutlined /></template>
                     <span v-if="!isMobile">{{ t('pages.xray.restart') }}</span>
                   </a-button>
                   <a-popover v-if="restartResult" placement="bottomRight" trigger="click">
-                    <template #title>Xray restart output</template>
+                    <template #title>{{ t('pages.xray.restartOutput') }}</template>
                     <template #content>
                       <pre class="restart-result">{{ restartResult }}</pre>
                     </template>
-                    <a-tooltip title="Xray restart output">
+                    <a-tooltip :title="t('pages.xray.restartOutput')">
                       <a-button class="result-button" shape="circle">
-                        <template #icon><QuestionCircleOutlined /></template>
+                        <template #icon><FileTextOutlined /></template>
                       </a-button>
                     </a-tooltip>
                   </a-popover>
@@ -335,10 +330,10 @@ function confirmRestart() {
                       </template>
                       <div class="advanced-editor">
                         <div class="advanced-header">
-                          <a-list-item-meta
-                            :title="t('pages.xray.Template')"
-                            :description="t('pages.xray.TemplateDesc')"
-                          />
+                          <div class="advanced-copy">
+                            <strong>{{ t('pages.xray.Template') }}</strong>
+                            <span>{{ t('pages.xray.TemplateDesc') }}</span>
+                          </div>
                           <a-radio-group
                             v-model:value="advSettings"
                             button-style="solid"
@@ -365,6 +360,25 @@ function confirmRestart() {
                   </div>
                 </a-col>
               </a-row>
+
+              <div class="save-bar">
+                <div class="save-state">
+                  <span class="save-state-dot" :class="{ clean: saveDisabled }" />
+                  <div>
+                    <strong>{{ saveDisabled ? t('pages.xray.savedState') : t('pages.xray.unsavedState') }}</strong>
+                    <span>{{ t('pages.xray.saveHint') }}</span>
+                  </div>
+                </div>
+                <div class="save-actions">
+                  <a-button :disabled="saveDisabled" @click="discardChanges">
+                    {{ t('pages.xray.discardChanges') }}
+                  </a-button>
+                  <a-button type="primary" :disabled="saveDisabled" @click="saveAll">
+                    <template #icon><SaveOutlined /></template>
+                    {{ t('pages.xray.save') }}
+                  </a-button>
+                </div>
+              </div>
             </template>
           </a-spin>
         </a-layout-content>
@@ -595,6 +609,458 @@ function confirmRestart() {
     display: flex;
     width: 100%;
     overflow-x: auto;
+  }
+}
+</style>
+
+<style scoped>
+.xray-page {
+  --xui-bg: #07080b;
+  --xui-surface: rgba(15, 17, 23, 0.88);
+  --xui-surface-2: rgba(255, 255, 255, 0.035);
+  --xui-surface-3: rgba(255, 255, 255, 0.055);
+  --xui-border: rgba(255, 255, 255, 0.065);
+  --xui-border-strong: rgba(255, 255, 255, 0.13);
+  --xui-primary: #6366f1;
+  --xui-primary-soft: rgba(99, 102, 241, 0.14);
+  --xui-text-strong: #f1f5f9;
+  --xui-text: #cbd5e1;
+  --xui-text-muted: #64748b;
+  --xui-success: #10b981;
+  --xui-warning: #f59e0b;
+  --xui-danger: #ef4444;
+  position: relative;
+  min-height: 100vh;
+  color: var(--xui-text);
+  background: #07080b;
+}
+
+.xray-page.is-dark.is-ultra {
+  background: #050609;
+}
+
+.xray-page::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 72% 42% at 9% -12%, rgba(99, 102, 241, 0.14), transparent 56%),
+    radial-gradient(ellipse 52% 38% at 96% 4%, rgba(139, 92, 246, 0.075), transparent 52%);
+}
+
+.content-shell {
+  position: relative;
+  z-index: 1;
+}
+
+.content-area {
+  padding: 28px 32px 112px !important;
+}
+
+.page-heading {
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.page-heading h1 {
+  color: var(--xui-text-strong);
+  font-size: 24px;
+}
+
+.page-heading p {
+  max-width: 760px;
+  color: var(--xui-text-muted);
+}
+
+.restart-button,
+.result-button {
+  min-height: 40px;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  border-radius: 10px;
+  color: #94a3b8 !important;
+  background: rgba(255, 255, 255, 0.03) !important;
+}
+
+.restart-button:not(:disabled):hover {
+  border-color: rgba(245, 158, 11, 0.32) !important;
+  color: #fbbf24 !important;
+  background: rgba(245, 158, 11, 0.08) !important;
+}
+
+.result-button:hover {
+  border-color: rgba(99, 102, 241, 0.35) !important;
+  color: #a5b4fc !important;
+  background: rgba(99, 102, 241, 0.1) !important;
+}
+
+.xray-workspace {
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.xray-tabs :deep(.ant-tabs-nav) {
+  margin: 0 0 18px;
+  padding: 4px;
+  border: 1px solid var(--xui-border);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.xray-tabs :deep(.ant-tabs-nav::before),
+.xray-tabs :deep(.ant-tabs-ink-bar) {
+  display: none;
+}
+
+.xray-tabs :deep(.ant-tabs-tab) {
+  min-height: 40px;
+  margin: 0 3px 0 0;
+  padding: 9px 16px;
+  border-radius: 9px;
+  transition: color 0.18s ease, background 0.18s ease;
+}
+
+.xray-tabs :deep(.ant-tabs-tab:hover) {
+  color: #cbd5e1;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.xray-tabs :deep(.ant-tabs-tab-active) {
+  background: var(--xui-primary-soft);
+}
+
+.xray-tabs :deep(.ant-tabs-tab-btn) {
+  color: var(--xui-text-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.xray-tabs :deep(.ant-tabs-tab-active .ant-tabs-tab-btn) {
+  color: #a5b4fc !important;
+}
+
+.xray-tabs :deep(.ant-tabs-content-holder) {
+  overflow: visible;
+  padding: 0;
+  background: transparent;
+}
+
+.tab-pane :deep(.ant-collapse-item) {
+  border-radius: 14px !important;
+  background: rgba(15, 17, 23, 0.82) !important;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.16);
+  backdrop-filter: blur(16px);
+}
+
+.tab-pane :deep(.ant-collapse-header) {
+  min-height: 62px;
+  padding: 17px 20px !important;
+  color: var(--xui-text-strong) !important;
+  font-size: 14px;
+}
+
+.tab-pane :deep(.ant-collapse-expand-icon) {
+  color: var(--xui-text-muted);
+}
+
+.tab-pane :deep(.ant-collapse-content) {
+  background: rgba(8, 10, 14, 0.44) !important;
+}
+
+.tab-pane :deep(.ant-list-item) {
+  min-height: 78px;
+  padding: 16px 20px !important;
+  border-block-end-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.tab-pane :deep(.ant-list-item-meta-title) {
+  color: var(--xui-text-strong) !important;
+  font-size: 13px;
+}
+
+.tab-pane :deep(.ant-list-item-meta-description) {
+  color: var(--xui-text-muted) !important;
+  font-size: 11.5px;
+}
+
+.tab-pane :deep(:is(.ant-input, .ant-input-affix-wrapper, .ant-input-number, .ant-picker, .ant-select-selector)) {
+  min-height: 40px;
+  border-color: rgba(255, 255, 255, 0.075) !important;
+  border-radius: 10px !important;
+  color: var(--xui-text) !important;
+  background: rgba(255, 255, 255, 0.035) !important;
+  box-shadow: none !important;
+}
+
+.tab-pane :deep(.ant-input-affix-wrapper-focused),
+.tab-pane :deep(.ant-input-number-focused),
+.tab-pane :deep(.ant-select-focused .ant-select-selector),
+.tab-pane :deep(.ant-input:focus) {
+  border-color: var(--xui-primary) !important;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.14) !important;
+}
+
+.tab-pane :deep(.ant-switch) {
+  min-width: 44px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.tab-pane :deep(.ant-switch-checked) {
+  background: var(--xui-primary) !important;
+}
+
+.tab-pane :deep(.ant-btn) {
+  min-height: 38px;
+  border-color: rgba(255, 255, 255, 0.08);
+  border-radius: 9px;
+  color: var(--xui-text);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.tab-pane :deep(.ant-btn-primary) {
+  border-color: transparent !important;
+  color: #fff !important;
+  background: linear-gradient(135deg, #6366f1, #7c3aed) !important;
+  box-shadow: 0 5px 16px rgba(99, 102, 241, 0.24);
+}
+
+.tab-pane :deep(.ant-table-wrapper) {
+  overflow: hidden;
+  border: 1px solid var(--xui-border);
+  border-radius: 12px;
+}
+
+.tab-pane :deep(.ant-table),
+.tab-pane :deep(.ant-table-container),
+.tab-pane :deep(.ant-table-content) {
+  color: var(--xui-text);
+  background: transparent !important;
+}
+
+.tab-pane :deep(.ant-table-thead > tr > th) {
+  color: var(--xui-text-muted) !important;
+  background: rgba(255, 255, 255, 0.035) !important;
+}
+
+.tab-pane :deep(.ant-table-tbody > tr > td) {
+  border-color: var(--xui-border) !important;
+  background: rgba(15, 17, 23, 0.72);
+}
+
+.tab-pane :deep(.ant-table-tbody > tr:hover > td) {
+  background: rgba(255, 255, 255, 0.035) !important;
+}
+
+.advanced-editor {
+  border-radius: 14px;
+  background: rgba(15, 17, 23, 0.82);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.16);
+}
+
+.advanced-header {
+  padding: 18px 20px;
+  border-color: var(--xui-border);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.advanced-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.advanced-copy strong {
+  color: var(--xui-text-strong);
+  font-size: 14px;
+}
+
+.advanced-copy span {
+  color: var(--xui-text-muted);
+  font-size: 12px;
+}
+
+.advanced-mode :deep(.ant-radio-button-wrapper) {
+  border-color: rgba(255, 255, 255, 0.07) !important;
+  color: var(--xui-text-muted);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.advanced-mode :deep(.ant-radio-button-wrapper-checked) {
+  color: #a5b4fc !important;
+  background: var(--xui-primary-soft) !important;
+}
+
+.editor-surface {
+  padding: 14px;
+  background: #0a0c11;
+}
+
+.editor-surface :deep(textarea.ant-input) {
+  min-height: 480px;
+  border-radius: 10px !important;
+  color: #dbeafe !important;
+  background: #0c0e14 !important;
+  line-height: 1.65;
+}
+
+.save-bar {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 260px;
+  z-index: 50;
+  min-height: 78px;
+  padding: 14px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  border-top: 1px solid var(--xui-border);
+  background: rgba(7, 8, 11, 0.9);
+  box-shadow: 0 -12px 34px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(18px);
+}
+
+.save-state {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.save-state-dot {
+  width: 9px;
+  height: 9px;
+  flex: 0 0 9px;
+  border-radius: 50%;
+  background: var(--xui-warning);
+  box-shadow: 0 0 0 5px rgba(245, 158, 11, 0.1);
+}
+
+.save-state-dot.clean {
+  background: var(--xui-success);
+  box-shadow: 0 0 0 5px rgba(16, 185, 129, 0.1);
+}
+
+.save-state div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.save-state strong {
+  color: var(--xui-text);
+  font-size: 12.5px;
+}
+
+.save-state span {
+  overflow: hidden;
+  color: var(--xui-text-muted);
+  font-size: 11.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.save-actions {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 10px;
+}
+
+.save-actions :deep(.ant-btn) {
+  min-height: 40px;
+  border-color: rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  color: var(--xui-text);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.save-actions :deep(.ant-btn-primary) {
+  border-color: transparent !important;
+  color: #fff;
+  background: linear-gradient(135deg, #6366f1, #7c3aed) !important;
+  box-shadow: 0 5px 18px rgba(99, 102, 241, 0.28);
+}
+
+:global(.ant-modal.xray-confirm-modal .ant-modal-content),
+:global(.ant-modal.xray-form-modal .ant-modal-content) {
+  border: 1px solid rgba(255, 255, 255, 0.065) !important;
+  border-radius: 14px !important;
+  color: #cbd5e1;
+  background: #0f1117 !important;
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.52) !important;
+}
+
+:global(.ant-modal.xray-form-modal .ant-modal-header) {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.065);
+  background: transparent !important;
+}
+
+:global(.ant-modal.xray-form-modal .ant-modal-title),
+:global(.ant-modal.xray-confirm-modal .ant-modal-confirm-title) {
+  color: #f1f5f9 !important;
+}
+
+:global(.ant-modal.xray-form-modal .ant-modal-close),
+:global(.ant-modal.xray-confirm-modal .ant-modal-confirm-content),
+:global(.ant-modal.xray-form-modal .ant-form-item-label > label) {
+  color: #64748b !important;
+}
+
+:global(.ant-modal.xray-form-modal :is(.ant-input, .ant-input-affix-wrapper, .ant-input-number, .ant-select-selector, .ant-input-group-addon)) {
+  border-color: rgba(255, 255, 255, 0.075) !important;
+  color: #cbd5e1 !important;
+  background: rgba(255, 255, 255, 0.035) !important;
+  box-shadow: none !important;
+}
+
+:global(.ant-modal.xray-form-modal .ant-divider) {
+  border-color: rgba(255, 255, 255, 0.065);
+}
+
+:global(.ant-modal.xray-form-modal .ant-btn-primary),
+:global(.ant-modal.xray-confirm-modal .ant-btn-primary) {
+  border-color: transparent !important;
+  background: linear-gradient(135deg, #6366f1, #7c3aed) !important;
+}
+
+@media (max-width: 768px) {
+  .content-area {
+    padding: 76px 12px 116px !important;
+  }
+
+  .xray-tabs :deep(.ant-tabs-tab) {
+    margin-right: 2px;
+    padding: 8px 11px;
+  }
+
+  .advanced-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .advanced-mode {
+    width: 100%;
+  }
+
+  .save-bar {
+    left: 0;
+    min-height: 88px;
+    padding: 12px;
+  }
+
+  .save-state span {
+    display: none;
+  }
+
+  .save-actions {
+    gap: 7px;
   }
 }
 </style>

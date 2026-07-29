@@ -16,7 +16,11 @@ const props = defineProps({
 // the separator char and the rest is the order of model keys
 // (i=Inbound, e=Email, o=Other). Surface it as two v-models that read
 // and write the underlying string.
-const remarkModels = { i: 'Inbound', e: 'Email', o: 'Other' };
+const remarkModels = computed(() => ({
+  i: t('pages.settings.remarkParts.inbound'),
+  e: t('pages.settings.remarkParts.email'),
+  o: t('pages.settings.remarkParts.other'),
+}));
 const remarkSeparators = [' ', '-', '_', '@', ':', '~', '|', ',', '.', '/'];
 
 const remarkModel = computed({
@@ -42,7 +46,7 @@ const remarkSeparator = computed({
 });
 
 const remarkSample = computed(() => {
-  const parts = remarkModel.value.map((k) => remarkModels[k]);
+  const parts = remarkModel.value.map((key) => remarkModels.value[key]);
   return parts.length === 0 ? '' : parts.join(remarkSeparator.value);
 });
 
@@ -51,10 +55,10 @@ const datepicker = computed({
   set: (value) => { props.allSetting.datepicker = value; },
 });
 
-const datepickerList = [
-  { name: 'Gregorian (Standard)', value: 'gregorian' },
-  { name: 'Jalalian (شمسی)', value: 'jalalian' },
-];
+const datepickerList = computed(() => [
+  { name: t('pages.settings.calendars.gregorian'), value: 'gregorian' },
+  { name: t('pages.settings.calendars.jalalian'), value: 'jalalian' },
+]);
 
 // Language is stored client-side in a cookie, NOT in AllSetting. The
 // legacy panel reloads on change so the Go side renders templates in
@@ -260,37 +264,37 @@ onMounted(loadInboundTags);
       </SettingListItem>
     </a-collapse-panel>
 
-    <a-collapse-panel key="6" header="LDAP">
+    <a-collapse-panel key="6" :header="t('pages.settings.ldap.title')">
       <SettingListItem paddings="small">
-        <template #title>Enable LDAP sync</template>
+        <template #title>{{ t('pages.settings.ldap.enable') }}</template>
         <template #control>
           <a-switch v-model:checked="allSetting.ldapEnable" />
         </template>
       </SettingListItem>
 
       <SettingListItem paddings="small">
-        <template #title>LDAP host</template>
+        <template #title>{{ t('pages.settings.ldap.host') }}</template>
         <template #control>
           <a-input v-model:value="allSetting.ldapHost" type="text" />
         </template>
       </SettingListItem>
 
       <SettingListItem paddings="small">
-        <template #title>LDAP port</template>
+        <template #title>{{ t('pages.settings.ldap.port') }}</template>
         <template #control>
           <a-input-number v-model:value="allSetting.ldapPort" :min="1" :max="65535" :style="{ width: '100%' }" />
         </template>
       </SettingListItem>
 
       <SettingListItem paddings="small">
-        <template #title>Use TLS (LDAPS)</template>
+        <template #title>{{ t('pages.settings.ldap.useTLS') }}</template>
         <template #control>
           <a-switch v-model:checked="allSetting.ldapUseTLS" />
         </template>
       </SettingListItem>
 
       <SettingListItem paddings="small">
-        <template #title>Bind DN</template>
+        <template #title>{{ t('pages.settings.ldap.bindDN') }}</template>
         <template #control>
           <a-input v-model:value="allSetting.ldapBindDN" type="text" />
         </template>
@@ -304,68 +308,68 @@ onMounted(loadInboundTags);
       </SettingListItem>
 
       <SettingListItem paddings="small">
-        <template #title>Base DN</template>
+        <template #title>{{ t('pages.settings.ldap.baseDN') }}</template>
         <template #control>
           <a-input v-model:value="allSetting.ldapBaseDN" type="text" />
         </template>
       </SettingListItem>
 
       <SettingListItem paddings="small">
-        <template #title>User filter</template>
+        <template #title>{{ t('pages.settings.ldap.userFilter') }}</template>
         <template #control>
           <a-input v-model:value="allSetting.ldapUserFilter" type="text" />
         </template>
       </SettingListItem>
 
       <SettingListItem paddings="small">
-        <template #title>User attribute (username/email)</template>
+        <template #title>{{ t('pages.settings.ldap.userAttribute') }}</template>
         <template #control>
           <a-input v-model:value="allSetting.ldapUserAttr" type="text" />
         </template>
       </SettingListItem>
 
       <SettingListItem paddings="small">
-        <template #title>VLESS flag attribute</template>
+        <template #title>{{ t('pages.settings.ldap.vlessField') }}</template>
         <template #control>
           <a-input v-model:value="allSetting.ldapVlessField" type="text" />
         </template>
       </SettingListItem>
 
       <SettingListItem paddings="small">
-        <template #title>Generic flag attribute (optional)</template>
-        <template #description>If set, overrides VLESS flag — e.g. shadowInactive.</template>
+        <template #title>{{ t('pages.settings.ldap.flagField') }}</template>
+        <template #description>{{ t('pages.settings.ldap.flagFieldDesc') }}</template>
         <template #control>
           <a-input v-model:value="allSetting.ldapFlagField" type="text" />
         </template>
       </SettingListItem>
 
       <SettingListItem paddings="small">
-        <template #title>Truthy values</template>
-        <template #description>Comma-separated; default: true,1,yes,on</template>
+        <template #title>{{ t('pages.settings.ldap.truthyValues') }}</template>
+        <template #description>{{ t('pages.settings.ldap.truthyValuesDesc') }}</template>
         <template #control>
           <a-input v-model:value="allSetting.ldapTruthyValues" type="text" />
         </template>
       </SettingListItem>
 
       <SettingListItem paddings="small">
-        <template #title>Invert flag</template>
-        <template #description>Enable when the attribute means disabled (e.g. shadowInactive).</template>
+        <template #title>{{ t('pages.settings.ldap.invertFlag') }}</template>
+        <template #description>{{ t('pages.settings.ldap.invertFlagDesc') }}</template>
         <template #control>
           <a-switch v-model:checked="allSetting.ldapInvertFlag" />
         </template>
       </SettingListItem>
 
       <SettingListItem paddings="small">
-        <template #title>Sync schedule</template>
-        <template #description>Cron-like string, e.g. @every 1m</template>
+        <template #title>{{ t('pages.settings.ldap.syncSchedule') }}</template>
+        <template #description>{{ t('pages.settings.ldap.syncScheduleDesc') }}</template>
         <template #control>
           <a-input v-model:value="allSetting.ldapSyncCron" type="text" />
         </template>
       </SettingListItem>
 
       <SettingListItem paddings="small">
-        <template #title>Inbound tags</template>
-        <template #description>Inbounds that LDAP sync may auto-create or auto-delete clients on.</template>
+        <template #title>{{ t('pages.settings.ldap.inboundTags') }}</template>
+        <template #description>{{ t('pages.settings.ldap.inboundTagsDesc') }}</template>
         <template #control>
           <a-select v-model:value="ldapInboundTagList" mode="multiple" :style="{ width: '100%' }">
             <a-select-option v-for="opt in inboundOptions" :key="opt.value" :value="opt.value">
@@ -373,41 +377,41 @@ onMounted(loadInboundTags);
             </a-select-option>
           </a-select>
           <div v-if="inboundOptions.length === 0" class="ldap-no-inbounds">
-            No inbounds found. Create one in Inbounds first.
+            {{ t('pages.settings.ldap.noInbounds') }}
           </div>
         </template>
       </SettingListItem>
 
       <SettingListItem paddings="small">
-        <template #title>Auto create clients</template>
+        <template #title>{{ t('pages.settings.ldap.autoCreate') }}</template>
         <template #control>
           <a-switch v-model:checked="allSetting.ldapAutoCreate" />
         </template>
       </SettingListItem>
 
       <SettingListItem paddings="small">
-        <template #title>Auto delete clients</template>
+        <template #title>{{ t('pages.settings.ldap.autoDelete') }}</template>
         <template #control>
           <a-switch v-model:checked="allSetting.ldapAutoDelete" />
         </template>
       </SettingListItem>
 
       <SettingListItem paddings="small">
-        <template #title>Default total (GB)</template>
+        <template #title>{{ t('pages.settings.ldap.defaultTotal') }}</template>
         <template #control>
           <a-input-number v-model:value="allSetting.ldapDefaultTotalGB" :min="0" :style="{ width: '100%' }" />
         </template>
       </SettingListItem>
 
       <SettingListItem paddings="small">
-        <template #title>Default expiry (days)</template>
+        <template #title>{{ t('pages.settings.ldap.defaultExpiry') }}</template>
         <template #control>
           <a-input-number v-model:value="allSetting.ldapDefaultExpiryDays" :min="0" :style="{ width: '100%' }" />
         </template>
       </SettingListItem>
 
       <SettingListItem paddings="small">
-        <template #title>Default IP limit</template>
+        <template #title>{{ t('pages.settings.ldap.defaultIpLimit') }}</template>
         <template #control>
           <a-input-number v-model:value="allSetting.ldapDefaultLimitIP" :min="0" :style="{ width: '100%' }" />
         </template>
@@ -419,7 +423,7 @@ onMounted(loadInboundTags);
 <style scoped>
 .ldap-no-inbounds {
   margin-top: 6px;
-  color: #999;
+  color: #64748b;
   font-size: 12px;
 }
 </style>

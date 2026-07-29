@@ -135,8 +135,8 @@ const fakeDnsList = computed(() => {
 
 const fakednsColumns = computed(() => [
   { title: '#', key: 'action', align: 'center', width: 60 },
-  { title: 'IP pool', dataIndex: 'ipPool', key: 'ipPool', align: 'left' },
-  { title: 'Pool size', dataIndex: 'poolSize', key: 'poolSize', align: 'right', width: 120 },
+  { title: t('pages.xray.fakedns.ipPool'), dataIndex: 'ipPool', key: 'ipPool', align: 'left' },
+  { title: t('pages.xray.fakedns.poolSize'), dataIndex: 'poolSize', key: 'poolSize', align: 'right', width: 120 },
 ]);
 
 function addFakedns() {
@@ -371,7 +371,7 @@ function updateFakednsField(idx, field, value) {
 :deep(.ant-collapse-content-box > .ant-empty),
 :deep(.ant-collapse-content-box > .ant-space) {
   margin: 0;
-  padding: 14px 16px;
+  padding: 16px 20px;
 }
 
 :deep(.ant-table-thead > tr > th) {

@@ -15,7 +15,7 @@ const padding = computed(() =>
 </script>
 
 <template>
-  <a-list-item :style="{ padding }">
+  <a-list-item class="setting-list-item" :style="{ padding }">
     <a-row :gutter="[8, 16]">
       <a-col :xs="24" :lg="12">
         <a-list-item-meta>
@@ -29,3 +29,9 @@ const padding = computed(() =>
     </a-row>
   </a-list-item>
 </template>
+
+<style scoped>
+.setting-list-item :deep(.ant-list-item-meta-content) {
+  min-width: 0;
+}
+</style>

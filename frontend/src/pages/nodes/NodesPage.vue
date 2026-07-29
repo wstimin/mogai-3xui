@@ -3,7 +3,7 @@ import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Modal, message } from 'ant-design-vue';
 import {
-  CloudServerOutlined,
+  ApartmentOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
   PlusOutlined,
@@ -26,6 +26,7 @@ const {
   loading,
   fetched,
   totals,
+  refresh,
   applyNodesEvent,
   create,
   update,
@@ -35,15 +36,12 @@ const {
   probe,
 } = useNodes();
 
-// Live updates — NodeHeartbeatJob pushes the fresh list every 10s.
 useWebSocket({ nodes: applyNodesEvent });
 
 const { isMobile } = useMediaQuery();
-
 const basePath = window.__X_UI_BASE_PATH__ || '';
 const requestUri = window.location.pathname;
 
-// === Form modal state =================================================
 const formOpen = ref(false);
 const formMode = ref('add');
 const formNode = ref(null);
@@ -62,8 +60,6 @@ function onEdit(node) {
   formOpen.value = true;
 }
 
-// Save callback the modal hands its payload to. We hide the create vs.
-// update branching here so the modal stays mode-agnostic.
 async function onSave(payload) {
   if (formMode.value === 'edit' && formNode.value?.id) {
     return update(formNode.value.id, payload);
@@ -73,6 +69,7 @@ async function onSave(payload) {
 
 function onDelete(node) {
   Modal.confirm({
+    class: 'node-confirm-modal',
     title: t('pages.nodes.deleteConfirmTitle', { name: node.name }),
     content: t('pages.nodes.deleteConfirmContent'),
     okText: t('delete'),
@@ -87,7 +84,7 @@ function onDelete(node) {
 
 async function onProbe(node) {
   if (probingIds.value.has(node.id)) return;
-  probingIds.value.add(node.id);
+  probingIds.value = new Set(probingIds.value).add(node.id);
   try {
     const msg = await probe(node.id);
     if (msg?.success && msg.obj) {
@@ -98,17 +95,21 @@ async function onProbe(node) {
       }
     }
   } finally {
-    probingIds.value.delete(node.id);
+    const pending = new Set(probingIds.value);
+    pending.delete(node.id);
+    probingIds.value = pending;
   }
 }
 
 async function onToggleEnable(node, next) {
   if (togglingIds.value.has(node.id)) return;
-  togglingIds.value.add(node.id);
+  togglingIds.value = new Set(togglingIds.value).add(node.id);
   try {
     await setEnable(node.id, next);
   } finally {
-    togglingIds.value.delete(node.id);
+    const pending = new Set(togglingIds.value);
+    pending.delete(node.id);
+    togglingIds.value = pending;
   }
 }
 </script>
@@ -119,66 +120,58 @@ async function onToggleEnable(node, next) {
       class="nodes-page"
       :class="{ 'is-dark': themeState.isDark, 'is-ultra': themeState.isUltra }"
     >
-      <AppSidebar :base-path="basePath" :request-uri="requestUri" />
+      <AppSidebar :base-path="basePath" :request-uri="requestUri" dashboard-style />
 
       <a-layout class="content-shell">
         <a-layout-content id="content-layout" class="content-area">
-          <a-spin :spinning="!fetched" :delay="200" tip="Loading…" size="large">
+          <a-spin :spinning="!fetched" :delay="200" :tip="t('loading')" size="large">
             <div v-if="!fetched" class="loading-spacer" />
 
-            <a-row v-else :gutter="[isMobile ? 8 : 16, isMobile ? 0 : 12]">
+            <a-row v-else :gutter="[isMobile ? 8 : 16, 12]">
               <a-col :span="24">
                 <div class="page-heading">
                   <div>
                     <h1>{{ t('menu.nodes') }}</h1>
-                    <p>{{ t('pages.nodes.totalNodes') }} · {{ t('pages.nodes.avgLatency') }}</p>
+                    <p>{{ t('pages.nodes.subtitle') }}</p>
                   </div>
-                  <a-button type="primary" @click="onAdd">
+                  <a-button type="primary" class="add-connection-button" @click="onAdd">
                     <template #icon><PlusOutlined /></template>
                     {{ t('pages.nodes.addNode') }}
                   </a-button>
                 </div>
               </a-col>
+
               <a-col :span="24">
                 <a-row class="metric-grid" :gutter="[12, 12]">
-                    <a-col :xs="12" :lg="6">
-                      <a-card class="metric-card" hoverable>
-                      <CustomStatistic
-                        :title="t('pages.nodes.totalNodes')"
-                        :value="String(totals.total)"
-                      >
+                  <a-col :xs="12" :lg="6">
+                    <a-card class="metric-card" hoverable>
+                      <CustomStatistic :title="t('pages.nodes.totalNodes')" :value="String(totals.total)">
                         <template #prefix>
-                          <span class="metric-icon icon-blue"><CloudServerOutlined /></span>
+                          <span class="metric-icon icon-violet"><ApartmentOutlined /></span>
                         </template>
                       </CustomStatistic>
-                      </a-card>
-                    </a-col>
-                    <a-col :xs="12" :lg="6">
-                      <a-card class="metric-card" hoverable>
-                      <CustomStatistic
-                        :title="t('pages.nodes.onlineNodes')"
-                        :value="String(totals.online)"
-                      >
+                    </a-card>
+                  </a-col>
+                  <a-col :xs="12" :lg="6">
+                    <a-card class="metric-card" hoverable>
+                      <CustomStatistic :title="t('pages.nodes.onlineNodes')" :value="String(totals.online)">
                         <template #prefix>
                           <span class="metric-icon icon-green"><CheckCircleOutlined /></span>
                         </template>
                       </CustomStatistic>
-                      </a-card>
-                    </a-col>
-                    <a-col :xs="12" :lg="6">
-                      <a-card class="metric-card" hoverable>
-                      <CustomStatistic
-                        :title="t('pages.nodes.offlineNodes')"
-                        :value="String(totals.offline)"
-                      >
+                    </a-card>
+                  </a-col>
+                  <a-col :xs="12" :lg="6">
+                    <a-card class="metric-card" hoverable>
+                      <CustomStatistic :title="t('pages.nodes.offlineNodes')" :value="String(totals.offline)">
                         <template #prefix>
                           <span class="metric-icon icon-red"><CloseCircleOutlined /></span>
                         </template>
                       </CustomStatistic>
-                      </a-card>
-                    </a-col>
-                    <a-col :xs="12" :lg="6">
-                      <a-card class="metric-card" hoverable>
+                    </a-card>
+                  </a-col>
+                  <a-col :xs="12" :lg="6">
+                    <a-card class="metric-card" hoverable>
                       <CustomStatistic
                         :title="t('pages.nodes.avgLatency')"
                         :value="totals.avgLatency > 0 ? `${totals.avgLatency} ms` : '-'"
@@ -187,18 +180,19 @@ async function onToggleEnable(node, next) {
                           <span class="metric-icon icon-amber"><ThunderboltOutlined /></span>
                         </template>
                       </CustomStatistic>
-                      </a-card>
-                    </a-col>
+                    </a-card>
+                  </a-col>
                 </a-row>
               </a-col>
 
-              <!-- Node table -->
               <a-col :span="24">
                 <NodeList
                   :nodes="nodes"
                   :loading="loading"
                   :probing-ids="probingIds"
                   :toggling-ids="togglingIds"
+                  @add="onAdd"
+                  @refresh="refresh"
                   @edit="onEdit"
                   @delete="onDelete"
                   @probe="onProbe"
@@ -223,21 +217,42 @@ async function onToggleEnable(node, next) {
 
 <style scoped>
 .nodes-page {
-  --bg-page: #e6e8ec;
-  --bg-card: #ffffff;
+  --xui-bg: #07080b;
+  --xui-surface: rgba(15, 17, 23, 0.94);
+  --xui-surface-2: rgba(255, 255, 255, 0.035);
+  --xui-surface-3: rgba(255, 255, 255, 0.055);
+  --xui-border: rgba(255, 255, 255, 0.065);
+  --xui-border-strong: rgba(255, 255, 255, 0.13);
+  --xui-primary: #6366f1;
+  --xui-primary-soft: rgba(99, 102, 241, 0.14);
+  --xui-text-strong: #f1f5f9;
+  --xui-text: #cbd5e1;
+  --xui-text-muted: #64748b;
+  --xui-text-faint: #475569;
+  --xui-success: #10b981;
+  --xui-warning: #f59e0b;
+  --xui-danger: #ef4444;
+  --xui-shadow: 0 18px 46px rgba(0, 0, 0, 0.28);
 
+  position: relative;
   min-height: 100vh;
-  background: var(--bg-page);
-}
-
-.nodes-page.is-dark {
-  --bg-page: #0a1222;
-  --bg-card: #151f31;
+  color: var(--xui-text);
+  background: #07080b;
 }
 
 .nodes-page.is-dark.is-ultra {
-  --bg-page: #050505;
-  --bg-card: #0c0e12;
+  background: #050609;
+}
+
+.nodes-page::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 72% 42% at 9% -12%, rgba(99, 102, 241, 0.14), transparent 56%),
+    radial-gradient(ellipse 52% 38% at 96% 4%, rgba(139, 92, 246, 0.075), transparent 52%);
 }
 
 .nodes-page :deep(.ant-layout),
@@ -246,7 +261,13 @@ async function onToggleEnable(node, next) {
 }
 
 .content-shell {
+  position: relative;
+  z-index: 1;
   background: transparent;
+}
+
+.content-area {
+  padding: 28px 32px 40px !important;
 }
 
 .loading-spacer {
@@ -255,6 +276,68 @@ async function onToggleEnable(node, next) {
 
 .page-heading {
   align-items: center;
+  margin-bottom: 4px;
+}
+
+.page-heading h1 {
+  color: #f1f5f9;
+  font-size: 24px;
+}
+
+.page-heading p {
+  max-width: 680px;
+  color: #64748b;
+}
+
+.add-connection-button {
+  min-height: 40px;
+  border: 0;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #6366f1, #7c3aed) !important;
+  box-shadow: 0 5px 18px rgba(99, 102, 241, 0.3);
+}
+
+.add-connection-button:hover {
+  transform: translateY(-1px);
+}
+
+.metric-grid {
+  margin: 4px 0 6px;
+}
+
+.metric-card {
+  min-height: 104px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.065) !important;
+  border-radius: 12px !important;
+  background: rgba(15, 17, 23, 0.78) !important;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.16) !important;
+  backdrop-filter: blur(16px);
+}
+
+.metric-card:hover {
+  border-color: rgba(255, 255, 255, 0.13) !important;
+}
+
+.metric-card :deep(.ant-card-body) {
+  min-height: 104px;
+  padding: 20px;
+}
+
+.metric-card :deep(.ant-statistic-title) {
+  margin-bottom: 7px;
+  color: #64748b !important;
+  font-size: 12px;
+}
+
+.metric-card :deep(.ant-statistic-content) {
+  color: #f1f5f9 !important;
+  font-size: 21px !important;
+  font-weight: 750;
+}
+
+.metric-card :deep(.ant-statistic-content-prefix) {
+  margin-inline-end: 10px;
 }
 
 .metric-icon {
@@ -262,44 +345,126 @@ async function onToggleEnable(node, next) {
   height: 38px;
   display: inline-grid;
   place-items: center;
-  margin-right: 6px;
   border: 1px solid transparent;
-  border-radius: 7px;
+  border-radius: 10px;
   font-size: 18px;
 }
 
-.icon-blue {
-  color: #60a5fa;
-  border-color: rgba(59, 130, 246, 0.25);
-  background: rgba(59, 130, 246, 0.12);
+.icon-violet {
+  color: #a5b4fc;
+  border-color: rgba(99, 102, 241, 0.26);
+  background: rgba(99, 102, 241, 0.13);
 }
 
 .icon-green {
   color: #34d399;
   border-color: rgba(16, 185, 129, 0.25);
-  background: rgba(16, 185, 129, 0.12);
+  background: rgba(16, 185, 129, 0.11);
 }
 
 .icon-red {
-  color: #fb7185;
+  color: #f87171;
   border-color: rgba(239, 68, 68, 0.25);
-  background: rgba(239, 68, 68, 0.12);
+  background: rgba(239, 68, 68, 0.11);
 }
 
 .icon-amber {
   color: #fbbf24;
   border-color: rgba(245, 158, 11, 0.25);
-  background: rgba(245, 158, 11, 0.12);
+  background: rgba(245, 158, 11, 0.11);
 }
 
-@media (max-width: 576px) {
+:global(.node-form-modal) {
+  --xui-bg: #07080b;
+  --xui-surface: #0f1117;
+  --xui-surface-2: rgba(255, 255, 255, 0.035);
+  --xui-surface-3: rgba(255, 255, 255, 0.055);
+  --xui-border: rgba(255, 255, 255, 0.065);
+  --xui-border-strong: rgba(255, 255, 255, 0.13);
+  --xui-primary: #6366f1;
+  --xui-primary-soft: rgba(99, 102, 241, 0.14);
+  --xui-text-strong: #f1f5f9;
+  --xui-text: #cbd5e1;
+  --xui-text-muted: #64748b;
+  --xui-danger: #ef4444;
+}
+
+:global(.node-confirm-modal) {
+  --xui-bg: #07080b;
+  --xui-surface: #0f1117;
+  --xui-surface-2: rgba(255, 255, 255, 0.035);
+  --xui-border: rgba(255, 255, 255, 0.065);
+  --xui-text-strong: #f1f5f9;
+  --xui-text: #cbd5e1;
+  --xui-text-muted: #64748b;
+  --xui-primary: #6366f1;
+}
+
+:global(.ant-modal.node-confirm-modal .ant-modal-content),
+:global(.node-form-modal .ant-modal-content) {
+  border: 1px solid rgba(255, 255, 255, 0.065) !important;
+  border-radius: 14px !important;
+  color: #cbd5e1;
+  background: #0f1117 !important;
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.52) !important;
+}
+
+:global(.ant-modal.node-confirm-modal .ant-modal-confirm-title),
+:global(.node-form-modal .ant-modal-title) {
+  color: #f1f5f9 !important;
+}
+
+:global(.ant-modal.node-confirm-modal .ant-modal-confirm-content) {
+  color: #64748b !important;
+}
+
+:global(.node-form-modal .ant-modal-header),
+:global(.node-form-modal .ant-modal-footer) {
+  border-color: rgba(255, 255, 255, 0.065) !important;
+  background: #0f1117 !important;
+}
+
+:global(.node-form-modal .ant-modal-body) {
+  color: #cbd5e1;
+  background: #090b10 !important;
+}
+
+:global(.node-form-modal .ant-btn-primary) {
+  border-color: transparent !important;
+  background: linear-gradient(135deg, #6366f1, #7c3aed) !important;
+  box-shadow: 0 5px 16px rgba(99, 102, 241, 0.28);
+}
+
+:global(.node-form-modal :is(.ant-input, .ant-input-affix-wrapper, .ant-input-number, .ant-select-selector)) {
+  border-color: rgba(255, 255, 255, 0.075) !important;
+  color: #cbd5e1 !important;
+  background: rgba(255, 255, 255, 0.035) !important;
+}
+
+@media (max-width: 768px) {
+  .content-area {
+    padding: 76px 12px 28px !important;
+  }
+
   .page-heading {
     align-items: flex-start;
   }
 
-  .page-heading :deep(.ant-btn) {
+  .page-heading h1 {
+    font-size: 21px;
+  }
+
+  .add-connection-button {
     flex: 0 0 auto;
   }
-}
 
+  .metric-card {
+    min-height: 94px;
+  }
+
+  .metric-card :deep(.ant-card-body) {
+    min-height: 94px;
+    padding: 15px 13px;
+  }
+}
 </style>

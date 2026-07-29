@@ -1,15 +1,9 @@
 // Centralizes the AllSetting fetch/save lifecycle the legacy panel
 // scattered across data() + methods + a busy-loop dirty checker.
-//
-// The dirty flag is recomputed once per second (matching the legacy
-// `while (true) sleep(1000)` poll) — we don't deep-watch because the
-// settings tree has many nested fields and a poll is cheap enough.
 
-import { onMounted, onUnmounted, reactive, ref } from 'vue';
+import { onMounted, reactive, ref, watch } from 'vue';
 import { HttpUtil } from '@/utils';
 import { AllSetting } from '@/models/setting.js';
-
-const DIRTY_POLL_MS = 1000;
 
 export function useAllSetting() {
   const fetched = ref(false);
@@ -46,27 +40,18 @@ export function useAllSetting() {
     }
   }
 
-  let timer = null;
-  function startDirtyPoll() {
-    if (timer != null) return;
-    timer = setInterval(() => {
-      // ObjectUtil.equals walks own enumerable props; reactive proxies
-      // expose them transparently so this works without cloning.
-      saveDisabled.value = oldAllSetting.equals(allSetting);
-    }, DIRTY_POLL_MS);
+  function discardChanges() {
+    Object.assign(allSetting, new AllSetting(oldAllSetting));
+    saveDisabled.value = true;
   }
-  function stopDirtyPoll() {
-    if (timer != null) {
-      clearInterval(timer);
-      timer = null;
-    }
-  }
+
+  watch(allSetting, () => {
+    saveDisabled.value = oldAllSetting.equals(allSetting);
+  }, { deep: true, flush: 'sync' });
 
   onMounted(() => {
     fetchAll();
-    startDirtyPoll();
   });
-  onUnmounted(stopDirtyPoll);
 
   return {
     fetched,
@@ -76,5 +61,6 @@ export function useAllSetting() {
     allSetting,
     fetchAll,
     saveAll,
+    discardChanges,
   };
 }

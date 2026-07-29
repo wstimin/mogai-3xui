@@ -30,6 +30,7 @@ const emit = defineEmits(['update:outbound-test-url', 'show-warp', 'show-nord', 
 
 function confirmResetDefault() {
   Modal.confirm({
+    class: 'xray-confirm-modal',
     title: t('pages.settings.resetDefaultConfig'),
     okText: t('reset'),
     okType: 'danger',
@@ -313,7 +314,7 @@ const localOutboundTestUrl = computed({
         <template #control><a-switch v-model:checked="statsOutboundUplink" /></template>
       </SettingListItem>
       <SettingListItem paddings="small">
-        <template #title>Outbound downlink stats</template>
+        <template #title>{{ t('pages.xray.statsOutboundDownlink') }}</template>
         <template #control><a-switch v-model:checked="statsOutboundDownlink" /></template>
       </SettingListItem>
     </a-collapse-panel>
@@ -495,15 +496,15 @@ const localOutboundTestUrl = computed({
 }
 
 .hint-alert {
-  margin: 12px 16px;
+  margin: 14px 20px;
   border: 1px solid rgba(245, 158, 11, 0.24);
-  border-radius: 7px;
+  border-radius: 11px;
   text-align: left;
   background: rgba(245, 158, 11, 0.08);
 }
 
 :deep(.ant-collapse-content-box > .ant-space) {
-  padding: 14px 16px !important;
+  padding: 16px 20px !important;
 }
 
 :deep(.ant-collapse-content-box > .ant-list-item + .hint-alert) {

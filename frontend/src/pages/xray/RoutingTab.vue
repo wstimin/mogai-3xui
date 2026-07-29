@@ -129,6 +129,7 @@ function onRuleConfirm(rule) {
 
 function confirmDelete(idx) {
   Modal.confirm({
+    class: 'xray-confirm-modal',
     title: `${t('delete')} ${t('pages.xray.Routings')} #${idx + 1}?`,
     okText: t('delete'),
     okType: 'danger',
@@ -152,9 +153,9 @@ function moveDown(idx) {
 // Computed so titles re-render after a locale swap.
 const desktopColumns = computed(() => [
   { title: '#', align: 'center', width: 70, key: 'action' },
-  { title: 'Source', align: 'left', width: 180, key: 'source' },
+  { title: t('pages.xray.ui.source'), align: 'left', width: 180, key: 'source' },
   { title: t('pages.inbounds.network'), align: 'left', width: 180, key: 'network' },
-  { title: 'Destination', align: 'left', key: 'destination' },
+  { title: t('pages.xray.ui.destination'), align: 'left', key: 'destination' },
   { title: t('pages.xray.Inbounds'), align: 'left', width: 180, key: 'inbound' },
   { title: t('pages.xray.Outbounds'), align: 'left', width: 170, key: 'target' },
 ]);
@@ -200,10 +201,10 @@ const columns = computed(() => (props.isMobile ? mobileColumns.value : desktopCo
                     <EditOutlined /> {{ t('edit') }}
                   </a-menu-item>
                   <a-menu-item :disabled="index === 0" @click="moveUp(index)">
-                    <ArrowUpOutlined />
+                    <ArrowUpOutlined /> {{ t('pages.xray.ui.moveUp') }}
                   </a-menu-item>
                   <a-menu-item :disabled="index === rows.length - 1" @click="moveDown(index)">
-                    <ArrowDownOutlined />
+                    <ArrowDownOutlined /> {{ t('pages.xray.ui.moveDown') }}
                   </a-menu-item>
                   <a-menu-item class="danger" @click="confirmDelete(index)">
                     <DeleteOutlined /> {{ t('delete') }}
@@ -350,8 +351,9 @@ const columns = computed(() => (props.isMobile ? mobileColumns.value : desktopCo
 .routing-panel {
   overflow: hidden;
   border: 1px solid var(--xui-border);
-  border-radius: 8px;
-  background: var(--xui-surface);
+  border-radius: 14px;
+  background: rgba(15, 17, 23, 0.82);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.16);
 }
 
 .tab-toolbar {
@@ -359,7 +361,7 @@ const columns = computed(() => (props.isMobile ? mobileColumns.value : desktopCo
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 12px;
+  padding: 14px 16px;
   border-bottom: 1px solid var(--xui-border);
   background: var(--xui-surface-2);
 }
@@ -368,7 +370,7 @@ const columns = computed(() => (props.isMobile ? mobileColumns.value : desktopCo
   min-width: 28px;
   padding: 3px 8px;
   border: 1px solid var(--xui-border);
-  border-radius: 7px;
+  border-radius: 8px;
   color: var(--xui-text-muted);
   background: var(--xui-surface);
   text-align: center;
@@ -418,13 +420,14 @@ const columns = computed(() => (props.isMobile ? mobileColumns.value : desktopCo
 .criterion-row {
   display: inline-flex;
   align-items: baseline;
-  gap: 4px;
+  gap: 6px;
   white-space: nowrap;
 }
 .criterion-label {
   font-size: 10px;
   text-transform: uppercase;
-  opacity: 0.55;
+  color: #64748b;
+  opacity: 1;
   letter-spacing: 0;
 }
 .criterion-value {
@@ -434,8 +437,9 @@ const columns = computed(() => (props.isMobile ? mobileColumns.value : desktopCo
   font-size: 11px;
   padding: 0 5px;
   border: 1px solid var(--xui-border);
-  border-radius: 6px;
-  background: var(--xui-surface-2);
+  border-radius: 7px;
+  color: #a5b4fc;
+  background: rgba(99, 102, 241, 0.1);
 }
 .criterion-empty {
   opacity: 0.4;

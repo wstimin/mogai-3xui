@@ -71,7 +71,7 @@ function download(content, name) {
 .text-modal-editor {
   overflow: hidden;
   border: 1px solid var(--xui-border);
-  border-radius: 6px;
+  border-radius: 10px;
   background: var(--xui-surface);
 }
 
@@ -95,7 +95,7 @@ function download(content, name) {
   overflow: hidden;
   padding: 0;
   border: 1px solid var(--xui-border);
-  border-radius: 8px;
+  border-radius: 14px;
   background: var(--xui-surface);
   box-shadow: 0 18px 48px rgba(0, 0, 0, 0.34);
 }

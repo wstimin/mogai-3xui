@@ -1,5 +1,6 @@
 <script setup>
 import { ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 // Generic prompt modal — used by features like "import inbound" that
 // need a free-form text/textarea input and a confirm callback. The
@@ -17,6 +18,7 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['update:open', 'confirm']);
+const { t } = useI18n();
 
 const value = ref('');
 
@@ -47,7 +49,7 @@ function onKeydown(e) {
     :open="open"
     :title="title"
     :ok-text="okText"
-    cancel-text="Cancel"
+    :cancel-text="t('cancel')"
     :mask-closable="false"
     :confirm-loading="loading"
     width="min(680px, calc(100vw - 32px))"
@@ -77,14 +79,14 @@ function onKeydown(e) {
 .prompt-input-shell {
   overflow: hidden;
   border: 1px solid var(--xui-border);
-  border-radius: 6px;
+  border-radius: 10px;
   background: var(--xui-surface);
   transition: border-color 0.16s ease, box-shadow 0.16s ease;
 }
 
 .prompt-input-shell:focus-within {
-  border-color: var(--xui-primary, #1677ff);
-  box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.16);
+  border-color: var(--xui-primary, #6366f1);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.16);
 }
 
 .prompt-input-shell :deep(.ant-input) {
@@ -106,7 +108,7 @@ function onKeydown(e) {
   overflow: hidden;
   padding: 0;
   border: 1px solid var(--xui-border);
-  border-radius: 8px;
+  border-radius: 14px;
   background: var(--xui-surface);
   box-shadow: 0 18px 48px rgba(0, 0, 0, 0.34);
 }

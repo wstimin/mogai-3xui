@@ -90,6 +90,7 @@ const title = computed(() =>
 
 <template>
   <a-modal
+    class="xray-form-modal"
     :open="open"
     :title="title"
     :ok-text="t('confirm')"
@@ -154,13 +155,13 @@ const title = computed(() =>
 
       <a-divider :style="{ margin: '5px 0' }" />
 
-      <a-form-item label="Skip fallback">
+      <a-form-item :label="t('pages.xray.ui.skipFallback')">
         <a-switch v-model:checked="form.skipFallback" />
       </a-form-item>
       <a-form-item :label="t('pages.xray.dns.disableCache')">
         <a-switch v-model:checked="form.disableCache" />
       </a-form-item>
-      <a-form-item label="Final query">
+      <a-form-item :label="t('pages.xray.ui.finalQuery')">
         <a-switch v-model:checked="form.finalQuery" />
       </a-form-item>
     </a-form>

@@ -118,7 +118,7 @@ async function copyToken() {
 </script>
 
 <template>
-  <a-modal :open="open" :title="title" :closable="true" @cancel="onCancel">
+  <a-modal class="two-factor-modal" :open="open" :title="title" :closable="true" @cancel="onCancel">
     <template v-if="type === 'set'">
       <p>{{ t('pages.settings.security.twoFactorModalSteps') }}</p>
       <a-divider />
@@ -177,5 +177,46 @@ async function copyToken() {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   word-break: break-all;
   text-align: center;
+}
+
+:global(.two-factor-modal .ant-modal-content) {
+  border: 1px solid rgba(255, 255, 255, 0.065) !important;
+  border-radius: 14px !important;
+  color: #cbd5e1;
+  background: #0f1117 !important;
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.52) !important;
+}
+
+:global(.two-factor-modal .ant-modal-header),
+:global(.two-factor-modal .ant-modal-footer) {
+  border-color: rgba(255, 255, 255, 0.065) !important;
+  background: #0f1117 !important;
+}
+
+:global(.two-factor-modal .ant-modal-title) {
+  color: #f1f5f9 !important;
+}
+
+:global(.two-factor-modal .ant-modal-body) {
+  color: #cbd5e1;
+  background: #090b10 !important;
+}
+
+:global(.two-factor-modal :is(.ant-input, .ant-input-affix-wrapper)) {
+  min-height: 40px;
+  border-color: rgba(255, 255, 255, 0.075) !important;
+  border-radius: 10px !important;
+  color: #cbd5e1 !important;
+  background: rgba(255, 255, 255, 0.035) !important;
+}
+
+:global(.two-factor-modal .ant-btn) {
+  min-height: 38px;
+  border-radius: 9px;
+}
+
+:global(.two-factor-modal .ant-btn-primary) {
+  border-color: transparent !important;
+  background: linear-gradient(135deg, #6366f1, #7c3aed) !important;
 }
 </style>

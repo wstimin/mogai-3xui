@@ -162,8 +162,8 @@ function openLink(key) {
   color: #fff;
   font-size: 18px;
   font-weight: 800;
-  background: #2f73f6;
-  box-shadow: 0 8px 20px rgba(47, 115, 246, 0.22);
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.28);
 }
 
 .brand-copy {
@@ -204,7 +204,7 @@ function openLink(key) {
 }
 
 .desktop-sider :deep(.ant-menu-item-selected) {
-  border: 1px solid rgba(59, 130, 246, 0.26);
+  border: 1px solid rgba(99, 102, 241, 0.26);
 }
 
 .sidebar-bottom {
@@ -351,7 +351,7 @@ function openLink(key) {
     display: grid;
     place-items: center;
     border: 1px solid var(--xui-border-strong);
-    border-radius: 6px;
+    border-radius: 10px;
     color: var(--xui-text-strong);
     background: var(--xui-surface);
     box-shadow: var(--xui-shadow);

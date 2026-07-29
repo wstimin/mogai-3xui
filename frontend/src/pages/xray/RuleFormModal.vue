@@ -138,6 +138,7 @@ const PROTOCOLS = ['http', 'tls', 'bittorrent', 'quic'];
 
 <template>
   <a-modal
+    class="xray-form-modal"
     :open="open"
     :title="title"
     :ok-text="okText"
@@ -150,8 +151,8 @@ const PROTOCOLS = ['http', 'tls', 'bittorrent', 'quic'];
     <a-form :colon="false" :label-col="{ md: { span: 8 } }" :wrapper-col="{ md: { span: 14 } }">
       <a-form-item>
         <template #label>
-          <a-tooltip title="Comma-separated list">
-            Source IPs <QuestionCircleOutlined />
+          <a-tooltip :title="t('pages.xray.ui.commaSeparated')">
+            {{ t('pages.xray.ui.sourceIps') }} <QuestionCircleOutlined />
           </a-tooltip>
         </template>
         <a-input v-model:value="form.sourceIP" placeholder="0.0.0.0/8, fc00::/7, geoip:ir" />
@@ -159,8 +160,8 @@ const PROTOCOLS = ['http', 'tls', 'bittorrent', 'quic'];
 
       <a-form-item>
         <template #label>
-          <a-tooltip title="Comma-separated list">
-            Source port <QuestionCircleOutlined />
+          <a-tooltip :title="t('pages.xray.ui.commaSeparated')">
+            {{ t('pages.xray.ui.sourcePort') }} <QuestionCircleOutlined />
           </a-tooltip>
         </template>
         <a-input v-model:value="form.sourcePort" placeholder="53,443,1000-2000" />
@@ -168,36 +169,36 @@ const PROTOCOLS = ['http', 'tls', 'bittorrent', 'quic'];
 
       <a-form-item>
         <template #label>
-          <a-tooltip title="Comma-separated list">
-            VLESS route <QuestionCircleOutlined />
+          <a-tooltip :title="t('pages.xray.ui.commaSeparated')">
+            {{ t('pages.xray.ui.vlessRoute') }} <QuestionCircleOutlined />
           </a-tooltip>
         </template>
         <a-input v-model:value="form.vlessRoute" placeholder="53,443,1000-2000" />
       </a-form-item>
 
-      <a-form-item label="Network">
+      <a-form-item :label="t('pages.xray.ui.network')">
         <a-select v-model:value="form.network">
-          <a-select-option v-for="n in NETWORKS" :key="n" :value="n">{{ n || '(any)' }}</a-select-option>
+          <a-select-option v-for="n in NETWORKS" :key="n" :value="n">{{ n || `(${t('pages.xray.ui.any')})` }}</a-select-option>
         </a-select>
       </a-form-item>
 
-      <a-form-item label="Protocol">
+      <a-form-item :label="t('pages.xray.ui.protocol')">
         <a-select v-model:value="form.protocol" mode="multiple">
           <a-select-option v-for="p in PROTOCOLS" :key="p" :value="p">{{ p }}</a-select-option>
         </a-select>
       </a-form-item>
 
-      <a-form-item label="Attributes">
+      <a-form-item :label="t('pages.xray.ui.attributes')">
         <a-button size="small" @click="form.attrs.push(['', ''])">
           <template #icon><PlusOutlined /></template>
         </a-button>
       </a-form-item>
       <a-form-item :wrapper-col="{ span: 24 }">
         <a-input-group v-for="(attr, idx) in form.attrs" :key="idx" compact class="mb-8">
-          <a-input :style="{ width: '45%' }" v-model:value="attr[0]" placeholder="Name">
+          <a-input :style="{ width: '45%' }" v-model:value="attr[0]" :placeholder="t('pages.xray.ui.name')">
             <template #addonBefore>{{ idx + 1 }}</template>
           </a-input>
-          <a-input :style="{ width: '45%' }" v-model:value="attr[1]" placeholder="Value" />
+          <a-input :style="{ width: '45%' }" v-model:value="attr[1]" :placeholder="t('pages.xray.ui.value')" />
           <a-button @click="form.attrs.splice(idx, 1)">
             <template #icon><MinusOutlined /></template>
           </a-button>
@@ -206,52 +207,52 @@ const PROTOCOLS = ['http', 'tls', 'bittorrent', 'quic'];
 
       <a-form-item>
         <template #label>
-          <a-tooltip title="Comma-separated list">IP <QuestionCircleOutlined /></a-tooltip>
+          <a-tooltip :title="t('pages.xray.ui.commaSeparated')">IP <QuestionCircleOutlined /></a-tooltip>
         </template>
         <a-input v-model:value="form.ip" placeholder="0.0.0.0/8, fc00::/7, geoip:ir" />
       </a-form-item>
 
       <a-form-item>
         <template #label>
-          <a-tooltip title="Comma-separated list">Domain <QuestionCircleOutlined /></a-tooltip>
+          <a-tooltip :title="t('pages.xray.ui.commaSeparated')">{{ t('pages.xray.ui.domain') }} <QuestionCircleOutlined /></a-tooltip>
         </template>
         <a-input v-model:value="form.domain" placeholder="google.com, geosite:cn" />
       </a-form-item>
 
       <a-form-item>
         <template #label>
-          <a-tooltip title="Comma-separated list">User <QuestionCircleOutlined /></a-tooltip>
+          <a-tooltip :title="t('pages.xray.ui.commaSeparated')">{{ t('pages.xray.ui.user') }} <QuestionCircleOutlined /></a-tooltip>
         </template>
         <a-input v-model:value="form.user" placeholder="email address" />
       </a-form-item>
 
       <a-form-item>
         <template #label>
-          <a-tooltip title="Comma-separated list">Port <QuestionCircleOutlined /></a-tooltip>
+          <a-tooltip :title="t('pages.xray.ui.commaSeparated')">{{ t('pages.xray.ui.port') }} <QuestionCircleOutlined /></a-tooltip>
         </template>
         <a-input v-model:value="form.port" placeholder="53,443,1000-2000" />
       </a-form-item>
 
-      <a-form-item label="Inbound tags">
+      <a-form-item :label="t('pages.xray.ui.inboundTags')">
         <a-select v-model:value="form.inboundTag" mode="multiple">
           <a-select-option v-for="tag in inboundTags" :key="tag" :value="tag">{{ tag }}</a-select-option>
         </a-select>
       </a-form-item>
 
-      <a-form-item label="Outbound tag">
+      <a-form-item :label="t('pages.xray.ui.outboundTag')">
         <a-select v-model:value="form.outboundTag">
-          <a-select-option v-for="tag in outboundTags" :key="tag || '__empty'" :value="tag">{{ tag || '(none)' }}</a-select-option>
+          <a-select-option v-for="tag in outboundTags" :key="tag || '__empty'" :value="tag">{{ tag || `(${t('pages.xray.ui.none')})` }}</a-select-option>
         </a-select>
       </a-form-item>
 
       <a-form-item>
         <template #label>
-          <a-tooltip title="Routes traffic through one of the configured load balancers">
-            Balancer tag <QuestionCircleOutlined />
+          <a-tooltip :title="t('pages.xray.balancer.balancerDesc')">
+            {{ t('pages.xray.ui.balancerTag') }} <QuestionCircleOutlined />
           </a-tooltip>
         </template>
         <a-select v-model:value="form.balancerTag">
-          <a-select-option v-for="tag in balancerTags" :key="tag || '__empty'" :value="tag">{{ tag || '(none)' }}</a-select-option>
+          <a-select-option v-for="tag in balancerTags" :key="tag || '__empty'" :value="tag">{{ tag || `(${t('pages.xray.ui.none')})` }}</a-select-option>
         </a-select>
       </a-form-item>
     </a-form>

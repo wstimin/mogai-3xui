@@ -5,10 +5,8 @@
 // printed for the textarea; tabs that want a parsed view can JSON.parse
 // it themselves.
 
-import { onMounted, onUnmounted, ref, watch } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import { HttpUtil, PromiseUtil } from '@/utils';
-
-const DIRTY_POLL_MS = 1000;
 
 // Hoists the parsed `templateSettings` alongside the JSON string so
 // structured tabs (Basics/Routing/Outbounds/etc.) can mutate fields
@@ -80,7 +78,7 @@ export function useXraySetting() {
   }
 
   // Structured tabs mutate templateSettings deeply. Re-stringify on
-  // change so the Advanced JSON view + the dirty-poll see the edits.
+  // change so the Advanced JSON view and dirty state see the edits.
   watch(
     templateSettings,
     (next) => {
@@ -120,6 +118,19 @@ export function useXraySetting() {
       if (msg?.success) await fetchAll();
     } finally {
       spinning.value = false;
+    }
+  }
+
+  function discardChanges() {
+    syncing = true;
+    try {
+      xraySetting.value = oldXraySetting.value;
+      templateSettings.value = JSON.parse(oldXraySetting.value);
+      outboundTestUrl.value = oldOutboundTestUrl.value;
+      outboundTestStates.value = {};
+      saveDisabled.value = true;
+    } finally {
+      syncing = false;
     }
   }
 
@@ -172,7 +183,7 @@ export function useXraySetting() {
       const msg = await HttpUtil.get('/panel/setting/getDefaultJsonConfig');
       if (msg?.success) {
         // Mutate templateSettings — the watch above re-stringifies into
-        // xraySetting so the Advanced JSON tab and dirty-poll see it.
+        // xraySetting so the Advanced JSON tab and dirty state see it.
         templateSettings.value = JSON.parse(JSON.stringify(msg.obj));
       }
     } finally {
@@ -196,30 +207,17 @@ export function useXraySetting() {
     }
   }
 
-  // Same 1s busy-loop pattern the settings page uses — keep it cheap
-  // and consistent. Real work (the JSON diff) is just a string compare.
-  let timer = null;
-  function startDirtyPoll() {
-    if (timer != null) return;
-    timer = setInterval(() => {
-      saveDisabled.value =
-        oldXraySetting.value === xraySetting.value
-        && oldOutboundTestUrl.value === outboundTestUrl.value;
-    }, DIRTY_POLL_MS);
-  }
-  function stopDirtyPoll() {
-    if (timer != null) {
-      clearInterval(timer);
-      timer = null;
-    }
-  }
+  // Recompute dirty state immediately when either saved field changes.
+  watch([xraySetting, outboundTestUrl], () => {
+    saveDisabled.value =
+      oldXraySetting.value === xraySetting.value
+      && oldOutboundTestUrl.value === outboundTestUrl.value;
+  }, { flush: 'sync' });
 
   onMounted(() => {
     fetchAll();
     fetchOutboundsTraffic();
-    startDirtyPoll();
   });
-  onUnmounted(stopDirtyPoll);
 
   return {
     fetched,
@@ -240,6 +238,7 @@ export function useXraySetting() {
     applyOutboundsEvent,
     testOutbound,
     saveAll,
+    discardChanges,
     resetToDefault,
     restartXray,
   };

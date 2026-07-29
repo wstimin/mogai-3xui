@@ -114,7 +114,7 @@ const visibleInbounds = computed(() => {
 });
 
 const filterItems = computed(() => [
-  { key: 'all', label: t('pages.client.selectAll') },
+  { key: 'all', label: t('pages.inbounds.filterAll') },
   { key: 'running', label: t('pages.index.xrayStatusRunning') },
   { key: 'disabled', label: t('disabled') },
   { key: 'expiring', label: t('depletingSoon') },
@@ -223,13 +223,17 @@ function nodeText(record) {
         <a-input v-model:value="searchKey" :placeholder="t('search')" allow-clear>
           <template #prefix><SearchOutlined /></template>
         </a-input>
-        <a-tooltip title="Refresh">
-          <a-button aria-label="Refresh" @click="emit('refresh')">
+        <a-tooltip :title="t('pages.inbounds.refresh')">
+          <a-button :aria-label="t('pages.inbounds.refresh')" @click="emit('refresh')">
             <template #icon><ReloadOutlined /></template>
           </a-button>
         </a-tooltip>
       </div>
       <div class="panel-toolbar__group">
+        <a-button class="import-button" @click="emit('general-action', 'import')">
+          <template #icon><ImportOutlined /></template>
+          {{ t('pages.inbounds.importInbound') }}
+        </a-button>
         <a-dropdown :trigger="['click']">
           <a-button>
             <template #icon><MoreOutlined /></template>
@@ -361,38 +365,88 @@ function nodeText(record) {
 .inbound-list-shell {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
+}
+
+.inbound-toolbar {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .search-group :deep(.ant-input-affix-wrapper) {
-  width: min(360px, 44vw);
+  width: min(360px, 42vw);
+  min-height: 40px;
+  padding-inline: 13px;
+  border-color: rgba(255, 255, 255, 0.065);
+  border-radius: 10px !important;
+  background: rgba(255, 255, 255, 0.03) !important;
+}
+
+.search-group :deep(.ant-input-prefix) {
+  color: #64748b;
+}
+
+.inbound-toolbar :deep(.ant-btn) {
+  min-height: 40px;
+  border-color: rgba(255, 255, 255, 0.065);
+  border-radius: 10px;
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.inbound-toolbar :deep(.ant-btn:hover) {
+  color: #f1f5f9;
+  border-color: rgba(255, 255, 255, 0.13);
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.inbound-toolbar :deep(.ant-btn-primary) {
+  color: #fff;
+  border-color: transparent;
+  background: linear-gradient(135deg, #6366f1, #7c3aed);
+  box-shadow: 0 5px 18px rgba(99, 102, 241, 0.3);
+}
+
+.inbound-toolbar :deep(.ant-btn-primary:hover) {
+  color: #fff;
+  border-color: transparent;
+  background: linear-gradient(135deg, #7477f5, #8b4de3);
+  transform: translateY(-1px);
 }
 
 .filter-tabs {
   display: flex;
-  gap: 4px;
+  gap: 8px;
   overflow-x: auto;
-  padding: 4px;
-  border: 1px solid var(--xui-border);
-  border-radius: 8px;
-  background: var(--xui-surface-2);
+  padding: 0 0 2px;
+  border: 0;
+  background: transparent;
 }
 
 .filter-tabs button {
-  min-height: 34px;
+  min-height: 35px;
   padding: 0 14px;
-  border: 0;
-  border-radius: 6px;
-  color: var(--xui-text-muted);
+  border: 1px solid rgba(255, 255, 255, 0.065);
+  border-radius: 8px;
+  color: #64748b;
   background: transparent;
   cursor: pointer;
   white-space: nowrap;
+  transition: color 150ms ease, border-color 150ms ease, background 150ms ease;
 }
 
-.filter-tabs button:hover,
+.filter-tabs button:hover {
+  color: #cbd5e1;
+  border-color: rgba(255, 255, 255, 0.13);
+  background: rgba(255, 255, 255, 0.035);
+}
+
 .filter-tabs button.active {
-  color: #fff;
-  background: var(--xui-primary);
+  color: #a5b4fc;
+  border-color: rgba(99, 102, 241, 0.32);
+  background: rgba(99, 102, 241, 0.14);
 }
 
 .inbound-cards {
@@ -406,32 +460,41 @@ function nodeText(record) {
   overflow: hidden;
   display: flex;
   min-width: 0;
-  border: 1px solid var(--xui-border);
-  border-radius: 8px;
-  background: var(--xui-surface);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.09);
-  transition: border-color 160ms ease, box-shadow 160ms ease;
+  border: 1px solid rgba(255, 255, 255, 0.055);
+  border-radius: 14px;
+  background: rgba(15, 17, 23, 0.82);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.14);
+  backdrop-filter: blur(18px);
+  animation: card-enter 320ms ease both;
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
 }
 
 .inbound-card:hover {
-  border-color: var(--xui-border-strong);
-  box-shadow: var(--xui-shadow);
+  border-color: rgba(255, 255, 255, 0.115);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.23);
+  transform: translateY(-1px);
+}
+
+@keyframes card-enter {
+  from { opacity: 0; transform: translateY(7px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .status-rail {
-  width: 4px;
-  flex: 0 0 4px;
-  background: var(--xui-success);
+  width: 3px;
+  flex: 0 0 3px;
+  background: #10b981;
+  box-shadow: 0 0 14px rgba(16, 185, 129, 0.38);
 }
 
-.inbound-card.status-disabled .status-rail { background: #738196; }
-.inbound-card.status-expiring .status-rail { background: var(--xui-warning); }
-.inbound-card.status-expired .status-rail { background: var(--xui-danger); }
+.inbound-card.status-disabled .status-rail { background: #475569; box-shadow: none; }
+.inbound-card.status-expiring .status-rail { background: #f59e0b; box-shadow: 0 0 14px rgba(245, 158, 11, 0.32); }
+.inbound-card.status-expired .status-rail { background: #ef4444; box-shadow: 0 0 14px rgba(239, 68, 68, 0.32); }
 
 .card-main {
   min-width: 0;
   flex: 1;
-  padding: 18px 20px;
+  padding: 17px 18px 16px;
 }
 
 .card-header {
@@ -441,17 +504,23 @@ function nodeText(record) {
 }
 
 .expand-button {
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   display: grid;
   place-items: center;
-  flex: 0 0 28px;
+  flex: 0 0 30px;
   margin-top: 1px;
-  border: 1px solid var(--xui-border);
-  border-radius: 6px;
-  color: var(--xui-text-muted);
-  background: var(--xui-surface-2);
+  border: 1px solid rgba(255, 255, 255, 0.065);
+  border-radius: 8px;
+  color: #64748b;
+  background: transparent;
   cursor: pointer;
+}
+
+.expand-button:hover {
+  color: #a5b4fc;
+  border-color: rgba(99, 102, 241, 0.3);
+  background: rgba(99, 102, 241, 0.1);
 }
 
 .expand-button span {
@@ -485,8 +554,8 @@ function nodeText(record) {
   max-width: 420px;
   margin: 0 4px 0 0;
   overflow: hidden;
-  color: var(--xui-text-strong);
-  font-size: 16px;
+  color: #f1f5f9;
+  font-size: 15px;
   line-height: 28px;
   font-weight: 700;
   text-overflow: ellipsis;
@@ -499,24 +568,25 @@ function nodeText(record) {
   align-items: center;
   min-height: 23px;
   padding: 2px 8px;
-  border: 1px solid var(--xui-border);
-  border-radius: 5px;
-  color: var(--xui-text-muted);
-  background: var(--xui-surface-2);
-  font-size: 11px;
+  border: 1px solid rgba(255, 255, 255, 0.065);
+  border-radius: 6px;
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.035);
+  font-size: 11.5px;
+  font-weight: 550;
 }
 
-.badge.protocol { color: #8ec5ff; border-color: rgba(59, 130, 246, 0.38); background: rgba(59, 130, 246, 0.12); }
-.badge.status-running { color: #63e6be; border-color: rgba(16, 185, 129, 0.34); background: rgba(16, 185, 129, 0.1); }
-.badge.status-disabled { color: #b3bfce; }
-.badge.status-expiring { color: #ffd166; border-color: rgba(245, 158, 11, 0.36); background: rgba(245, 158, 11, 0.1); }
-.badge.status-expired { color: #ff8a8a; border-color: rgba(239, 68, 68, 0.36); background: rgba(239, 68, 68, 0.1); }
-.badge.port { color: #b7c7dc; }
+.badge.protocol { color: #a5b4fc; border-color: rgba(99, 102, 241, 0.3); background: rgba(99, 102, 241, 0.13); }
+.badge.status-running { color: #34d399; border-color: rgba(16, 185, 129, 0.28); background: rgba(16, 185, 129, 0.1); }
+.badge.status-disabled { color: #94a3b8; background: rgba(100, 116, 139, 0.11); }
+.badge.status-expiring { color: #fbbf24; border-color: rgba(245, 158, 11, 0.3); background: rgba(245, 158, 11, 0.1); }
+.badge.status-expired { color: #f87171; border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.1); }
+.badge.port { color: #cbd5e1; font-variant-numeric: tabular-nums; }
 
 .meta-line {
   gap: 7px 16px;
   margin-top: 9px;
-  color: var(--xui-text-muted);
+  color: #64748b;
   font-size: 12px;
 }
 
@@ -527,15 +597,15 @@ function nodeText(record) {
   display: inline-block;
   margin: 0 7px 2px 0;
   border-radius: 50%;
-  background: var(--xui-text-faint);
+  background: #475569;
 }
 
 .special-tag {
   min-height: 20px;
   padding: 1px 6px;
-  color: #67e8f9;
-  border-color: rgba(6, 182, 212, 0.34);
-  background: rgba(6, 182, 212, 0.08);
+  color: #c4b5fd;
+  border-color: rgba(139, 92, 246, 0.28);
+  background: rgba(139, 92, 246, 0.09);
 }
 
 .primary-actions {
@@ -548,29 +618,34 @@ function nodeText(record) {
   width: 34px;
   height: 34px;
   padding: 0;
-  color: var(--xui-text-muted);
-  border-color: var(--xui-border);
-  background: var(--xui-surface-2);
+  color: #64748b;
+  border-color: rgba(255, 255, 255, 0.065);
+  border-radius: 8px;
+  background: transparent;
 }
 
-.primary-actions :deep(.icon-action:hover) { color: #fff; border-color: var(--xui-primary); background: var(--xui-primary); }
-.primary-actions :deep(.power.enabled:hover) { border-color: var(--xui-warning); background: var(--xui-warning); }
-.primary-actions :deep(.delete:hover) { border-color: var(--xui-danger); background: var(--xui-danger); }
+.primary-actions :deep(.icon-action:hover) { color: #f1f5f9; border-color: rgba(255, 255, 255, 0.14); background: rgba(255, 255, 255, 0.055); }
+.primary-actions :deep(.qr:hover),
+.primary-actions :deep(.copy:hover),
+.primary-actions :deep(.edit:hover) { color: #a5b4fc; border-color: rgba(99, 102, 241, 0.32); background: rgba(99, 102, 241, 0.12); }
+.primary-actions :deep(.power.enabled) { color: #34d399; }
+.primary-actions :deep(.power:hover) { color: #fbbf24; border-color: rgba(245, 158, 11, 0.28); background: rgba(245, 158, 11, 0.1); }
+.primary-actions :deep(.delete:hover) { color: #f87171; border-color: rgba(239, 68, 68, 0.28); background: rgba(239, 68, 68, 0.1); }
 
 .traffic-section {
   width: min(580px, 100%);
-  margin: 16px 0 0 40px;
+  margin: 15px 0 0 42px;
 }
 
 .traffic-labels {
   gap: 10px;
   margin-bottom: 4px;
-  color: var(--xui-text-muted);
+  color: #64748b;
   font-size: 11px;
 }
 
 .traffic-labels strong {
-  color: var(--xui-text);
+  color: #cbd5e1;
   font-weight: 600;
 }
 
@@ -579,13 +654,14 @@ function nodeText(record) {
 }
 
 .traffic-section :deep(.ant-progress-inner) {
-  background: var(--xui-surface-3);
+  background: rgba(255, 255, 255, 0.055);
 }
 
 .client-panel {
-  margin: 16px 0 0 40px;
-  padding-top: 16px;
-  border-top: 1px solid var(--xui-border);
+  margin: 17px -18px -16px -21px;
+  padding: 15px 18px 16px 21px;
+  border-top: 1px solid rgba(255, 255, 255, 0.055);
+  background: rgba(0, 0, 0, 0.18);
 }
 
 .danger-item {
@@ -614,6 +690,10 @@ function nodeText(record) {
     flex: 1;
   }
 
+  .inbound-toolbar :deep(.ant-btn) {
+    min-width: 0;
+  }
+
   .card-main {
     padding: 14px 12px;
   }
@@ -633,8 +713,15 @@ function nodeText(record) {
   }
 
   .traffic-section,
-  .client-panel {
+  .traffic-section {
     margin-left: 0;
+  }
+
+  .client-panel {
+    margin-right: -12px;
+    margin-left: -15px;
+    padding-right: 12px;
+    padding-left: 15px;
   }
 }
 </style>

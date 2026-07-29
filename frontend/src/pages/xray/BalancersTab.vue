@@ -23,11 +23,14 @@ const props = defineProps({
   clientReverseTags: { type: Array, default: () => [] },
 });
 
-const STRATEGY_LABELS = {
-  random: 'Random',
-  roundRobin: 'Round robin',
-  leastLoad: 'Least load',
-  leastPing: 'Least ping',
+const strategyLabel = (strategy) => {
+  const key = {
+    random: 'strategyRandom',
+    roundRobin: 'strategyRoundRobin',
+    leastLoad: 'strategyLeastLoad',
+    leastPing: 'strategyLeastPing',
+  }[strategy];
+  return key ? t(`pages.xray.ui.${key}`) : strategy;
 };
 
 const rows = computed(() => {
@@ -120,6 +123,7 @@ function onConfirm(form) {
 
 function confirmDelete(idx) {
   Modal.confirm({
+    class: 'xray-confirm-modal',
     title: `${t('delete')} ${t('pages.xray.Balancers')} #${idx + 1}?`,
     okText: t('delete'),
     okType: 'danger',
@@ -134,10 +138,10 @@ function confirmDelete(idx) {
 
 const columns = computed(() => [
   { title: '#', key: 'action', align: 'center', width: 80 },
-  { title: 'Tag', dataIndex: 'tag', key: 'tag', align: 'center', width: 160 },
-  { title: 'Strategy', key: 'strategy', align: 'center', width: 140 },
-  { title: 'Selector', key: 'selector', align: 'center' },
-  { title: 'Fallback', dataIndex: 'fallbackTag', key: 'fallbackTag', align: 'center', width: 160 },
+  { title: t('pages.xray.outbound.tag'), dataIndex: 'tag', key: 'tag', align: 'center', width: 160 },
+  { title: t('pages.xray.ui.strategy'), key: 'strategy', align: 'center', width: 140 },
+  { title: t('pages.xray.ui.selector'), key: 'selector', align: 'center' },
+  { title: t('pages.xray.ui.fallback'), dataIndex: 'fallbackTag', key: 'fallbackTag', align: 'center', width: 160 },
 ]);
 </script>
 
@@ -183,7 +187,7 @@ const columns = computed(() => [
 
           <template v-else-if="column.key === 'strategy'">
             <a-tag :color="record.strategy === 'random' ? 'purple' : 'green'">
-              {{ STRATEGY_LABELS[record.strategy] || record.strategy }}
+              {{ strategyLabel(record.strategy) }}
             </a-tag>
           </template>
 
@@ -202,10 +206,11 @@ const columns = computed(() => [
 <style scoped>
 .balancer-panel {
   overflow: hidden;
-  padding: 12px;
+  padding: 16px;
   border: 1px solid var(--xui-border);
-  border-radius: 8px;
-  background: var(--xui-surface);
+  border-radius: 14px;
+  background: rgba(15, 17, 23, 0.82);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.16);
 }
 
 .balancer-panel :deep(.ant-table) {

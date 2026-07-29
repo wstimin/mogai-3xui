@@ -2,8 +2,11 @@
 import { computed, ref, watch } from 'vue';
 import { ApiOutlined, SyncOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons-vue';
 import { message } from 'ant-design-vue';
+import { useI18n } from 'vue-i18n';
 
 import { HttpUtil, SizeFormatter, ObjectUtil, Wireguard } from '@/utils';
+
+const { t } = useI18n();
 
 // Cloudflare WARP provisioning modal. Mirrors the legacy warp_modal:
 //   • when no WARP account is registered yet, a single Create button
@@ -162,7 +165,7 @@ function reservedFor(clientId) {
 
 function addOutbound() {
   if (!stagedOutbound.value) {
-    message.warning('Fetch the WARP config first.');
+    message.warning(t('pages.xray.ui.fetchWarpFirst'));
     return;
   }
   emit('add-outbound', stagedOutbound.value);
@@ -183,6 +186,7 @@ const hasConfig = computed(() => !ObjectUtil.isEmpty(warpConfig.value));
 
 <template>
   <a-modal
+    class="xray-form-modal"
     :open="open"
     title="Cloudflare WARP"
     :footer="null"
@@ -198,7 +202,7 @@ const hasConfig = computed(() => !ObjectUtil.isEmpty(warpConfig.value));
     <template v-if="!hasWarp">
       <a-button type="primary" :loading="loading" @click="register">
         <template #icon><ApiOutlined /></template>
-        Create WARP account
+        {{ t('pages.xray.ui.createAccount') }}
       </a-button>
     </template>
 
@@ -207,19 +211,19 @@ const hasConfig = computed(() => !ObjectUtil.isEmpty(warpConfig.value));
       <table class="warp-data-table">
         <tbody>
           <tr class="row-odd">
-            <td>Access token</td>
+            <td>{{ t('pages.xray.outbound.accessToken') }}</td>
             <td>{{ warpData.access_token }}</td>
           </tr>
           <tr>
-            <td>Device ID</td>
+            <td>{{ t('pages.xray.ui.deviceId') }}</td>
             <td>{{ warpData.device_id }}</td>
           </tr>
           <tr class="row-odd">
-            <td>License key</td>
+            <td>{{ t('pages.xray.ui.licenseKey') }}</td>
             <td>{{ warpData.license_key }}</td>
           </tr>
           <tr>
-            <td>Private key</td>
+            <td>{{ t('pages.xray.outbound.privateKey') }}</td>
             <td>{{ warpData.private_key }}</td>
           </tr>
         </tbody>
@@ -227,10 +231,10 @@ const hasConfig = computed(() => !ObjectUtil.isEmpty(warpConfig.value));
 
       <a-button :loading="loading" type="primary" danger class="mt-8" @click="delConfig">
         <template #icon><DeleteOutlined /></template>
-        Delete account
+        {{ t('pages.xray.ui.deleteAccount') }}
       </a-button>
 
-      <a-divider class="zero-margin">Settings</a-divider>
+      <a-divider class="zero-margin">{{ t('pages.xray.ui.settings') }}</a-divider>
 
       <a-collapse class="my-10">
         <a-collapse-panel header="WARP / WARP+ license key">
@@ -243,70 +247,70 @@ const hasConfig = computed(() => !ObjectUtil.isEmpty(warpConfig.value));
                 :disabled="warpPlus.length < 26"
                 :loading="loading"
                 @click="updateLicense"
-              >Update</a-button>
+              >{{ t('pages.xray.ui.update') }}</a-button>
             </a-form-item>
           </a-form>
         </a-collapse-panel>
       </a-collapse>
 
-      <a-divider class="zero-margin">Account info</a-divider>
+      <a-divider class="zero-margin">{{ t('pages.xray.ui.accountInfo') }}</a-divider>
       <a-button class="my-8" :loading="loading" type="primary" @click="getConfig">
         <template #icon><SyncOutlined /></template>
-        Refresh
+        {{ t('pages.xray.ui.refresh') }}
       </a-button>
 
       <template v-if="hasConfig">
         <table class="warp-data-table">
           <tbody>
             <tr class="row-odd">
-              <td>Device name</td>
+              <td>{{ t('pages.xray.ui.deviceName') }}</td>
               <td>{{ warpConfig.name }}</td>
             </tr>
             <tr>
-              <td>Device model</td>
+              <td>{{ t('pages.xray.ui.deviceModel') }}</td>
               <td>{{ warpConfig.model }}</td>
             </tr>
             <tr class="row-odd">
-              <td>Device enabled</td>
+              <td>{{ t('pages.xray.ui.deviceEnabled') }}</td>
               <td>{{ warpConfig.enabled }}</td>
             </tr>
             <template v-if="warpConfig.account">
               <tr>
-                <td>Account type</td>
+                <td>{{ t('pages.xray.ui.accountType') }}</td>
                 <td>{{ warpConfig.account.account_type }}</td>
               </tr>
               <tr class="row-odd">
-                <td>Role</td>
+                <td>{{ t('pages.xray.ui.role') }}</td>
                 <td>{{ warpConfig.account.role }}</td>
               </tr>
               <tr>
-                <td>WARP+ data</td>
+                <td>{{ t('pages.xray.ui.warpPlusData') }}</td>
                 <td>{{ SizeFormatter.sizeFormat(warpConfig.account.premium_data) }}</td>
               </tr>
               <tr class="row-odd">
-                <td>Quota</td>
+                <td>{{ t('pages.xray.ui.quota') }}</td>
                 <td>{{ SizeFormatter.sizeFormat(warpConfig.account.quota) }}</td>
               </tr>
               <tr v-if="warpConfig.account.usage">
-                <td>Usage</td>
+                <td>{{ t('pages.xray.ui.usage') }}</td>
                 <td>{{ SizeFormatter.sizeFormat(warpConfig.account.usage) }}</td>
               </tr>
             </template>
           </tbody>
         </table>
 
-        <a-divider class="my-10">Outbound status</a-divider>
+        <a-divider class="my-10">{{ t('pages.xray.ui.outboundStatus') }}</a-divider>
         <template v-if="warpOutboundIndex >= 0">
-          <a-tag color="green">Enabled</a-tag>
+          <a-tag color="green">{{ t('pages.xray.ui.enabled') }}</a-tag>
           <a-button type="primary" danger :loading="loading" class="ml-8" @click="resetOutbound">
-            Reset
+            {{ t('pages.xray.ui.resetOutbound') }}
           </a-button>
         </template>
         <template v-else>
-          <a-tag color="orange">Disabled</a-tag>
+          <a-tag color="orange">{{ t('pages.xray.ui.disabled') }}</a-tag>
           <a-button type="primary" :loading="loading" class="ml-8" @click="addOutbound">
             <template #icon><PlusOutlined /></template>
-            Add outbound
+            {{ t('pages.xray.ui.addOutbound') }}
           </a-button>
         </template>
       </template>

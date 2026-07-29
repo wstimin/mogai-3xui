@@ -20,12 +20,12 @@ const props = defineProps({
 
 const emit = defineEmits(['update:open', 'confirm']);
 
-const STRATEGIES = [
-  { value: 'random', label: 'Random' },
-  { value: 'roundRobin', label: 'Round robin' },
-  { value: 'leastLoad', label: 'Least load' },
-  { value: 'leastPing', label: 'Least ping' },
-];
+const STRATEGIES = computed(() => [
+  { value: 'random', label: t('pages.xray.ui.strategyRandom') },
+  { value: 'roundRobin', label: t('pages.xray.ui.strategyRoundRobin') },
+  { value: 'leastLoad', label: t('pages.xray.ui.strategyLeastLoad') },
+  { value: 'leastPing', label: t('pages.xray.ui.strategyLeastPing') },
+]);
 
 const form = reactive({
   tag: '',
@@ -67,13 +67,13 @@ const tagValidateStatus = computed(() => {
   return 'success';
 });
 const tagHelp = computed(() => {
-  if (tagEmpty.value) return 'Tag is required';
-  if (duplicateTag.value) return 'Tag already used by another balancer';
+  if (tagEmpty.value) return t('pages.xray.ui.tagRequired');
+  if (duplicateTag.value) return t('pages.xray.ui.tagDuplicate');
   return '';
 });
 
 const selectorValidateStatus = computed(() => (emptySelector.value ? 'error' : 'success'));
-const selectorHelp = computed(() => (emptySelector.value ? 'Pick at least one outbound' : ''));
+const selectorHelp = computed(() => (emptySelector.value ? t('pages.xray.ui.selectorRequired') : ''));
 
 function close() { emit('update:open', false); }
 function onOk() {
@@ -92,26 +92,26 @@ const okText = computed(() =>
 </script>
 
 <template>
-  <a-modal :open="open" :title="title" :ok-text="okText" :cancel-text="t('close')"
+  <a-modal class="xray-form-modal" :open="open" :title="title" :ok-text="okText" :cancel-text="t('close')"
     :ok-button-props="{ disabled: !isValid }" :mask-closable="false" @ok="onOk" @cancel="close">
     <a-form :colon="false" :label-col="{ md: { span: 8 } }" :wrapper-col="{ md: { span: 14 } }">
       <a-form-item
-        label="Tag"
+        :label="t('pages.xray.outbound.tag')"
         :validate-status="tagValidateStatus"
         :help="tagHelp"
         has-feedback
       >
-        <a-input v-model:value="form.tag" placeholder="unique balancer tag" />
+        <a-input v-model:value="form.tag" :placeholder="t('pages.xray.outbound.tagDesc')" />
       </a-form-item>
 
-      <a-form-item label="Strategy">
+      <a-form-item :label="t('pages.xray.ui.strategy')">
         <a-select v-model:value="form.strategy">
           <a-select-option v-for="s in STRATEGIES" :key="s.value" :value="s.value">{{ s.label }}</a-select-option>
         </a-select>
       </a-form-item>
 
       <a-form-item
-        label="Selector"
+        :label="t('pages.xray.ui.selector')"
         :validate-status="selectorValidateStatus"
         :help="selectorHelp"
         has-feedback
@@ -121,7 +121,7 @@ const okText = computed(() =>
         </a-select>
       </a-form-item>
 
-      <a-form-item label="Fallback">
+      <a-form-item :label="t('pages.xray.ui.fallback')">
         <a-select v-model:value="form.fallbackTag" allow-clear>
           <a-select-option v-for="tag in ['', ...outboundTags]" :key="tag || '__empty'" :value="tag">
             {{ tag || `(${t('none')})` }}

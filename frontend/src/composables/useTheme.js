@@ -27,33 +27,36 @@ export const theme = reactive({
 export const currentTheme = computed(() => (theme.isDark ? 'dark' : 'light'));
 
 // AD-Vue 4 theme config consumed by every page's <a-config-provider>.
-// Three modes — light / dark / ultra-dark — all share AD-Vue's vanilla
-// blue primary. Dark uses a navy palette across page/cards/modals so
-// the sidebar blends with the rest of the surface; ultra-dark stays
-// neutral black on top of darkAlgorithm.
+// Three modes share the panel's visual language. Dark mode follows the
+// redesigned pages so teleported overlays and page-local controls use the
+// same neutral surfaces and indigo accent.
 const DARK_TOKENS = {
-  colorPrimary: '#3b82f6',
-  colorBgBase: '#0f1419',
-  colorBgLayout: '#0f1419',
-  colorBgContainer: '#1a2332',
-  colorBgElevated: '#1a2332',
-  colorBorder: '#2a3749',
-  colorBorderSecondary: '#243143',
-  colorText: '#c8d3e1',
-  colorTextHeading: '#f4f7fb',
-  borderRadius: 6,
+  colorPrimary: '#6366f1',
+  colorInfo: '#6366f1',
+  colorSuccess: '#22c55e',
+  colorWarning: '#f59e0b',
+  colorError: '#ef4444',
+  colorBgBase: '#07080b',
+  colorBgLayout: '#07080b',
+  colorBgContainer: '#0f1117',
+  colorBgElevated: '#11141c',
+  colorBorder: 'rgba(255, 255, 255, 0.075)',
+  colorBorderSecondary: 'rgba(255, 255, 255, 0.055)',
+  colorText: '#cbd5e1',
+  colorTextSecondary: '#94a3b8',
+  colorTextTertiary: '#64748b',
+  colorTextHeading: '#f1f5f9',
+  controlItemBgActive: 'rgba(99, 102, 241, 0.16)',
+  controlItemBgHover: 'rgba(255, 255, 255, 0.045)',
+  borderRadius: 9,
+  borderRadiusLG: 14,
 };
 const ULTRA_DARK_TOKENS = {
-  colorPrimary: '#3b82f6',
-  colorBgBase: '#080b10',
-  colorBgLayout: '#080b10',
-  colorBgContainer: '#121923',
-  colorBgElevated: '#121923',
-  colorBorder: '#252f3d',
-  colorBorderSecondary: '#202a38',
-  colorText: '#c2cee0',
-  colorTextHeading: '#f1f5fb',
-  borderRadius: 6,
+  ...DARK_TOKENS,
+  colorBgBase: '#030407',
+  colorBgLayout: '#030407',
+  colorBgContainer: '#0a0c11',
+  colorBgElevated: '#0d0f15',
 };
 
 // AD-Vue 4 hardcodes navy `#001529` / `#002140` as the Layout sider
@@ -64,9 +67,9 @@ const ULTRA_DARK_TOKENS = {
 // Dark theme uses a refined navy for the sidebar — distinct from the
 // neutral ultra-dark and warmer than AD-Vue's stock #001529.
 const DARK_LAYOUT_TOKENS = {
-  colorBgHeader: '#111923',
-  colorBgTrigger: '#1a2332',
-  colorBgBody: '#0f1419',
+  colorBgHeader: '#0c0e13',
+  colorBgTrigger: '#11141c',
+  colorBgBody: '#07080b',
 };
 const ULTRA_DARK_LAYOUT_TOKENS = {
   colorBgHeader: '#0a0a0a',
@@ -74,11 +77,11 @@ const ULTRA_DARK_LAYOUT_TOKENS = {
   colorBgBody: '#000',
 };
 const DARK_MENU_TOKENS = {
-  colorItemBg: '#111923',
-  colorSubItemBg: '#141d29',
-  menuSubMenuBg: '#111923',
-  itemSelectedBg: 'rgba(59, 130, 246, 0.14)',
-  itemSelectedColor: '#69a2ff',
+  colorItemBg: '#0c0e13',
+  colorSubItemBg: '#0f1117',
+  menuSubMenuBg: '#0c0e13',
+  itemSelectedBg: 'rgba(99, 102, 241, 0.16)',
+  itemSelectedColor: '#a5b4fc',
 };
 const ULTRA_DARK_MENU_TOKENS = {
   colorItemBg: '#0a0a0a',

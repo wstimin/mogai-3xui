@@ -119,67 +119,87 @@ async function onSave() {
     :ok-text="t('save')"
     :cancel-text="t('cancel')"
     :mask-closable="false"
-    width="640px"
+    width="min(680px, calc(100vw - 24px))"
+    wrap-class-name="node-form-modal"
     @ok="onSave"
     @cancel="close"
   >
-    <a-form layout="vertical" :model="form">
-      <a-row :gutter="16">
-        <a-col :xs="24" :sm="12">
-          <a-form-item :label="t('pages.nodes.name')" required>
-            <a-input v-model:value="form.name" :placeholder="t('pages.nodes.namePlaceholder')" />
-          </a-form-item>
-        </a-col>
-        <a-col :xs="24" :sm="12">
-          <a-form-item :label="t('pages.nodes.remark')">
-            <a-input v-model:value="form.remark" />
-          </a-form-item>
-        </a-col>
-      </a-row>
+    <div class="node-form-stack">
+      <section class="form-section">
+        <div class="section-heading">
+          <span class="section-icon"><ApiOutlined /></span>
+          <div>
+            <h3>{{ t('pages.nodes.connectionSettings') }}</h3>
+            <p>{{ t('pages.nodes.connectionSettingsHint') }}</p>
+          </div>
+        </div>
 
-      <a-row :gutter="16">
-        <a-col :xs="24" :sm="6">
-          <a-form-item :label="t('pages.nodes.scheme')">
-            <a-select v-model:value="form.scheme">
-              <a-select-option value="https">https</a-select-option>
-              <a-select-option value="http">http</a-select-option>
-            </a-select>
-          </a-form-item>
-        </a-col>
-        <a-col :xs="24" :sm="12">
-          <a-form-item :label="t('pages.nodes.address')" required>
-            <a-input v-model:value="form.address" :placeholder="t('pages.nodes.addressPlaceholder')" />
-          </a-form-item>
-        </a-col>
-        <a-col :xs="24" :sm="6">
-          <a-form-item :label="t('pages.nodes.port')" required>
-            <a-input-number v-model:value="form.port" :min="1" :max="65535" style="width: 100%" />
-          </a-form-item>
-        </a-col>
-      </a-row>
+        <a-form layout="vertical" :model="form">
+          <a-row :gutter="16">
+            <a-col :xs="24" :sm="12">
+              <a-form-item :label="t('pages.nodes.name')" required>
+                <a-input v-model:value="form.name" :placeholder="t('pages.nodes.namePlaceholder')" />
+              </a-form-item>
+            </a-col>
+            <a-col :xs="24" :sm="12">
+              <a-form-item :label="t('pages.nodes.remark')">
+                <a-input v-model:value="form.remark" />
+              </a-form-item>
+            </a-col>
+          </a-row>
 
-      <a-row :gutter="16">
-        <a-col :xs="24" :sm="12">
-          <a-form-item :label="t('pages.nodes.basePath')">
-            <a-input v-model:value="form.basePath" placeholder="/" />
-          </a-form-item>
-        </a-col>
-        <a-col :xs="24" :sm="12">
-          <a-form-item :label="t('pages.nodes.enable')">
-            <a-switch v-model:checked="form.enable" />
-          </a-form-item>
-        </a-col>
-      </a-row>
+          <a-row :gutter="16">
+            <a-col :xs="24" :sm="6">
+              <a-form-item :label="t('pages.nodes.scheme')">
+                <a-select v-model:value="form.scheme">
+                  <a-select-option value="https">https</a-select-option>
+                  <a-select-option value="http">http</a-select-option>
+                </a-select>
+              </a-form-item>
+            </a-col>
+            <a-col :xs="24" :sm="12">
+              <a-form-item :label="t('pages.nodes.address')" required>
+                <a-input v-model:value="form.address" :placeholder="t('pages.nodes.addressPlaceholder')" />
+              </a-form-item>
+            </a-col>
+            <a-col :xs="24" :sm="6">
+              <a-form-item :label="t('pages.nodes.port')" required>
+                <a-input-number v-model:value="form.port" :min="1" :max="65535" style="width: 100%" />
+              </a-form-item>
+            </a-col>
+          </a-row>
 
-      <a-form-item :label="t('pages.nodes.apiToken')" required>
-        <a-input-password
-          v-model:value="form.apiToken"
-          :placeholder="t('pages.nodes.apiTokenPlaceholder')"
-        />
-        <div class="hint">{{ t('pages.nodes.apiTokenHint') }}</div>
-      </a-form-item>
+          <a-row :gutter="16">
+            <a-col :xs="24" :sm="16">
+              <a-form-item :label="t('pages.nodes.basePath')">
+                <a-input v-model:value="form.basePath" placeholder="/" />
+              </a-form-item>
+            </a-col>
+            <a-col :xs="24" :sm="8">
+              <a-form-item :label="t('pages.nodes.enable')">
+                <div class="enable-control">
+                  <a-switch v-model:checked="form.enable" />
+                  <span>{{ form.enable ? t('pages.nodes.enabledOnSave') : t('disabled') }}</span>
+                </div>
+              </a-form-item>
+            </a-col>
+          </a-row>
 
-      <div class="test-row">
+          <a-form-item :label="t('pages.nodes.apiToken')" required>
+            <a-input-password
+              v-model:value="form.apiToken"
+              :placeholder="t('pages.nodes.apiTokenPlaceholder')"
+            />
+            <div class="hint">{{ t('pages.nodes.apiTokenHint') }}</div>
+          </a-form-item>
+        </a-form>
+      </section>
+
+      <section class="test-row">
+        <div>
+          <strong>{{ t('pages.nodes.testConnection') }}</strong>
+          <p>{{ t('pages.nodes.testConnectionHint') }}</p>
+        </div>
         <a-button :loading="testing" @click="onTest">
           <template #icon><ApiOutlined /></template>
           {{ t('pages.nodes.testConnection') }}
@@ -200,34 +220,136 @@ async function onSave() {
             :description="testResult.error"
           />
         </div>
-      </div>
-    </a-form>
+      </section>
+    </div>
   </a-modal>
 </template>
 
 <style scoped>
-.hint {
-  margin-top: 4px;
-  color: var(--xui-text-muted);
+.node-form-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.form-section {
+  padding: 17px;
+  border: 1px solid rgba(255, 255, 255, 0.055);
+  border-radius: 12px;
+  background: rgba(15, 17, 23, 0.72);
+}
+
+.section-heading {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 17px;
+}
+
+.section-icon {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 38px;
+  border: 1px solid rgba(99, 102, 241, 0.28);
+  border-radius: 10px;
+  color: #a5b4fc;
+  background: rgba(99, 102, 241, 0.12);
+}
+
+.section-heading h3,
+.section-heading p,
+.test-row p {
+  margin: 0;
+}
+
+.section-heading h3 {
+  color: #f1f5f9;
+  font-size: 14px;
+}
+
+.section-heading p,
+.test-row p {
+  margin-top: 3px;
+  color: #64748b;
+  font-size: 11.5px;
+}
+
+.form-section :deep(.ant-form-item-label > label) {
+  color: #94a3b8 !important;
   font-size: 12px;
 }
 
-.test-row {
+.form-section :deep(.ant-input),
+.form-section :deep(.ant-input-affix-wrapper),
+.form-section :deep(.ant-input-number),
+.form-section :deep(.ant-select-selector) {
+  min-height: 39px;
+  border-radius: 9px !important;
+}
+
+.form-section :deep(.ant-select-selector) {
+  align-items: center;
+}
+
+.enable-control {
+  min-height: 39px;
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  color: #64748b;
+  font-size: 11.5px;
+}
+
+.hint {
+  margin-top: 6px;
+  color: #64748b;
+  font-size: 11.5px;
+}
+
+.test-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
   gap: 12px;
-  margin-top: 10px;
-  padding: 14px;
-  border: 1px solid var(--xui-border);
-  border-radius: 7px;
-  background: var(--xui-surface-2);
+  padding: 15px 17px;
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 12px;
+  background: rgba(99, 102, 241, 0.07);
 }
 
 .test-row :deep(.ant-btn) {
-  align-self: flex-start;
+  min-height: 38px;
+  border-color: rgba(99, 102, 241, 0.28);
+  border-radius: 9px;
+  color: #a5b4fc;
+  background: rgba(99, 102, 241, 0.11);
+}
+
+.test-row :deep(.ant-btn:hover) {
+  color: #fff;
+  border-color: rgba(99, 102, 241, 0.46);
+  background: rgba(99, 102, 241, 0.2);
 }
 
 .test-result {
+  grid-column: 1 / -1;
   width: 100%;
+}
+
+@media (max-width: 576px) {
+  .form-section {
+    padding: 14px 12px;
+  }
+
+  .test-row {
+    grid-template-columns: 1fr;
+    padding: 14px 12px;
+  }
+
+  .test-row :deep(.ant-btn) {
+    width: 100%;
+  }
 }
 </style>

@@ -119,6 +119,7 @@ async function copyApiToken() {
 
 function regenerateApiToken() {
   Modal.confirm({
+    class: 'settings-confirm-modal',
     title: t('pages.nodes.regenerateConfirm'),
     okText: t('confirm'),
     cancelText: t('cancel'),

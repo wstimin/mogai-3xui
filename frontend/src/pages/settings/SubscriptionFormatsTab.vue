@@ -29,27 +29,27 @@ const DEFAULT_RULES = [
   { type: 'field', outboundTag: 'direct', ip: ['geoip:private', 'geoip:ir'] },
 ];
 
-const directIPsOptions = [
-  { label: 'Private IP', value: 'geoip:private' },
-  { label: '🇮🇷 Iran', value: 'geoip:ir' },
-  { label: '🇨🇳 China', value: 'geoip:cn' },
-  { label: '🇷🇺 Russia', value: 'geoip:ru' },
-  { label: '🇻🇳 Vietnam', value: 'geoip:vn' },
-  { label: '🇪🇸 Spain', value: 'geoip:es' },
-  { label: '🇮🇩 Indonesia', value: 'geoip:id' },
-  { label: '🇺🇦 Ukraine', value: 'geoip:ua' },
-  { label: '🇹🇷 Türkiye', value: 'geoip:tr' },
-  { label: '🇧🇷 Brazil', value: 'geoip:br' },
-];
-const directDomainsOptions = [
-  { label: 'Private DNS', value: 'geosite:private' },
-  { label: '🇮🇷 Iran', value: 'geosite:category-ir' },
-  { label: '🇨🇳 China', value: 'geosite:cn' },
-  { label: '🇷🇺 Russia', value: 'geosite:category-ru' },
+const directIPsOptions = computed(() => [
+  { label: t('pages.settings.regions.privateIp'), value: 'geoip:private' },
+  { label: t('pages.settings.regions.iran'), value: 'geoip:ir' },
+  { label: t('pages.settings.regions.china'), value: 'geoip:cn' },
+  { label: t('pages.settings.regions.russia'), value: 'geoip:ru' },
+  { label: t('pages.settings.regions.vietnam'), value: 'geoip:vn' },
+  { label: t('pages.settings.regions.spain'), value: 'geoip:es' },
+  { label: t('pages.settings.regions.indonesia'), value: 'geoip:id' },
+  { label: t('pages.settings.regions.ukraine'), value: 'geoip:ua' },
+  { label: t('pages.settings.regions.turkiye'), value: 'geoip:tr' },
+  { label: t('pages.settings.regions.brazil'), value: 'geoip:br' },
+]);
+const directDomainsOptions = computed(() => [
+  { label: t('pages.settings.regions.privateDns'), value: 'geosite:private' },
+  { label: t('pages.settings.regions.iran'), value: 'geosite:category-ir' },
+  { label: t('pages.settings.regions.china'), value: 'geosite:cn' },
+  { label: t('pages.settings.regions.russia'), value: 'geosite:category-ru' },
   { label: 'Apple', value: 'geosite:apple' },
   { label: 'Meta', value: 'geosite:meta' },
   { label: 'Google', value: 'geosite:google' },
-];
+]);
 
 // === Path helpers (json + clash share the same shape) ===================
 function makePath(field) {
@@ -260,25 +260,25 @@ const directDomains = computed({
         <a-collapse>
           <a-collapse-panel :header="t('pages.settings.fragmentSett')">
             <SettingListItem paddings="small">
-              <template #title>Packets</template>
+              <template #title>{{ t('pages.settings.fragmentFields.packets') }}</template>
               <template #control>
                 <a-input v-model:value="fragmentPackets" placeholder="1-1 | 1-3 | tlshello | …" />
               </template>
             </SettingListItem>
             <SettingListItem paddings="small">
-              <template #title>Length</template>
+              <template #title>{{ t('pages.settings.fragmentFields.length') }}</template>
               <template #control>
                 <a-input v-model:value="fragmentLength" placeholder="100-200" />
               </template>
             </SettingListItem>
             <SettingListItem paddings="small">
-              <template #title>Interval</template>
+              <template #title>{{ t('pages.settings.fragmentFields.interval') }}</template>
               <template #control>
                 <a-input v-model:value="fragmentInterval" placeholder="10-20" />
               </template>
             </SettingListItem>
             <SettingListItem paddings="small">
-              <template #title>Max split</template>
+              <template #title>{{ t('pages.settings.fragmentFields.maxSplit') }}</template>
               <template #control>
                 <a-input v-model:value="fragmentMaxSplit" placeholder="300-400" />
               </template>
@@ -288,9 +288,9 @@ const directDomains = computed({
       </a-list-item>
     </a-collapse-panel>
 
-    <a-collapse-panel key="3" header="Noises">
+    <a-collapse-panel key="3" :header="t('pages.settings.noises')">
       <SettingListItem paddings="small">
-        <template #title>Noises</template>
+        <template #title>{{ t('pages.settings.noises') }}</template>
         <template #description>{{ t('pages.settings.noisesDesc') }}</template>
         <template #control>
           <a-switch v-model:checked="noises" />
@@ -299,9 +299,10 @@ const directDomains = computed({
 
       <a-list-item v-if="noises" class="nested-block">
         <a-collapse>
-          <a-collapse-panel v-for="(noise, index) in noisesArray" :key="index" :header="`Noise №${index + 1}`">
+          <a-collapse-panel v-for="(noise, index) in noisesArray" :key="index"
+            :header="`${t('pages.settings.noise')} #${index + 1}`">
             <SettingListItem paddings="small">
-              <template #title>Type</template>
+              <template #title>{{ t('pages.settings.noiseFields.type') }}</template>
               <template #control>
                 <a-select :value="noise.type" :style="{ width: '100%' }"
                   @change="(v) => updateNoiseField(index, 'type', v)">
@@ -312,21 +313,21 @@ const directDomains = computed({
               </template>
             </SettingListItem>
             <SettingListItem paddings="small">
-              <template #title>Packet</template>
+              <template #title>{{ t('pages.settings.noiseFields.packet') }}</template>
               <template #control>
                 <a-input :value="noise.packet" placeholder="5-10"
                   @input="(e) => updateNoiseField(index, 'packet', e.target.value)" />
               </template>
             </SettingListItem>
             <SettingListItem paddings="small">
-              <template #title>Delay (ms)</template>
+              <template #title>{{ t('pages.settings.noiseFields.delay') }}</template>
               <template #control>
                 <a-input :value="noise.delay" placeholder="10-20"
                   @input="(e) => updateNoiseField(index, 'delay', e.target.value)" />
               </template>
             </SettingListItem>
             <SettingListItem paddings="small">
-              <template #title>Apply to</template>
+              <template #title>{{ t('pages.settings.noiseFields.applyTo') }}</template>
               <template #control>
                 <a-select :value="noise.applyTo" :style="{ width: '100%' }"
                   @change="(v) => updateNoiseField(index, 'applyTo', v)">
@@ -348,7 +349,7 @@ const directDomains = computed({
 
         <a-button type="primary" class="add-noise-button" @click="addNoise">
           <template #icon><PlusOutlined /></template>
-          Noise
+          {{ t('pages.settings.addNoise') }}
         </a-button>
       </a-list-item>
     </a-collapse-panel>
@@ -366,19 +367,19 @@ const directDomains = computed({
         <a-collapse>
           <a-collapse-panel :header="t('pages.settings.muxSett')">
             <SettingListItem paddings="small">
-              <template #title>Concurrency</template>
+              <template #title>{{ t('pages.settings.muxFields.concurrency') }}</template>
               <template #control>
                 <a-input-number v-model:value="muxConcurrency" :min="-1" :max="1024" :style="{ width: '100%' }" />
               </template>
             </SettingListItem>
             <SettingListItem paddings="small">
-              <template #title>xudp concurrency</template>
+              <template #title>{{ t('pages.settings.muxFields.xudpConcurrency') }}</template>
               <template #control>
                 <a-input-number v-model:value="muxXudpConcurrency" :min="-1" :max="1024" :style="{ width: '100%' }" />
               </template>
             </SettingListItem>
             <SettingListItem paddings="small">
-              <template #title>xudp UDP 443</template>
+              <template #title>{{ t('pages.settings.muxFields.xudpUdp443') }}</template>
               <template #control>
                 <a-select v-model:value="muxXudpProxyUDP443" :style="{ width: '100%' }">
                   <a-select-option v-for="p in ['reject', 'allow', 'skip']" :key="p" :value="p">

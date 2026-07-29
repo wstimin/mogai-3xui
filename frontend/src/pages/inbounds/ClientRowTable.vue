@@ -139,6 +139,7 @@ function statusBadgeColor(client) {
 // === Action confirms ==============================================
 function confirmReset(client) {
   Modal.confirm({
+    class: 'inbound-confirm-modal',
     title: `${t('pages.inbounds.resetTraffic')} — ${client.email}`,
     content: t('pages.inbounds.resetTrafficContent'),
     okText: t('reset'),
@@ -148,6 +149,7 @@ function confirmReset(client) {
 }
 function confirmDelete(client) {
   Modal.confirm({
+    class: 'inbound-confirm-modal',
     title: `${t('pages.inbounds.deleteClient')} — ${client.email}`,
     content: t('pages.inbounds.deleteClientContent'),
     okText: t('delete'),
@@ -383,7 +385,11 @@ function rowKey(client) {
 
 <style scoped>
 .client-list {
-  margin: -8px 0;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.055);
+  border-radius: 10px;
+  background: rgba(15, 17, 23, 0.62);
   font-size: 13px;
 }
 
@@ -406,23 +412,26 @@ function rowKey(client) {
   /* expiry */
   gap: 12px;
   align-items: center;
-  padding: 8px 16px;
-  border-top: 1px solid rgba(128, 128, 128, 0.12);
+  min-height: 52px;
+  padding: 8px 13px;
+  border-top: 1px solid rgba(255, 255, 255, 0.045);
+  transition: background 150ms ease;
 }
 
-.client-row:last-child {
-  border-bottom: 1px solid rgba(128, 128, 128, 0.12);
+.client-row:not(.client-list-header):hover {
+  background: rgba(255, 255, 255, 0.024);
 }
 
 .client-list-header {
-  font-weight: 500;
-  font-size: 12px;
-  opacity: 0.65;
-  padding-top: 6px;
-  padding-bottom: 6px;
+  min-height: 42px;
+  color: #64748b;
+  font-weight: 600;
+  font-size: 10.5px;
+  padding-top: 7px;
+  padding-bottom: 7px;
   border-top: none;
   text-transform: uppercase;
-  letter-spacing: 0.02em;
+  background: rgba(255, 255, 255, 0.022);
 }
 
 .cell {
@@ -469,19 +478,33 @@ function rowKey(client) {
 
 /* Action icons */
 .row-icon {
-  font-size: 16px;
+  width: 28px;
+  height: 28px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.055);
+  border-radius: 7px;
+  color: #64748b;
+  background: transparent;
+  font-size: 14px;
   cursor: pointer;
-  padding: 0 2px;
-  color: inherit;
-  transition: color 120ms ease;
+  transition: color 120ms ease, border-color 120ms ease, background 120ms ease;
 }
 
 .row-icon:hover {
-  color: var(--ant-color-primary, #1677ff);
+  color: #a5b4fc;
+  border-color: rgba(99, 102, 241, 0.3);
+  background: rgba(99, 102, 241, 0.1);
 }
 
 .row-icon.danger {
-  color: #ff4d4f;
+  color: #f87171;
+}
+
+.row-icon.danger:hover {
+  border-color: rgba(239, 68, 68, 0.28);
+  background: rgba(239, 68, 68, 0.1);
 }
 
 .danger {
@@ -498,7 +521,8 @@ function rowKey(client) {
 }
 
 .client-email {
-  font-weight: 500;
+  color: #cbd5e1;
+  font-weight: 550;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -506,8 +530,8 @@ function rowKey(client) {
 }
 
 .client-comment {
+  color: #64748b;
   font-size: 11px;
-  opacity: 0.7;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -523,6 +547,7 @@ function rowKey(client) {
 }
 
 .usage-text {
+  color: #94a3b8;
   font-size: 12px;
   white-space: nowrap;
 }
@@ -530,6 +555,25 @@ function rowKey(client) {
 .usage-bar :deep(.ant-progress) {
   margin: 0;
   line-height: 1;
+}
+
+.usage-bar :deep(.ant-progress-inner) {
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.client-list :deep(.ant-tag) {
+  margin-inline-end: 0;
+  border-color: rgba(255, 255, 255, 0.055);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.client-list :deep(.ant-switch) {
+  background: #334155;
+}
+
+.client-list :deep(.ant-switch-checked) {
+  background: #10b981;
 }
 
 .infinite-tag {
@@ -551,18 +595,19 @@ function rowKey(client) {
   flex-direction: column;
   gap: 8px;
   margin: 0;
+  overflow: visible;
+  border: 0;
+  background: transparent;
 }
 
 .client-card {
-  border: 1px solid rgba(128, 128, 128, 0.18);
-  border-radius: 8px;
-  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.055);
+  border-radius: 10px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-}
-:global(body.dark) .client-card {
-  border-color: rgba(255, 255, 255, 0.1);
+  gap: 8px;
+  background: rgba(15, 17, 23, 0.72);
 }
 
 .client-card-head {
@@ -588,13 +633,14 @@ function rowKey(client) {
   flex-shrink: 0;
 }
 .client-card-actions .row-icon {
-  font-size: 20px;
-  padding: 4px;
+  width: 32px;
+  height: 32px;
+  font-size: 17px;
 }
 
 .client-comment-line {
+  color: #64748b;
   font-size: 11px;
-  opacity: 0.7;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -612,10 +658,9 @@ function rowKey(client) {
   gap: 6px;
 }
 .client-card-foot .stat-label {
+  color: #64748b;
   font-size: 10px;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  opacity: 0.6;
   min-width: 96px;
   flex-shrink: 0;
 }

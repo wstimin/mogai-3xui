@@ -40,7 +40,7 @@ function normalizeSubPath() {
       </SettingListItem>
 
       <SettingListItem paddings="small">
-        <template #title>JSON subscription</template>
+        <template #title>{{ t('pages.settings.jsonSubscription') }}</template>
         <template #description>{{ t('pages.settings.subJsonEnable') }}</template>
         <template #control>
           <a-switch v-model:checked="allSetting.subJsonEnable" />
@@ -48,7 +48,7 @@ function normalizeSubPath() {
       </SettingListItem>
 
       <SettingListItem paddings="small">
-        <template #title>Clash / Mihomo subscription</template>
+        <template #title>{{ t('pages.settings.clashSubscription') }}</template>
         <template #control>
           <a-switch v-model:checked="allSetting.subClashEnable" />
         </template>

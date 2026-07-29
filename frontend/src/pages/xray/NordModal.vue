@@ -2,8 +2,11 @@
 import { computed, ref, watch } from 'vue';
 import { LoginOutlined, SaveOutlined } from '@ant-design/icons-vue';
 import { message } from 'ant-design-vue';
+import { useI18n } from 'vue-i18n';
 
 import { HttpUtil } from '@/utils';
+
+const { t } = useI18n();
 
 // NordVPN provisioning modal — mirrors the legacy nord_modal.
 //
@@ -164,7 +167,7 @@ async function fetchServers() {
       .sort((a, b) => a.load - b.load);
 
     if (servers.value.length === 0) {
-      message.warning('No servers found for the selected country');
+      message.warning(t('pages.xray.ui.noServers'));
     }
   } finally {
     loading.value = false;
@@ -181,7 +184,7 @@ function buildNordOutbound() {
   const tech = server.technologies?.find((t) => t.id === 35);
   const publicKey = tech?.metadata?.find((m) => m.name === 'public_key')?.value;
   if (!publicKey) {
-    message.error('Selected server does not advertise a NordLynx public key.');
+    message.error(t('pages.xray.ui.nordPublicKeyMissing'));
     return null;
   }
   return {
@@ -200,7 +203,7 @@ function addOutbound() {
   const ob = buildNordOutbound();
   if (!ob) return;
   emit('add-outbound', ob);
-  message.success('NordVPN outbound added');
+  message.success(t('pages.xray.ui.nordAdded'));
   close();
 }
 
@@ -217,7 +220,7 @@ function resetOutbound() {
     oldTag,
     newTag: ob.tag,
   });
-  message.success('NordVPN outbound updated');
+  message.success(t('pages.xray.ui.nordUpdated'));
   close();
 }
 
@@ -225,7 +228,7 @@ function close() { emit('update:open', false); }
 </script>
 
 <template>
-  <a-modal :open="open" title="NordVPN NordLynx" :footer="null" :closable="true" :mask-closable="true" @cancel="close">
+  <a-modal class="xray-form-modal" :open="open" title="NordVPN NordLynx" :footer="null" :closable="true" :mask-closable="true" @cancel="close">
     <!-- WARP / NordVPN provisioning forms keep technical wire labels in
          English on purpose: they map directly to API field names users
          look up in vendor docs. Only the primary action buttons +
@@ -233,28 +236,28 @@ function close() { emit('update:open', false); }
     <!-- Not authenticated → tabbed login (token or manual key) -->
     <template v-if="nordData == null">
       <a-tabs default-active-key="token">
-        <a-tab-pane key="token" tab="Access token">
+        <a-tab-pane key="token" :tab="t('pages.xray.outbound.accessToken')">
           <a-form :colon="false" :label-col="{ md: { span: 6 } }" :wrapper-col="{ md: { span: 18 } }" class="mt-20">
-            <a-form-item label="Access token">
-              <a-input v-model:value="token" placeholder="Access token" />
+            <a-form-item :label="t('pages.xray.outbound.accessToken')">
+              <a-input v-model:value="token" :placeholder="t('pages.xray.outbound.accessToken')" />
               <a-button type="primary" class="mt-10" :loading="loading" @click="login">
                 <template #icon>
                   <LoginOutlined />
                 </template>
-                Login
+                {{ t('pages.xray.ui.login') }}
               </a-button>
             </a-form-item>
           </a-form>
         </a-tab-pane>
-        <a-tab-pane key="key" tab="Private key">
+        <a-tab-pane key="key" :tab="t('pages.xray.outbound.privateKey')">
           <a-form :colon="false" :label-col="{ md: { span: 6 } }" :wrapper-col="{ md: { span: 18 } }" class="mt-20">
-            <a-form-item label="Private key">
-              <a-input v-model:value="manualKey" placeholder="Private key" />
+            <a-form-item :label="t('pages.xray.outbound.privateKey')">
+              <a-input v-model:value="manualKey" :placeholder="t('pages.xray.outbound.privateKey')" />
               <a-button type="primary" class="mt-10" :loading="loading" @click="saveKey">
                 <template #icon>
                   <SaveOutlined />
                 </template>
-                Save
+                {{ t('pages.xray.save') }}
               </a-button>
             </a-form-item>
           </a-form>
@@ -267,22 +270,22 @@ function close() { emit('update:open', false); }
       <table class="nord-data-table">
         <tbody>
           <tr v-if="nordData.token" class="row-odd">
-            <td>Access token</td>
+            <td>{{ t('pages.xray.outbound.accessToken') }}</td>
             <td>{{ nordData.token }}</td>
           </tr>
           <tr>
-            <td>Private key</td>
+            <td>{{ t('pages.xray.outbound.privateKey') }}</td>
             <td>{{ nordData.private_key }}</td>
           </tr>
         </tbody>
       </table>
 
-      <a-button :loading="loading" type="primary" danger class="mt-8" @click="logout">Logout</a-button>
+      <a-button :loading="loading" type="primary" danger class="mt-8" @click="logout">{{ t('pages.xray.ui.logout') }}</a-button>
 
-      <a-divider class="zero-margin">Settings</a-divider>
+      <a-divider class="zero-margin">{{ t('pages.xray.ui.settings') }}</a-divider>
 
       <a-form :colon="false" :label-col="{ md: { span: 6 } }" :wrapper-col="{ md: { span: 18 } }" class="mt-10">
-        <a-form-item label="Country">
+        <a-form-item :label="t('pages.xray.outbound.country')">
           <a-select v-model:value="countryId" show-search option-filter-prop="label" @change="fetchServers">
             <a-select-option v-for="c in countries" :key="c.id" :value="c.id" :label="c.name">
               {{ c.name }} ({{ c.code }})
@@ -290,35 +293,36 @@ function close() { emit('update:open', false); }
           </a-select>
         </a-form-item>
 
-        <a-form-item v-if="cities.length > 0" label="City">
+        <a-form-item v-if="cities.length > 0" :label="t('pages.xray.outbound.city')">
           <a-select v-model:value="cityId" show-search option-filter-prop="label">
-            <a-select-option :value="null" label="All cities">All cities</a-select-option>
+            <a-select-option :value="null" :label="t('pages.xray.outbound.allCities')">{{ t('pages.xray.outbound.allCities') }}</a-select-option>
             <a-select-option v-for="c in cities" :key="c.id" :value="c.id" :label="c.name">{{ c.name
             }}</a-select-option>
           </a-select>
         </a-form-item>
 
-        <a-form-item v-if="filteredServers.length > 0" label="Server">
+        <a-form-item v-if="filteredServers.length > 0" :label="t('pages.xray.outbound.server')">
           <a-select v-model:value="serverId">
             <a-select-option v-for="s in filteredServers" :key="s.id" :value="s.id">
-              {{ s.cityName }} - {{ s.name }} (load: {{ s.load }}%)
+              {{ s.cityName }} - {{ s.name }} ({{ t('pages.xray.ui.load') }}: {{ s.load }}%)
             </a-select-option>
           </a-select>
         </a-form-item>
       </a-form>
 
-      <a-divider class="my-10">Outbound status</a-divider>
+      <a-divider class="my-10">{{ t('pages.xray.ui.outboundStatus') }}</a-divider>
 
       <template v-if="nordOutboundIndex >= 0">
-        <a-tag color="green">Enabled</a-tag>
+        <a-tag color="green">{{ t('pages.xray.ui.enabled') }}</a-tag>
         <a-button type="primary" danger :loading="loading" class="ml-8" @click="resetOutbound">
-          Reset
+          {{ t('pages.xray.ui.resetOutbound') }}
         </a-button>
       </template>
       <template v-else>
-        <a-tag color="orange">Disabled</a-tag>
-        <a-button type="primary" class="ml-8" :disabled="!serverId" :loading="loading" @click="addOutbound">Add
-          outbound</a-button>
+        <a-tag color="orange">{{ t('pages.xray.ui.disabled') }}</a-tag>
+        <a-button type="primary" class="ml-8" :disabled="!serverId" :loading="loading" @click="addOutbound">
+          {{ t('pages.xray.ui.addOutbound') }}
+        </a-button>
       </template>
     </template>
   </a-modal>
