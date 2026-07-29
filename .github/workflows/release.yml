@@ -22,7 +22,36 @@ on:
   pull_request:
 
 jobs:
+  prepare-release:
+    name: Prepare tagged release
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete existing release for tag
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+        uses: actions/github-script@v7
+        with:
+          script: |
+            try {
+              const { data: release } = await github.rest.repos.getReleaseByTag({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                tag: context.ref.replace('refs/tags/', ''),
+              });
+              await github.rest.repos.deleteRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                release_id: release.id,
+              });
+              core.info(`Deleted existing release ${release.id}`);
+            } catch (error) {
+              if (error.status !== 404) throw error;
+              core.info('No existing release found for this tag');
+            }
+
   build:
+    needs: prepare-release
     permissions:
       contents: write
     strategy:
@@ -171,6 +200,7 @@ jobs:
   # =================================
   build-windows:
     name: Build for Windows
+    needs: prepare-release
     permissions:
       contents: write
     strategy:
