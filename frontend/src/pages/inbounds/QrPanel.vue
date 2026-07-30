@@ -148,11 +148,15 @@ function download() {
 .qr-panel-canvas {
   display: flex;
   justify-content: center;
+  align-self: center;
+  width: fit-content;
+  max-width: 100%;
   padding: 14px;
   overflow: auto;
-  border: 1px solid var(--xui-border);
-  border-radius: 7px;
-  background: #ffffff;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 8px;
+  background: #f8fafc;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.14);
 }
 
 .qr-panel-canvas canvas {
