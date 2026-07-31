@@ -121,7 +121,9 @@ function onOk() {
 }
 
 import { useI18n } from 'vue-i18n';
-const { t } = useI18n();
+const { t, locale } = useI18n();
+const isChinese = computed(() => locale.value === 'zh-CN');
+const uiText = (english, chinese) => (isChinese.value ? chinese : english);
 
 const title = computed(() =>
   isEdit.value
@@ -138,17 +140,30 @@ const PROTOCOLS = ['http', 'tls', 'bittorrent', 'quic'];
 
 <template>
   <a-modal
-    class="xray-form-modal"
     :open="open"
-    :title="title"
     :ok-text="okText"
     :cancel-text="t('close')"
     :mask-closable="false"
-    width="640px"
+    width="min(720px, calc(100vw - 24px))"
+    wrap-class-name="routing-rule-modal"
+    root-class-name="routing-rule-modal-root"
     @ok="onOk"
     @cancel="close"
   >
-    <a-form :colon="false" :label-col="{ md: { span: 8 } }" :wrapper-col="{ md: { span: 14 } }">
+    <template #title>
+      <div class="modal-heading">
+        <div class="modal-heading-title">{{ title }}</div>
+        <div class="modal-heading-subtitle">
+          {{ uiText('Define matching conditions and routing destination', '定义流量匹配条件与路由目标') }}
+        </div>
+      </div>
+    </template>
+    <a-form class="routing-form" :colon="false" :label-col="{ md: { span: 8 } }" :wrapper-col="{ md: { span: 14 } }">
+      <section class="modal-form-card">
+        <div class="card-heading">
+          <div class="card-title">{{ uiText('Source conditions', '来源条件') }}</div>
+          <div class="card-description">{{ uiText('Match traffic origin and protocol', '匹配流量来源与协议特征') }}</div>
+        </div>
       <a-form-item>
         <template #label>
           <a-tooltip :title="t('pages.xray.ui.commaSeparated')">
@@ -204,7 +219,13 @@ const PROTOCOLS = ['http', 'tls', 'bittorrent', 'quic'];
           </a-button>
         </a-input-group>
       </a-form-item>
+      </section>
 
+      <section class="modal-form-card">
+        <div class="card-heading">
+          <div class="card-title">{{ uiText('Target matching', '目标匹配') }}</div>
+          <div class="card-description">{{ uiText('Match destination, user and inbound tags', '匹配目标地址、用户与入站标签') }}</div>
+        </div>
       <a-form-item>
         <template #label>
           <a-tooltip :title="t('pages.xray.ui.commaSeparated')">IP <QuestionCircleOutlined /></a-tooltip>
@@ -238,7 +259,13 @@ const PROTOCOLS = ['http', 'tls', 'bittorrent', 'quic'];
           <a-select-option v-for="tag in inboundTags" :key="tag" :value="tag">{{ tag }}</a-select-option>
         </a-select>
       </a-form-item>
+      </section>
 
+      <section class="modal-form-card">
+        <div class="card-heading">
+          <div class="card-title">{{ uiText('Routing action', '路由动作') }}</div>
+          <div class="card-description">{{ uiText('Choose an outbound or balancer target', '选择出站或负载均衡目标') }}</div>
+        </div>
       <a-form-item :label="t('pages.xray.ui.outboundTag')">
         <a-select v-model:value="form.outboundTag">
           <a-select-option v-for="tag in outboundTags" :key="tag || '__empty'" :value="tag">{{ tag || `(${t('pages.xray.ui.none')})` }}</a-select-option>
@@ -255,10 +282,181 @@ const PROTOCOLS = ['http', 'tls', 'bittorrent', 'quic'];
           <a-select-option v-for="tag in balancerTags" :key="tag || '__empty'" :value="tag">{{ tag || `(${t('pages.xray.ui.none')})` }}</a-select-option>
         </a-select>
       </a-form-item>
+      </section>
     </a-form>
   </a-modal>
 </template>
 
 <style scoped>
 .mb-8 { margin-bottom: 8px; }
+
+.modal-heading {
+  min-width: 0;
+  padding-right: 38px;
+}
+
+.modal-heading-title {
+  color: #f1f5f9;
+  font-size: 16px;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.modal-heading-subtitle {
+  margin-top: 4px;
+  color: #64748b;
+  font-size: 12.5px;
+  font-weight: 400;
+  line-height: 1.45;
+}
+
+.routing-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.modal-form-card {
+  padding: 18px 18px 5px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  background: rgba(18, 20, 28, 0.92);
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.16);
+}
+
+.card-heading {
+  margin-bottom: 17px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+}
+
+.card-title {
+  color: #f1f5f9;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.card-description {
+  margin-top: 3px;
+  color: #64748b;
+  font-size: 11.5px;
+  line-height: 1.4;
+}
+
+.routing-form :deep(.ant-form-item-label > label) {
+  color: #94a3b8;
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+.routing-form :deep(.ant-input),
+.routing-form :deep(.ant-input-affix-wrapper),
+.routing-form :deep(.ant-select-selector) {
+  color: #e2e8f0 !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  border-radius: 8px !important;
+  background: rgba(255, 255, 255, 0.035) !important;
+  box-shadow: none !important;
+}
+
+.routing-form :deep(.ant-input:hover),
+.routing-form :deep(.ant-input-affix-wrapper:hover),
+.routing-form :deep(.ant-select:not(.ant-select-disabled):hover .ant-select-selector) {
+  border-color: rgba(99, 102, 241, 0.42) !important;
+}
+
+.routing-form :deep(.ant-input:focus),
+.routing-form :deep(.ant-input-affix-wrapper-focused),
+.routing-form :deep(.ant-select-focused .ant-select-selector) {
+  border-color: rgba(99, 102, 241, 0.62) !important;
+  background: rgba(99, 102, 241, 0.055) !important;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.11) !important;
+}
+
+:global(.routing-rule-modal .ant-modal-content) {
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 16px;
+  background: #0e1017;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(99, 102, 241, 0.06);
+}
+
+:global(.routing-rule-modal .ant-modal-header) {
+  margin: 0;
+  padding: 18px 22px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  background: #0e1017;
+}
+
+:global(.routing-rule-modal .ant-modal-close) {
+  top: 14px;
+  right: 14px;
+  color: #64748b;
+  border-radius: 8px;
+}
+
+:global(.routing-rule-modal .ant-modal-body) {
+  max-height: min(72vh, 760px);
+  padding: 18px 20px 28px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: #0e1017;
+}
+
+:global(.routing-rule-modal .ant-modal-footer) {
+  margin: 0;
+  padding: 16px 22px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+:global(.routing-rule-modal .ant-modal-footer .ant-btn) {
+  min-width: 84px;
+  height: 36px;
+  border-radius: 8px;
+}
+
+:global(.routing-rule-modal .ant-modal-footer .ant-btn-primary) {
+  border-color: #6366f1;
+  background: #6366f1;
+  box-shadow: 0 2px 12px rgba(99, 102, 241, 0.35);
+}
+
+:global(.routing-rule-modal-root .ant-modal-mask) {
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(8px);
+}
+
+@media (max-width: 768px) {
+  .modal-form-card {
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .routing-form :deep(.ant-form-item-row) {
+    display: block;
+  }
+
+  .routing-form :deep(.ant-form-item-label),
+  .routing-form :deep(.ant-form-item-control) {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+
+  .routing-form :deep(.ant-form-item-label) {
+    padding: 0 0 5px;
+    text-align: left;
+  }
+
+  :global(.routing-rule-modal .ant-modal) {
+    top: 12px;
+    padding-bottom: 12px;
+  }
+
+  :global(.routing-rule-modal .ant-modal-body) {
+    max-height: calc(100vh - 148px);
+    padding: 14px 12px 24px;
+  }
+}
 </style>

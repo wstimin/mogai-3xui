@@ -22,7 +22,9 @@ import {
 } from '@/models/outbound.js';
 import FinalMaskForm from '@/components/FinalMaskForm.vue';
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
+const isChinese = computed(() => locale.value === 'zh-CN');
+const uiText = (english, chinese) => (isChinese.value ? chinese : english);
 
 // Structured outbound add/edit modal — mirrors the legacy
 // web/html/form/outbound.html. Covers every protocol + transport
@@ -209,11 +211,21 @@ function regenerateWgKeys() {
 </script>
 
 <template>
-  <a-modal class="xray-form-modal" :open="open" :title="title" :ok-text="okText" :cancel-text="t('close')" :mask-closable="false" width="780px"
+  <a-modal :open="open" :ok-text="okText" :cancel-text="t('close')" :mask-closable="false"
+    width="min(860px, calc(100vw - 24px))" wrap-class-name="outbound-form-modal" root-class-name="outbound-modal-root"
     @ok="onOk" @cancel="close">
-    <a-tabs v-if="outbound" v-model:active-key="activeKey">
+    <template #title>
+      <div class="modal-heading">
+        <div class="modal-heading-title">{{ title }}</div>
+        <div class="modal-heading-subtitle">
+          {{ uiText('Configure outbound connection and routing behavior', '配置出站连接信息与路由行为') }}
+        </div>
+      </div>
+    </template>
+    <a-tabs v-if="outbound" v-model:active-key="activeKey" class="modal-tabs">
       <!-- ============================== FORM ============================== -->
       <a-tab-pane key="1" :tab="t('pages.xray.basicTemplate')">
+        <div class="modal-form-card">
         <a-form :colon="false" :label-col="{ md: { span: 8 } }" :wrapper-col="{ md: { span: 14 } }">
           <!-- Protocol -->
           <a-form-item :label="t('protocol')">
@@ -958,26 +970,138 @@ function regenerateWgKeys() {
           :stream="outbound.stream"
           :protocol="proto"
         />
+        </div>
       </a-tab-pane>
 
       <!-- ============================== JSON ============================== -->
       <a-tab-pane key="2" tab="JSON">
-        <a-space direction="vertical" :size="10" :style="{ width: '100%', marginTop: '10px' }">
-          <a-input-search v-model:value="linkInput" placeholder="vmess:// vless:// trojan:// ss:// hysteria2://"
-            @search="convertLink">
-            <template #enterButton>
-              <a-button>{{ t('pages.xray.ui.convert') }}</a-button>
-            </template>
-          </a-input-search>
-          <a-textarea v-model:value="advancedJson" :auto-size="{ minRows: 14, maxRows: 30 }" spellcheck="false"
-            class="json-editor" />
-        </a-space>
+        <div class="modal-form-card json-card">
+          <a-space direction="vertical" :size="10" :style="{ width: '100%' }">
+            <a-input-search v-model:value="linkInput" placeholder="vmess:// vless:// trojan:// ss:// hysteria2://"
+              @search="convertLink">
+              <template #enterButton>
+                <a-button>{{ t('pages.xray.ui.convert') }}</a-button>
+              </template>
+            </a-input-search>
+            <a-textarea v-model:value="advancedJson" :auto-size="{ minRows: 14, maxRows: 30 }" spellcheck="false"
+              class="json-editor" />
+          </a-space>
+        </div>
       </a-tab-pane>
     </a-tabs>
   </a-modal>
 </template>
 
 <style scoped>
+.modal-heading {
+  min-width: 0;
+  padding-right: 38px;
+}
+
+.modal-heading-title {
+  color: #f1f5f9;
+  font-size: 16px;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.modal-heading-subtitle {
+  margin-top: 4px;
+  color: #64748b;
+  font-size: 12.5px;
+  font-weight: 400;
+  line-height: 1.45;
+}
+
+.modal-tabs {
+  min-height: 460px;
+}
+
+.modal-form-card {
+  display: block;
+  width: 100%;
+  padding: 18px 18px 5px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  background: rgba(18, 20, 28, 0.92);
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.16);
+}
+
+.json-card {
+  padding-bottom: 18px;
+}
+
+.modal-tabs :deep(.ant-tabs-nav) {
+  position: sticky;
+  z-index: 5;
+  top: 0;
+  margin: 0 0 14px;
+  padding: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 11px;
+  background: rgba(14, 16, 23, 0.94);
+  backdrop-filter: blur(12px);
+}
+
+.modal-tabs :deep(.ant-tabs-nav::before) {
+  display: none;
+}
+
+.modal-tabs :deep(.ant-tabs-tab) {
+  min-width: 132px;
+  justify-content: center;
+  margin: 0 !important;
+  padding: 9px 16px;
+  border-radius: 8px;
+  color: #94a3b8;
+}
+
+.modal-tabs :deep(.ant-tabs-tab-active) {
+  background: rgba(99, 102, 241, 0.16);
+}
+
+.modal-tabs :deep(.ant-tabs-tab-active .ant-tabs-tab-btn) {
+  color: #eef2ff;
+}
+
+.modal-tabs :deep(.ant-tabs-ink-bar) {
+  display: none;
+}
+
+.modal-form-card :deep(.ant-form-item-label > label) {
+  color: #94a3b8;
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+.modal-form-card :deep(.ant-input),
+.modal-form-card :deep(.ant-input-affix-wrapper),
+.modal-form-card :deep(.ant-input-number),
+.modal-form-card :deep(.ant-input-number-input),
+.modal-form-card :deep(.ant-select-selector) {
+  color: #e2e8f0 !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  border-radius: 8px !important;
+  background: rgba(255, 255, 255, 0.035) !important;
+  box-shadow: none !important;
+}
+
+.modal-form-card :deep(.ant-input:hover),
+.modal-form-card :deep(.ant-input-affix-wrapper:hover),
+.modal-form-card :deep(.ant-input-number:hover),
+.modal-form-card :deep(.ant-select:not(.ant-select-disabled):hover .ant-select-selector) {
+  border-color: rgba(99, 102, 241, 0.42) !important;
+}
+
+.modal-form-card :deep(.ant-input:focus),
+.modal-form-card :deep(.ant-input-affix-wrapper-focused),
+.modal-form-card :deep(.ant-input-number-focused),
+.modal-form-card :deep(.ant-select-focused .ant-select-selector) {
+  border-color: rgba(99, 102, 241, 0.62) !important;
+  background: rgba(99, 102, 241, 0.055) !important;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.11) !important;
+}
+
 .random-icon {
   cursor: pointer;
   color: var(--ant-primary-color, #1890ff);
@@ -1029,5 +1153,92 @@ function regenerateWgKeys() {
 
 .sniffing-options :deep(.ant-checkbox-wrapper) {
   margin-inline-start: 0;
+}
+
+:global(.outbound-form-modal .ant-modal-content) {
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 16px;
+  background: #0e1017;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(99, 102, 241, 0.06);
+}
+
+:global(.outbound-form-modal .ant-modal-header) {
+  margin: 0;
+  padding: 18px 22px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  background: #0e1017;
+}
+
+:global(.outbound-form-modal .ant-modal-close) {
+  top: 14px;
+  right: 14px;
+  color: #64748b;
+  border-radius: 8px;
+}
+
+:global(.outbound-form-modal .ant-modal-body) {
+  max-height: min(72vh, 760px);
+  padding: 18px 20px 28px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: #0e1017;
+}
+
+:global(.outbound-form-modal .ant-modal-footer) {
+  margin: 0;
+  padding: 16px 22px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+:global(.outbound-form-modal .ant-modal-footer .ant-btn) {
+  min-width: 84px;
+  height: 36px;
+  border-radius: 8px;
+}
+
+:global(.outbound-form-modal .ant-modal-footer .ant-btn-primary) {
+  border-color: #6366f1;
+  background: #6366f1;
+  box-shadow: 0 2px 12px rgba(99, 102, 241, 0.35);
+}
+
+:global(.outbound-modal-root .ant-modal-mask) {
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(8px);
+}
+
+@media (max-width: 768px) {
+  .modal-form-card {
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .modal-form-card :deep(.ant-form-item-row) {
+    display: block;
+  }
+
+  .modal-form-card :deep(.ant-form-item-label),
+  .modal-form-card :deep(.ant-form-item-control) {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+
+  .modal-form-card :deep(.ant-form-item-label) {
+    padding: 0 0 5px;
+    text-align: left;
+  }
+
+  :global(.outbound-form-modal .ant-modal) {
+    top: 12px;
+    padding-bottom: 12px;
+  }
+
+  :global(.outbound-form-modal .ant-modal-body) {
+    max-height: calc(100vh - 148px);
+    padding: 14px 12px 24px;
+  }
 }
 </style>

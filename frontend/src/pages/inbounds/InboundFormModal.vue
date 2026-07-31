@@ -71,6 +71,7 @@ const FLOW_OPTIONS = Object.values(TLS_FLOW_CONTROL);
 const inbound = ref(null);
 const dbForm = ref(null);
 const saving = ref(false);
+const activeSection = ref('basic');
 const advancedJson = ref({ stream: '', sniffing: '', settings: '' });
 // Cached default cert/key paths from /panel/setting/defaultSettings —
 // powers the "Set default cert" button on the TLS form.
@@ -236,6 +237,7 @@ function primeAdvancedJson() {
 
 watch(() => props.open, (next) => {
   if (!next) return;
+  activeSection.value = 'basic';
   if (props.mode === 'edit' && props.dbInbound) {
     loadFromDbInbound(props.dbInbound);
   } else {
@@ -550,10 +552,41 @@ watch(
 </script>
 
 <template>
-  <a-modal :open="open" :title="title" :ok-text="okText" :cancel-text="t('close')" :confirm-loading="saving"
-    :mask-closable="false" width="min(720px, calc(100vw - 24px))" wrap-class-name="inbound-form-modal"
+  <a-modal :open="open" :ok-text="okText" :cancel-text="t('close')" :confirm-loading="saving"
+    :mask-closable="false" width="min(820px, calc(100vw - 24px))" wrap-class-name="inbound-form-modal"
+    root-class-name="inbound-modal-root"
     @ok="submit" @cancel="close">
+    <template #title>
+      <div class="modal-heading">
+        <div class="modal-heading-title">{{ title }}</div>
+        <div class="modal-heading-subtitle">
+          {{ uiText('Configure inbound access, protocol and connection options', '配置入站访问、协议与连接参数') }}
+        </div>
+      </div>
+    </template>
     <div v-if="inbound && dbForm" class="inbound-form-stack">
+      <div class="section-switcher" role="tablist">
+        <button
+          type="button"
+          class="section-switcher-button"
+          :class="{ active: activeSection === 'basic' }"
+          @click="activeSection = 'basic'"
+        >
+          <span>{{ uiText('Basic settings', '基础设置') }}</span>
+          <small>{{ uiText('Access and protocol', '访问与协议') }}</small>
+        </button>
+        <button
+          type="button"
+          class="section-switcher-button"
+          :class="{ active: activeSection === 'advanced' }"
+          @click="activeSection = 'advanced'"
+        >
+          <span>{{ uiText('Advanced settings', '高级设置') }}</span>
+          <small>{{ uiText('Transport, security and JSON', '传输、安全与 JSON') }}</small>
+        </button>
+      </div>
+
+      <div v-show="activeSection === 'basic'" class="section-panel">
       <!-- ============================== BASICS ============================== -->
       <section class="inbound-form-section">
         <h3 class="form-section-title">{{ t('pages.xray.basicTemplate') }}</h3>
@@ -1003,6 +1036,10 @@ watch(
           </a-form>
         </template>
       </section>
+
+      </div>
+
+      <div v-show="activeSection === 'advanced'" class="section-panel">
 
       <!-- ============================== STREAM ============================== -->
       <section v-if="canEnableStream" class="inbound-form-section">
@@ -1729,6 +1766,7 @@ watch(
           </a-form-item>
         </a-form>
       </section>
+      </div>
     </div>
   </a-modal>
 </template>
@@ -1857,32 +1895,126 @@ watch(
   opacity: 0.85;
 }
 
+.modal-heading {
+  min-width: 0;
+  padding-right: 38px;
+}
+
+.modal-heading-title {
+  color: #f1f5f9;
+  font-size: 16px;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.modal-heading-subtitle {
+  margin-top: 4px;
+  color: #64748b;
+  font-size: 12.5px;
+  font-weight: 400;
+  line-height: 1.45;
+}
+
+.section-switcher {
+  position: sticky;
+  z-index: 5;
+  top: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  max-width: 820px;
+  margin: 0 auto 16px;
+  padding: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 11px;
+  background: rgba(14, 16, 23, 0.94);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(12px);
+}
+
+.section-switcher-button {
+  display: flex;
+  min-width: 0;
+  min-height: 54px;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 8px 12px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: #94a3b8;
+  background: transparent;
+  cursor: pointer;
+  transition: border-color 0.16s ease, color 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
+}
+
+.section-switcher-button:hover {
+  color: #cbd5e1;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.section-switcher-button.active {
+  border-color: rgba(99, 102, 241, 0.35);
+  color: #eef2ff;
+  background: rgba(99, 102, 241, 0.16);
+  box-shadow: 0 5px 16px rgba(99, 102, 241, 0.12);
+}
+
+.section-switcher-button span {
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.section-switcher-button small {
+  margin-top: 2px;
+  overflow: hidden;
+  color: #64748b;
+  font-size: 11px;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.section-switcher-button.active small {
+  color: #a5b4fc;
+}
+
+.section-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
 .inbound-form-stack {
-  max-height: calc(100vh - 190px);
-  overflow-y: auto;
-  padding: 16px 18px 30px;
-  background: var(--xui-bg);
+  padding: 18px 20px 28px;
+  background: #0e1017;
 }
 
 .inbound-form-section {
-  padding: 0 0 22px;
-  border-bottom: 1px solid var(--xui-border);
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 18px 18px 5px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  background: rgba(18, 20, 28, 0.92);
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.16);
 }
 
 .inbound-form-section + .inbound-form-section {
-  padding-top: 22px;
+  padding-top: 18px;
 }
 
 .inbound-form-section:last-child {
-  padding-bottom: 0;
-  border-bottom: 0;
+  padding-bottom: 5px;
 }
 
 .form-section-title {
-  margin: 0 0 18px;
-  color: var(--xui-text-strong);
-  font-size: 14px;
-  font-weight: 700;
+  margin: 0 0 17px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+  color: #f1f5f9;
+  font-size: 13px;
+  font-weight: 650;
 }
 
 .inbound-form-stack :deep(.ant-form) {
@@ -1895,9 +2027,40 @@ watch(
 }
 
 .inbound-form-stack :deep(.ant-form-item-label > label) {
-  color: var(--xui-text-muted);
-  font-size: 12px;
-  font-weight: 650;
+  color: #94a3b8;
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+.inbound-form-stack :deep(.ant-input),
+.inbound-form-stack :deep(.ant-input-affix-wrapper),
+.inbound-form-stack :deep(.ant-input-number),
+.inbound-form-stack :deep(.ant-input-number-input),
+.inbound-form-stack :deep(.ant-picker),
+.inbound-form-stack :deep(.ant-select-selector) {
+  color: #e2e8f0 !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  border-radius: 8px !important;
+  background: rgba(255, 255, 255, 0.035) !important;
+  box-shadow: none !important;
+}
+
+.inbound-form-stack :deep(.ant-input:hover),
+.inbound-form-stack :deep(.ant-input-affix-wrapper:hover),
+.inbound-form-stack :deep(.ant-input-number:hover),
+.inbound-form-stack :deep(.ant-picker:hover),
+.inbound-form-stack :deep(.ant-select:not(.ant-select-disabled):hover .ant-select-selector) {
+  border-color: rgba(99, 102, 241, 0.42) !important;
+}
+
+.inbound-form-stack :deep(.ant-input:focus),
+.inbound-form-stack :deep(.ant-input-affix-wrapper-focused),
+.inbound-form-stack :deep(.ant-input-number-focused),
+.inbound-form-stack :deep(.ant-picker-focused),
+.inbound-form-stack :deep(.ant-select-focused .ant-select-selector) {
+  border-color: rgba(99, 102, 241, 0.62) !important;
+  background: rgba(99, 102, 241, 0.055) !important;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.11) !important;
 }
 
 .inbound-form-stack :deep(.ant-input),
@@ -1980,17 +2143,17 @@ watch(
 :global(.inbound-form-modal .ant-modal-content) {
   overflow: hidden;
   padding: 0;
-  border: 1px solid var(--xui-border);
-  border-radius: 8px;
-  background: var(--xui-surface);
-  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.34);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 16px;
+  background: #0e1017;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(99, 102, 241, 0.06);
 }
 
 :global(.inbound-form-modal .ant-modal-header) {
   margin: 0;
-  padding: 17px 20px;
-  border-bottom: 1px solid var(--xui-border);
-  background: var(--xui-surface);
+  padding: 18px 22px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  background: #0e1017;
 }
 
 :global(.inbound-form-modal .ant-modal-title) {
@@ -2000,9 +2163,10 @@ watch(
 }
 
 :global(.inbound-form-modal .ant-modal-close) {
-  top: 12px;
-  right: 12px;
-  color: var(--xui-text-muted);
+  top: 14px;
+  right: 14px;
+  color: #64748b;
+  border-radius: 8px;
 }
 
 :global(.inbound-form-modal .ant-modal-body) {
@@ -2010,24 +2174,52 @@ watch(
   padding: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
-  background: var(--xui-bg);
+  background: #0e1017;
 }
 
 :global(.inbound-form-modal .ant-modal-footer) {
   margin: 0;
-  padding: 13px 20px;
-  border-top: 1px solid var(--xui-border);
-  background: var(--xui-surface);
+  padding: 16px 22px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(0, 0, 0, 0.2);
 }
 
 :global(.inbound-form-modal .ant-modal-footer .ant-btn) {
   min-width: 84px;
+  height: 36px;
+  border-radius: 8px;
+}
+
+:global(.inbound-form-modal .ant-modal-footer .ant-btn-primary) {
+  border-color: #6366f1;
+  background: #6366f1;
+  box-shadow: 0 2px 12px rgba(99, 102, 241, 0.35);
+}
+
+:global(.inbound-modal-root .ant-modal-mask) {
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(8px);
 }
 
 @media (max-width: 768px) {
   .inbound-form-stack {
     min-height: 440px;
     padding: 14px 12px 24px;
+  }
+
+  .section-switcher-button {
+    align-items: center;
+    padding: 8px;
+    text-align: center;
+  }
+
+  .section-switcher-button small {
+    white-space: normal;
+  }
+
+  .inbound-form-section {
+    padding-right: 12px;
+    padding-left: 12px;
   }
 
   .inbound-form-stack :deep(.ant-form-item) {
