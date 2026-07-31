@@ -553,7 +553,7 @@ watch(
 
 <template>
   <a-modal :open="open" :ok-text="okText" :cancel-text="t('close')" :confirm-loading="saving"
-    :mask-closable="false" width="min(820px, calc(100vw - 24px))" wrap-class-name="inbound-form-modal"
+    :mask-closable="false" centered :width="640" wrap-class-name="inbound-form-modal"
     root-class-name="inbound-modal-root"
     @ok="submit" @cancel="close">
     <template #title>
@@ -573,7 +573,7 @@ watch(
           @click="activeSection = 'basic'"
         >
           <span>{{ uiText('Basic settings', '基础设置') }}</span>
-          <small>{{ uiText('Access and protocol', '访问与协议') }}</small>
+          <small>{{ uiText('All visual configuration', '全部可视化配置') }}</small>
         </button>
         <button
           type="button"
@@ -582,7 +582,7 @@ watch(
           @click="activeSection = 'advanced'"
         >
           <span>{{ uiText('Advanced settings', '高级设置') }}</span>
-          <small>{{ uiText('Transport, security and JSON', '传输、安全与 JSON') }}</small>
+          <small>{{ uiText('Raw configuration JSON', '原始配置 JSON') }}</small>
         </button>
       </div>
 
@@ -1036,10 +1036,6 @@ watch(
           </a-form>
         </template>
       </section>
-
-      </div>
-
-      <div v-show="activeSection === 'advanced'" class="section-panel">
 
       <!-- ============================== STREAM ============================== -->
       <section v-if="canEnableStream" class="inbound-form-section">
@@ -1745,6 +1741,9 @@ watch(
         </a-form>
       </section>
 
+      </div>
+
+      <div v-show="activeSection === 'advanced'" class="section-panel section-panel-advanced">
       <!-- ============================== ADVANCED ============================== -->
       <section class="inbound-form-section">
         <h3 class="form-section-title">{{ t('pages.xray.advancedTemplate') }}</h3>
@@ -1922,7 +1921,7 @@ watch(
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
-  max-width: 820px;
+  width: 100%;
   margin: 0 auto 16px;
   padding: 6px;
   border: 1px solid rgba(255, 255, 255, 0.07);
@@ -1981,17 +1980,24 @@ watch(
 
 .section-panel {
   display: flex;
+  width: 100%;
   flex-direction: column;
   gap: 14px;
 }
 
+.section-panel-advanced .inbound-form-section {
+  padding-bottom: 18px;
+}
+
 .inbound-form-stack {
-  padding: 18px 20px 28px;
+  width: 100%;
+  padding: 20px 22px 28px;
   background: #0e1017;
 }
 
 .inbound-form-section {
-  max-width: 820px;
+  width: 100%;
+  max-width: none;
   margin: 0 auto;
   padding: 18px 18px 5px;
   border: 1px solid rgba(255, 255, 255, 0.07);
@@ -2018,7 +2024,8 @@ watch(
 }
 
 .inbound-form-stack :deep(.ant-form) {
-  max-width: 820px;
+  width: 100%;
+  max-width: none;
   margin: 0 auto;
 }
 
@@ -2170,7 +2177,7 @@ watch(
 }
 
 :global(.inbound-form-modal .ant-modal-body) {
-  max-height: min(72vh, 760px);
+  max-height: min(74vh, 760px);
   padding: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -2199,6 +2206,10 @@ watch(
 :global(.inbound-modal-root .ant-modal-mask) {
   background: rgba(0, 0, 0, 0.65);
   backdrop-filter: blur(8px);
+}
+
+:global(.inbound-form-modal .ant-modal) {
+  padding-bottom: 0;
 }
 
 @media (max-width: 768px) {
@@ -2268,7 +2279,6 @@ watch(
   }
 
   :global(.inbound-form-modal .ant-modal) {
-    top: 12px;
     padding-bottom: 12px;
   }
 
