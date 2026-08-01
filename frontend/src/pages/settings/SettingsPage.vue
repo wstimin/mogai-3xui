@@ -10,11 +10,11 @@ import {
   CodeOutlined,
   SaveOutlined,
   ReloadOutlined,
+  UndoOutlined,
 } from '@ant-design/icons-vue';
 
 import { HttpUtil, PromiseUtil } from '@/utils';
 import { theme as themeState, antdThemeConfig } from '@/composables/useTheme.js';
-import { useMediaQuery } from '@/composables/useMediaQuery.js';
 import AppSidebar from '@/components/AppSidebar.vue';
 import { useAllSetting } from './useAllSetting.js';
 import GeneralTab from './GeneralTab.vue';
@@ -32,7 +32,6 @@ const {
   saveAll,
   discardChanges,
 } = useAllSetting();
-const { isMobile } = useMediaQuery();
 
 const basePath = window.__X_UI_BASE_PATH__ || '';
 const requestUri = window.location.pathname;
@@ -167,10 +166,24 @@ const initialTab = window.location.hash === '#subscription' ? '4' : '1';
                   <h1>{{ t('menu.settings') }}</h1>
                   <p>{{ t('pages.settings.subtitle') }}</p>
                 </div>
-                <a-button class="restart-button" :disabled="!saveDisabled" @click="restartPanel">
-                  <template #icon><ReloadOutlined /></template>
-                  <span v-if="!isMobile">{{ t('pages.settings.restartPanel') }}</span>
-                </a-button>
+                <div class="heading-actions">
+                  <div class="save-state" :title="t('pages.settings.saveHint')">
+                    <span class="save-state-dot" :class="{ clean: saveDisabled }" />
+                    <strong>{{ saveDisabled ? t('pages.settings.savedState') : t('pages.settings.unsavedState') }}</strong>
+                  </div>
+                  <a-button class="discard-button" :disabled="saveDisabled" @click="discardChanges">
+                    <template #icon><UndoOutlined /></template>
+                    {{ t('pages.settings.discardChanges') }}
+                  </a-button>
+                  <a-button class="save-button" type="primary" :disabled="saveDisabled" @click="saveAll">
+                    <template #icon><SaveOutlined /></template>
+                    {{ t('pages.settings.save') }}
+                  </a-button>
+                  <a-button class="restart-button" :disabled="!saveDisabled" @click="restartPanel">
+                    <template #icon><ReloadOutlined /></template>
+                    {{ t('pages.settings.restartPanel') }}
+                  </a-button>
+                </div>
               </div>
 
               <a-alert
@@ -216,24 +229,6 @@ const initialTab = window.location.hash === '#subscription' ? '4' : '1';
                 </a-tabs>
               </div>
 
-              <div class="save-bar">
-                <div class="save-state">
-                  <span class="save-state-dot" :class="{ clean: saveDisabled }" />
-                  <div>
-                    <strong>{{ saveDisabled ? t('pages.settings.savedState') : t('pages.settings.unsavedState') }}</strong>
-                    <span>{{ t('pages.settings.saveHint') }}</span>
-                  </div>
-                </div>
-                <div class="save-actions">
-                  <a-button :disabled="saveDisabled" @click="discardChanges">
-                    {{ t('pages.settings.discardChanges') }}
-                  </a-button>
-                  <a-button type="primary" :disabled="saveDisabled" @click="saveAll">
-                    <template #icon><SaveOutlined /></template>
-                    {{ t('pages.settings.save') }}
-                  </a-button>
-                </div>
-              </div>
             </template>
           </a-spin>
         </a-layout-content>
@@ -293,7 +288,7 @@ const initialTab = window.location.hash === '#subscription' ? '4' : '1';
 }
 
 .content-area {
-  padding: 28px 32px 112px !important;
+  padding: 28px 32px 48px !important;
 }
 
 .loading-spacer {
@@ -301,8 +296,20 @@ const initialTab = window.location.hash === '#subscription' ? '4' : '1';
 }
 
 .page-heading {
+  display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 24px;
   margin-bottom: 20px;
+}
+
+.heading-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .page-heading h1 {
@@ -315,20 +322,43 @@ const initialTab = window.location.hash === '#subscription' ? '4' : '1';
   color: #64748b;
 }
 
-.restart-button {
+.heading-actions :deep(.ant-btn) {
   min-height: 40px;
   border-color: rgba(255, 255, 255, 0.08) !important;
   border-radius: 10px;
-  color: #94a3b8 !important;
+}
+
+.discard-button {
+  color: #cbd5e1 !important;
   background: rgba(255, 255, 255, 0.03) !important;
 }
 
-.restart-button:not(:disabled):hover {
-  border-color: rgba(245, 158, 11, 0.32) !important;
-  color: #fbbf24 !important;
-  background: rgba(245, 158, 11, 0.08) !important;
+.save-button {
+  border-color: transparent !important;
+  color: #fff !important;
+  background: linear-gradient(135deg, #6366f1, #7c3aed) !important;
+  box-shadow: 0 5px 18px rgba(99, 102, 241, 0.28);
 }
 
+.restart-button:not(:disabled) {
+  border-color: rgba(251, 146, 60, 0.72) !important;
+  color: #fff7ed !important;
+  background: linear-gradient(135deg, #f97316, #dc2626) !important;
+  box-shadow: 0 6px 22px rgba(239, 68, 68, 0.32), 0 0 0 1px rgba(251, 146, 60, 0.18);
+}
+
+.restart-button:not(:disabled):hover {
+  border-color: #fdba74 !important;
+  color: #fff !important;
+  background: linear-gradient(135deg, #fb923c, #ef4444) !important;
+  box-shadow: 0 8px 28px rgba(239, 68, 68, 0.44), 0 0 0 3px rgba(249, 115, 22, 0.12);
+  transform: translateY(-1px);
+}
+
+.restart-button:disabled {
+  color: #64748b !important;
+  background: rgba(255, 255, 255, 0.03) !important;
+}
 .conf-alert {
   margin: 4px 0 16px;
   border: 1px solid rgba(239, 68, 68, 0.24) !important;
@@ -533,85 +563,36 @@ const initialTab = window.location.hash === '#subscription' ? '4' : '1';
   font-size: 11px;
 }
 
-.save-bar {
-  position: fixed;
-  right: 0;
-  bottom: 0;
-  left: 260px;
-  z-index: 50;
-  min-height: 78px;
-  padding: 14px 32px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.065);
-  background: rgba(7, 8, 11, 0.9);
-  box-shadow: 0 -12px 34px rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(18px);
-}
-
 .save-state {
-  min-width: 0;
-  display: flex;
+  display: inline-flex;
+  min-height: 40px;
   align-items: center;
-  gap: 11px;
+  gap: 9px;
+  padding: 0 11px;
+  border: 1px solid rgba(255, 255, 255, 0.065);
+  border-radius: 10px;
+  color: #cbd5e1;
+  background: rgba(255, 255, 255, 0.025);
 }
 
 .save-state-dot {
-  width: 9px;
-  height: 9px;
-  flex: 0 0 9px;
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
   border-radius: 50%;
   background: #f59e0b;
-  box-shadow: 0 0 0 5px rgba(245, 158, 11, 0.1);
+  box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.1);
 }
 
 .save-state-dot.clean {
   background: #10b981;
-  box-shadow: 0 0 0 5px rgba(16, 185, 129, 0.1);
-}
-
-.save-state div {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
 }
 
 .save-state strong {
-  color: #cbd5e1;
-  font-size: 12.5px;
-}
-
-.save-state span {
-  overflow: hidden;
-  color: #64748b;
-  font-size: 11.5px;
-  text-overflow: ellipsis;
+  font-size: 12px;
   white-space: nowrap;
 }
-
-.save-actions {
-  flex: 0 0 auto;
-  display: flex;
-  gap: 10px;
-}
-
-.save-actions :deep(.ant-btn) {
-  min-height: 40px;
-  border-color: rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
-  color: #cbd5e1;
-  background: rgba(255, 255, 255, 0.035);
-}
-
-.save-actions :deep(.ant-btn-primary) {
-  border-color: transparent !important;
-  color: #fff;
-  background: linear-gradient(135deg, #6366f1, #7c3aed) !important;
-  box-shadow: 0 5px 18px rgba(99, 102, 241, 0.28);
-}
-
 :global(.ant-modal.settings-confirm-modal .ant-modal-content) {
   border: 1px solid rgba(255, 255, 255, 0.065) !important;
   border-radius: 14px !important;
@@ -635,11 +616,22 @@ const initialTab = window.location.hash === '#subscription' ? '4' : '1';
 
 @media (max-width: 768px) {
   .content-area {
-    padding: 76px 12px 116px !important;
+    padding: 76px 12px 40px !important;
   }
 
   .page-heading {
     align-items: flex-start;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .heading-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .save-state {
+    width: 100%;
   }
 
   .settings-tabs :deep(.ant-tabs-nav) {
@@ -656,20 +648,6 @@ const initialTab = window.location.hash === '#subscription' ? '4' : '1';
 
   .tab-pane :deep(.ant-list-item) {
     padding: 14px 16px !important;
-  }
-
-  .save-bar {
-    left: 0;
-    min-height: 88px;
-    padding: 12px;
-  }
-
-  .save-state span {
-    display: none;
-  }
-
-  .save-actions {
-    gap: 7px;
   }
 }
 </style>
