@@ -53,7 +53,6 @@ func (a *ServerController) initRouter(g *gin.RouterGroup) {
 	g.GET("/getDb", a.getDb)
 	g.GET("/getNewUUID", a.getNewUUID)
 	g.GET("/getNewX25519Cert", a.getNewX25519Cert)
-	g.GET("/getWebCertFiles", a.getWebCertFiles)
 	g.GET("/getNewmldsa65", a.getNewmldsa65)
 	g.GET("/getNewmlkem768", a.getNewmlkem768)
 	g.GET("/getNewVlessEnc", a.getNewVlessEnc)
@@ -364,29 +363,6 @@ func (a *ServerController) getNewX25519Cert(c *gin.Context) {
 		return
 	}
 	jsonObj(c, cert, nil)
-}
-
-// getWebCertFiles returns the panel TLS paths without loading all settings.
-func (a *ServerController) getWebCertFiles(c *gin.Context) {
-	certFile, err := a.settingService.GetCertFile()
-	if err != nil {
-		jsonMsg(c, "get web certificate", err)
-		return
-	}
-	keyFile, err := a.settingService.GetKeyFile()
-	if err != nil {
-		jsonMsg(c, "get web certificate", err)
-		return
-	}
-	if certFile == "" || keyFile == "" {
-		jsonMsg(c, "get web certificate", fmt.Errorf("panel TLS certificate is not configured"))
-		return
-	}
-
-	jsonObj(c, map[string]string{
-		"webCertFile": certFile,
-		"webKeyFile":  keyFile,
-	}, nil)
 }
 
 // getNewmldsa65 generates a new ML-DSA-65 key.
