@@ -4,6 +4,9 @@ import (
 	"archive/zip"
 	"bufio"
 	"bytes"
+	"crypto/ecdh"
+	"crypto/rand"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -1186,26 +1189,22 @@ func (s *ServerService) UpdateGeofile(fileName string) error {
 }
 
 func (s *ServerService) GetNewX25519Cert() (any, error) {
-	// Run the command
-	cmd := exec.Command(xray.GetBinaryPath(), "x25519")
-	var out bytes.Buffer
-	cmd.Stdout = &out
-	err := cmd.Run()
+	privateKeyBytes := make([]byte, 32)
+	if _, err := rand.Read(privateKeyBytes); err != nil {
+		return nil, err
+	}
+	privateKeyBytes[0] &= 248
+	privateKeyBytes[31] &= 127
+	privateKeyBytes[31] |= 64
+
+	privateKey, err := ecdh.X25519().NewPrivateKey(privateKeyBytes)
 	if err != nil {
 		return nil, err
 	}
 
-	lines := strings.Split(out.String(), "\n")
-
-	privateKeyLine := strings.Split(lines[0], ":")
-	publicKeyLine := strings.Split(lines[1], ":")
-
-	privateKey := strings.TrimSpace(privateKeyLine[1])
-	publicKey := strings.TrimSpace(publicKeyLine[1])
-
 	keyPair := map[string]any{
-		"privateKey": privateKey,
-		"publicKey":  publicKey,
+		"privateKey": base64.RawURLEncoding.EncodeToString(privateKey.Bytes()),
+		"publicKey":  base64.RawURLEncoding.EncodeToString(privateKey.PublicKey().Bytes()),
 	}
 
 	return keyPair, nil
